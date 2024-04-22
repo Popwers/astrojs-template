@@ -2,72 +2,113 @@
 
 /* Font-size */
 
-$extraLarge: 3.5rem;
-$large: 2rem;
-$medium: 1.25rem;
+$small: 0.875rem;
+$base: 1rem;
+$medium: 1.5rem;
+$large: 1.9rem;
+$extraLarge: 2.75rem;
+$display: 3.5rem;
 
 /* Colors */
 
-$black: #2a2a2a;
+$black: #000000;
 $white: #ffffff;
-$grey: #f5f5f5;
+$blue_light: #e6ebf4;
+$blue_saturated: #7086b2;
+$blue: #4542bd;
+$blue_dark: #313050;
+$red: #dc2626;
 
-/* Shared with Components */
-:root {
-	--radius: 0.5rem;
-	--accent: 136, 58, 234;
-	--accent-light: 224, 204, 250;
-	--accent-dark: 49, 10, 101;
-	--accent-gradient: linear-gradient(45deg, rgb(var(--accent)), rgb(var(--accent-light)) 30%, white 60%);
-}
+$gradient_dark_blue: linear-gradient(90deg, $blue 0%, $blue_dark 100%);
+$gradient_saturated_blue: linear-gradient(90deg, $white 0%, $blue_saturated 100%);
+$gradient_blue: linear-gradient(90deg, $blue 0%, $blue_saturated 100%);
 
 /* Shadows */
 
-$shadow: 0 5px 10px
+$shadow: 0 25px 50px
 	rgba(
-		$color: #000000,
-		$alpha: 0.15,
+		$color: $black,
+		$alpha: 0.1,
 	);
 
 /* ######################## FONTS ######################## */
 
-/*@import url('https://fonts.googleapis.com/css?family=Quicksand:400,500,700&display=swap');
-
-// font-family: 'Quicksand', sans-serif;
-
-@font-face {
-    font-family: 'Righteous';
-    src: url('fonts/coolvetica/Righteous-Regular.eot');
-    src: local('Righteous'), local('Righteous-Regular'),
-        url('fonts/coolvetica/Righteous-Regular.eot?#iefix') format('embedded-opentype'),
-        url('fonts/coolvetica/Righteous-Regular.woff2') format('woff2'),
-        url('fonts/coolvetica/Righteous-Regular.woff') format('woff'),
-        url('fonts/coolvetica/Righteous-Regular.ttf') format('truetype'),
-        url('fonts/coolvetica/Righteous-Regular.svg#Righteous-Regular') format('svg');
-    font-weight: normal;
-    font-style: normal;
-}*/
+$default_font: sans-serif;
+$title_font: sans-serif;
 
 /* ###################################################### */
 /* ######################## BASE ######################## */
 /* ###################################################### */
 
+/* Use root to pass variables to tailwindcss */
+
+:root {
+	--small: #{$small};
+	--base: #{$base};
+	--medium: #{$medium};
+	--large: #{$large};
+	--extraLarge: #{$extraLarge};
+	--display: #{$display};
+
+	--black: #{$black};
+	--white: #{$white};
+	--blue_light: #{$blue_light};
+	--blue_saturated: #{$blue_saturated};
+	--blue: #{$blue};
+	--blue_dark: #{$blue_dark};
+
+	--gradient_dark_blue: #{$gradient_dark_blue};
+	--gradient_saturated_blue: #{$gradient_saturated_blue};
+	--gradient_blue: #{$gradient_blue};
+
+	--shadow: #{$shadow};
+
+	--default_font: #{$default_font};
+	--title_font: #{$title_font};
+}
+
 html {
-	font-size: 16px;
-	background: #13151a;
-	background-size: 224px;
+	font-size: 16px !important;
 }
 
 html,
 body {
 	scroll-behavior: smooth;
-	font-family: system-ui, sans-serif;
+	font-family: $default_font;
 	font-size: 1rem;
-	color: $black;
+	color: $blue_dark;
 	text-rendering: geometricPrecision;
 	-webkit-font-smoothing: antialiased;
 	-moz-osx-font-smoothing: grayscale;
 	font-synthesis: style;
+
+	scrollbar-color: $blue_dark transparent;
+	scrollbar-width: thin;
+
+	/* For Webkit-based browsers (Chrome, Safari, and Opera) */
+	&::-webkit-scrollbar {
+		width: 4px;
+	}
+
+	&::-webkit-scrollbar-track {
+		background-color: transparent;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background-color: transparent;
+		border-radius: 4px;
+	}
+
+	/* For Firefox */
+	& {
+		scrollbar-color: $blue_dark transparent;
+		scrollbar-width: thin;
+	}
+
+	.scrollbar-blue {
+		scrollbar-color: $blue transparent;
+		scrollbar-width: thin;
+	}
 }
 
 h1,
@@ -82,53 +123,65 @@ h6,
 .h4,
 .h5,
 .h6 {
-	font-weight: bold;
+	font-family: $title_font;
 	margin: 0;
 	margin-bottom: 1rem;
 }
 
 h1,
 .h1 {
-	font-size: $extraLarge;
+	font-size: $display;
+	font-weight: 600;
+	line-height: 75.6px;
 	margin-bottom: 2rem;
 }
 
 h2,
 .h2 {
-	font-size: $large;
+	font-size: $extraLarge;
+	line-height: 72px;
 	margin-bottom: 1.5rem;
 }
 
 h3,
 .h3 {
-	font-size: $medium;
+	font-size: $large;
+	font-weight: 600;
+	line-height: 45px;
 	margin-bottom: 1.3rem;
 }
 
 h4,
 h5,
-h6 {
+h6,
+.h4,
+.h5,
+.h6 {
+	font-family: $default_font;
+	font-size: $medium;
+	line-height: 36px;
 }
 
 p {
 	font-size: 1rem;
 	margin: 1rem 0;
+	line-height: 32px;
 }
 
 a {
 	text-decoration: none;
-	color: #000;
+	color: $blue_dark;
 	transition: color 0.5s ease;
 
 	&:hover {
 		text-decoration: none;
-		color: #000;
+		color: $blue_saturated;
 	}
 }
 
 strong,
 b {
-	color: #000;
+	color: $blue_dark;
 	font-weight: bold;
 }
 
@@ -143,22 +196,51 @@ li {
 button,
 .button,
 .btn {
+	font-family: $default_font;
+	font-weight: bold;
 	display: inline-block;
 	text-align: center;
-	background-color: $white;
-	padding: 1rem;
+	background-color: $blue;
+	color: $blue_light;
+	border-radius: 16px;
+	padding: 1.9rem 3rem;
 	cursor: pointer;
 	-webkit-appearance: none;
 	appearance: none;
 	border: none;
 	line-height: 1;
+	user-select: none;
 	transition:
+		opacity 0.3s ease,
+		transform 0.3s ease,
 		background 0.3s ease,
 		color 0.3s ease;
 
-	&:hover {
-		color: $white;
+	&.starter {
 		background-color: $white;
+		color: $blue;
+	}
+
+	&.secondary {
+		background-color: $blue_light;
+		color: $blue_saturated;
+	}
+
+	&.disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+		pointer-events: none !important;
+	}
+
+	&:hover {
+		background-color: $blue_saturated;
+		color: $blue_light;
+	}
+
+	&:active {
+		transform: scale(0.95);
+		background-color: $blue_saturated;
+		color: $blue_light;
 	}
 }
 
@@ -479,6 +561,9 @@ form {
 }
 
 @media screen and (max-width: 767px) {
+	html {
+		font-size: 15px !important;
+	}
 }
 
 @media screen and (max-width: 425px) {

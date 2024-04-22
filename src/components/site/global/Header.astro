@@ -1,0 +1,12 @@
+---
+import menuArray from '@data/menu.json';
+
+import Menu from './Menu.astro';
+---
+
+<header>
+	<Menu
+		menus={menuArray.header}
+		className='text-center justify-center lg:flex items-center py-10 md:py-14 mv-10 md:mb-14 lg:mb-32'
+	/>
+</header>

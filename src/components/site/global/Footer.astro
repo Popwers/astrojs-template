@@ -1,0 +1,9 @@
+---
+import menuArray from '@data/menu.json';
+
+import Menu from './Menu.astro';
+---
+
+<footer>
+	<Menu menus={menuArray.footer} className='flex flex-col lg:flex-row justify-center items-center py-8' />
+</footer>

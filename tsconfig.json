@@ -1,6 +1,16 @@
 {
 	"extends": "astro/tsconfigs/base",
 	"compilerOptions": {
+		"baseUrl": ".",
+		"paths": {
+			"@pages/*": ["src/pages/*"],
+			"@styles/*": ["src/styles/*"],
+			"@layouts/*": ["src/layouts/*"],
+			"@components/*": ["src/components/*"],
+			"@assets/*": ["src/assets/*"],
+			"@data/*": ["src/data/*"],
+			"@lib/*": ["src/lib/*"]
+		},
 		"jsx": "react-jsx",
 		"jsxImportSource": "react"
 	}
