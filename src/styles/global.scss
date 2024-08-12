@@ -25,11 +25,12 @@ $gradient_blue: linear-gradient(90deg, $blue 0%, $blue_saturated 100%);
 
 /* Shadows */
 
-$shadow: 0 25px 50px
-	rgba(
-		$color: $black,
-		$alpha: 0.1,
-	);
+$shadow: 0px 0px 0px 1px rgba(165, 165, 165, 0.04),
+-9px 9px 9px -0.5px rgba(0, 0, 0, 0.04),
+-18px 18px 18px -1.5px rgba(0, 0, 0, 0.08),
+-37px 37px 37px -3px rgba(0, 0, 0, 0.16),
+-75px 75px 75px -6px rgba(0, 0, 0, 0.24),
+-150px 150px 150px -12px rgba(0, 0, 0, 0.48);
 
 /* ######################## FONTS ######################## */
 
@@ -69,6 +70,9 @@ $title_font: sans-serif;
 
 html {
 	font-size: 16px !important;
+	scroll-padding-top: 80px;
+	overscroll-behavior: none;
+	scroll-behavior: smooth;
 }
 
 html,
@@ -123,6 +127,7 @@ h6,
 .h4,
 .h5,
 .h6 {
+	text-wrap: balance;
 	font-family: $title_font;
 	margin: 0;
 	margin-bottom: 1rem;
@@ -163,6 +168,7 @@ h6,
 }
 
 p {
+	text-wrap: pretty;
 	font-size: 1rem;
 	margin: 1rem 0;
 	line-height: 32px;
