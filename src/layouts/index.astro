@@ -15,7 +15,7 @@ interface Props {
 	description?: string;
 }
 
-const { title = 'Default title', description = 'Default description' } = Astro.props;
+const { title = 'Default title', description = 'Default description' } = Astro.props as Props;
 //const pathname = Astro.url.pathname.replace(/\/$/, '');
 ---
 
@@ -66,6 +66,8 @@ const { title = 'Default title', description = 'Default description' } = Astro.p
 				],
 			}}
 		/>
+
+		<link rel='manifest' href='/site.webmanifest' crossorigin='use-credentials' />
 		<ViewTransitions />
 	</head>
 

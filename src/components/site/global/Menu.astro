@@ -1,5 +1,11 @@
 ---
-const { menus, className } = Astro.props;
+interface MenuItems {
+	link: string;
+	name: string;
+	submenus?: MenuItems[];
+}
+
+const { menus, className } = Astro.props as { menus: MenuItems[]; className: string };
 ---
 
 <ul class={className}>

@@ -22,11 +22,10 @@ export default async function fetchApi<T>({
 	if (endpoint.startsWith('/')) endpoint = endpoint.slice(1);
 
 	const url = new URL(`${import.meta.env.STRAPI_URL}/api/${endpoint}`);
-
 	if (query) {
-		Object.entries(query).forEach(([key, value]) => {
+		for (const [key, value] of Object.entries(query)) {
 			url.searchParams.append(key, value);
-		});
+		}
 	}
 	const res = await fetch(url.toString(), {
 		headers: {
