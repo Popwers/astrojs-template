@@ -1,5 +1,5 @@
 {
-	"extends": "astro/tsconfigs/base",
+	"extends": "astro/tsconfigs/strict",
 	"compilerOptions": {
 		"baseUrl": ".",
 		"paths": {
@@ -9,9 +9,12 @@
 			"@components/*": ["src/components/*"],
 			"@assets/*": ["src/assets/*"],
 			"@data/*": ["src/data/*"],
-			"@lib/*": ["src/lib/*"]
+			"@lib/*": ["src/lib/*"],
+			"@interfaces/*": ["src/interfaces/*"],
+			"@stores/*": ["src/stores/*"]
 		},
 		"jsx": "react-jsx",
-		"jsxImportSource": "react"
+		"jsxImportSource": "react",
+		"checkJs": true
 	}
 }
