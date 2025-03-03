@@ -8,15 +8,26 @@ Inside of your Astro project, you'll see the following folders and files:
 ```text
 /
 ├── public/
-│   └── favicon.svg
+│   ├── favicon.svg
+│   ├── icon.png
+│   └── site.webmanifest
 ├── src/
+    ├── actions/
+│   ├── assets/
 │   ├── components/
-│   │   └── Card.astro
+│   ├── data/
+    ├── interfaces/
 │   ├── layouts/
-│   │   └── Layout.astro
-│   └── pages/
-│       └── index.astro
-└── package.json
+│   ├── lib/
+    ├── middleware/
+│   ├── pages/
+    ├── stores/
+│   └── styles/
+├── astro.config.mjs
+├── package.json
+├── tailwind.config.mjs
+└── tsconfig.json
+└── Other config files...
 ```
 
 Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
@@ -31,13 +42,21 @@ All commands are run from the root of the project, from a terminal:
 
 | Command                   | Action                                           |
 | :------------------------ | :----------------------------------------------- |
-| `bun install`             | Installs dependencies                            |
-| `bun run dev`             | Starts local dev server at `localhost:4321`      |
-| `bun run build`           | Build your production site to `./dist/`          |
+| `npm install`             | Installs dependencies                            |
+| `node --run dev`             | Starts local dev server at `localhost:4321`      |
+| `node --run build`           | Build your production site to `./dist/`          |
 | `bun run preview`         | Preview your build locally, before deploying     |
-| `bun run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `bun run astro -- --help` | Get help using the Astro CLI                     |
+| `node --run astro ...`       | Run CLI commands like `astro add`, `astro check` |
+| `node --run astro -- --help` | Get help using the Astro CLI                     |
 
-## 👀 Want to learn more?
+## 🚀 Deployment
 
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+This project uses a Docker-based deployment. The `Dockerfile` is set up to build and run the application in a production environment.
+
+## 🛠 Technologies Used
+
+- [Astro](https://astro.build)
+- [React](https://reactjs.org)
+- [Tailwind CSS](https://tailwindcss.com)
+- [Bun](https://bun.sh)
+- [Strapi](https://strapi.io) (for API)

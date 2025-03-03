@@ -51,13 +51,7 @@
 		"rules": {
 			"recommended": true
 		},
-		"ignore": [
-			"dist/*",
-			"**/.cache",
-			"**/public",
-			"**/node_modules",
-			"**/*.esm.js"
-		]
+		"ignore": ["dist/*", "**/.cache", "**/public", "**/node_modules", "**/*.esm.js"]
 	},
 	"javascript": {
 		"formatter": {
@@ -74,15 +68,15 @@
 	},
 	"overrides": [
 		{
-			"include": [
-				"*.ts",
-				"*.tsx"
-			]
+			"include": ["*.ts", "*.tsx"]
 		}
 	],
 	"vcs": {
 		"enabled": true,
 		"clientKind": "git",
 		"useIgnoreFile": true
+	},
+	"files": {
+		"ignore": ["**/patches/*"]
 	}
 }

@@ -3,55 +3,69 @@
   "type": "module",
   "version": "0.0.1",
   "scripts": {
-    "dev": "bunx --bun astro dev",
-    "start": "bunx --bun astro dev",
-    "build": "bunx --bun astro check && bunx --bun astro build",
-    "preview": "bunx --bun astro preview",
+    "dev": "astro dev --host",
+    "build": "astro build",
+    "start": "node --require dotenv/config ./dist/server/entry.mjs",
     "astro": "astro",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "test": "bun test",
+    "upgrade": "npx @astrojs/upgrade"
   },
   "dependencies": {
-    "@astrojs/check": "0.9.3",
-    "@astrojs/react": "3.6.2",
-    "@astrojs/sitemap": "^3.1.6",
-    "@astrojs/tailwind": "^5.1.0",
-    "@playform/compress": "^0.1.1",
-    "@types/react": "^18.3.5",
-    "@types/react-dom": "^18.3.0",
-    "astro": "4.15.4",
+    "@astrojs/node": "^9.1.2",
+    "@astrojs/react": "^4.2.1",
+    "@astrojs/sitemap": "^3.2.1",
+    "@legendapp/state": "^3.0.0-alpha.30",
+    "@playform/compress": "^0.1.7",
+    "@strapi/blocks-react-renderer": "^1.0.2",
+    "@tailwindcss/vite": "^4.0.9",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "astro": "^5.4.1",
+    "astro-capo": "^0.0.1",
     "astro-seo": "^0.8.4",
+    "astro-seo-schema": "^5.0.0",
+    "dotenv": "^16.4.7",
+    "motion": "^12.4.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "sass": "^1.78.0",
+    "sass": "^1.85.1",
+    "schema-dts": "^1.1.2",
     "sharp": "^0.33.5",
-    "tailwindcss": "^3.4.10",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss": "^4.0.9",
+    "typescript": "^5.8.2"
   },
   "devDependencies": {
-    "@biomejs/biome": "1.8.3",
-    "@commitlint/cli": "^19.4.1",
-    "@commitlint/config-conventional": "^19.4.1",
+    "@astrojs/check": "^0.9.4",
+    "@biomejs/biome": "1.9.4",
+    "@commitlint/cli": "^19.7.1",
+    "@commitlint/config-conventional": "^19.7.1",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
-    "@types/bun": "^1.1.8",
-    "husky": "^9.1.5",
-    "semantic-release": "^24.1.0",
-    "typescript": "^5.6.2"
+    "@types/bun": "^1.2.4",
+    "husky": "^9.1.7",
+    "semantic-release": "^24.2.3"
   },
   "trustedDependencies": [
     "core-js",
     "esbuild",
-    "sharp"
+    "sharp",
+    "@biomejs/biome"
   ],
   "release": {
     "branch": "main",
-    "repositoryUrl": "",
+    "repositoryUrl": "https://github.com/your-repo",
     "plugins": [
       "@semantic-release/commit-analyzer",
       "@semantic-release/release-notes-generator",
       "@semantic-release/changelog",
       "@semantic-release/git",
-      "@semantic-release/github"
+      [
+        "@semantic-release/github",
+        {
+          "successComment": false
+        }
+      ]
     ]
   }
 }

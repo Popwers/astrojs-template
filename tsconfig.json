@@ -11,10 +11,13 @@
 			"@data/*": ["src/data/*"],
 			"@lib/*": ["src/lib/*"],
 			"@interfaces/*": ["src/interfaces/*"],
-			"@stores/*": ["src/stores/*"]
+			"@stores/*": ["src/stores/*"],
+			"@actions/*": ["src/actions/*"]
 		},
 		"jsx": "react-jsx",
 		"jsxImportSource": "react",
 		"checkJs": true
-	}
+	},
+	"include": [".astro/types.d.ts", "**/*"],
+	"exclude": ["dist"]
 }

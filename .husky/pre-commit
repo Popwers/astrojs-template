@@ -1,2 +1,8 @@
+# Run tests
+bun test || exit 1
+
+# Run Biome checks
 bunx @biomejs/biome check --write --staged --files-ignore-unknown=true --no-errors-on-unmatched
+
+# Update the git index
 git update-index --again
