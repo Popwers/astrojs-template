@@ -12,21 +12,21 @@ Inside of your Astro project, you'll see the following folders and files:
 │   ├── icon.png
 │   └── site.webmanifest
 ├── src/
-    ├── actions/
+│   ├── actions/
 │   ├── assets/
 │   ├── components/
 │   ├── data/
-    ├── interfaces/
+│   ├── interfaces/
 │   ├── layouts/
 │   ├── lib/
-    ├── middleware/
+│   ├── middleware/
 │   ├── pages/
-    ├── stores/
+│   ├── stores/
 │   └── styles/
 ├── astro.config.mjs
 ├── package.json
 ├── tailwind.config.mjs
-└── tsconfig.json
+├── tsconfig.json
 └── Other config files...
 ```
 
@@ -45,7 +45,7 @@ All commands are run from the root of the project, from a terminal:
 | `npm install`             | Installs dependencies                            |
 | `node --run dev`             | Starts local dev server at `localhost:4321`      |
 | `node --run build`           | Build your production site to `./dist/`          |
-| `bun run preview`         | Preview your build locally, before deploying     |
+| `node --run preview`         | Preview your build locally, before deploying     |
 | `node --run astro ...`       | Run CLI commands like `astro add`, `astro check` |
 | `node --run astro -- --help` | Get help using the Astro CLI                     |
 
