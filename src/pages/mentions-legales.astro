@@ -1,0 +1,23 @@
+---
+import TextRenderer from '@components/site/global/TextRenderer';
+import DefaultLayout from '@layouts/index.astro';
+
+import type TextPage from '@interfaces/textPage';
+import fetchApi from '@lib/strapi';
+
+const data = await fetchApi<TextPage>({
+	endpoint: 'mention-legale',
+	query: { fields: 'Contenu' },
+});
+const content = data?.Contenu ?? [];
+
+const title: string = 'Mentions légales';
+const description: string = 'Page des mentions légales du site';
+---
+
+<DefaultLayout title={title} description={description}>
+	<h1>{title}</h1>
+	<div class='mb-16 lg:mb-32'>
+		<TextRenderer content={content} />
+	</div>
+</DefaultLayout>

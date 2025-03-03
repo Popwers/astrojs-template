@@ -1,0 +1,61 @@
+---
+import { actions } from 'astro:actions';
+
+/**
+ * -------------------------------------------
+ * ------------ LOGOUT ACTION ----------------
+ * -------------------------------------------
+ */
+const result = Astro.getActionResult(actions.auth.logout);
+if (result && !result.error && result.data.disconnect) {
+	return Astro.redirect('/login');
+}
+
+import Avatar from '@components/site/global/Avatar.astro';
+import CardWrapper from '@components/site/global/CardWrapper.astro';
+import DashboardLayout from '@layouts/dashboard.astro';
+
+import user_blue_icon from '@assets/icons/user_blue.svg';
+
+import { Image } from 'astro:assets';
+
+const LINK_CLASS =
+	'h4 font-light flex items-center gap-6 border border-blue-light rounded-[1.9rem] p-6 pl-10 hover:bg-blue-saturated hover:text-white transition-all duration-300';
+
+const title: string = 'Mon compte';
+const description: string = 'Gérer mon compte et';
+
+const { username, email } = Astro.locals.user ?? {};
+---
+
+<DashboardLayout title={title} description={description} dashboardTitle={title}>
+	<section class='flex flex-col lg:flex-row gap-6 mb-12'>
+		<CardWrapper className='bg-blue-light text-center relative'>
+			<Avatar showTitle />
+			<p class='h4 !mt-4 !mb-8'>
+				{username}<br />
+				<span class='relative -top-2 text-base text-blue-saturated'>{email}</span>
+			</p>
+
+			<form method='POST' action={actions.auth.logout}>
+				<button
+					id='logout-button'
+					type='submit'
+					class='text-blue-dark font-bold p-2 bg-transparent hover:bg-transparent hover:text-blue'>
+					Se déconnecter
+				</button>
+			</form>
+		</CardWrapper>
+	</section>
+
+	<section class='flex flex-col gap-2'>
+		<a class={LINK_CLASS} href='/dashboard/account'
+			><Image
+				src={user_blue_icon}
+				alt='Logo informations personnelles'
+				densities={[1.5, 2]}
+				loading='eager'
+			/> Informations personnelles</a
+		>
+	</section>
+</DashboardLayout>

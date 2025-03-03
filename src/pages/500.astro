@@ -1,0 +1,24 @@
+---
+import DefaultLayout from '@layouts/index.astro';
+
+const title: string = 'Erreur interne';
+const description: string = 'Nous sommes désolés, une erreur est survenue';
+
+const { error } = Astro.props;
+---
+
+<DefaultLayout title={title} description={description}>
+	<div class='flex flex-col items-center justify-center min-h-40 text-center px-4'>
+		<h1 class='text-4xl font-bold mb-4'>Erreur 500</h1>
+		<p class='mb-8'>{description}</p>
+		{
+			error && (
+				<div class='border px-4 py-3 rounded-sm mb-8 max-w-lg'>
+					<p class='font-bold'>Détails de l'erreur :</p>
+					<p>{error instanceof Error ? error.message : 'Aucun détail disponible'}</p>
+				</div>
+			)
+		}
+		<a href='/' class='btn secondary'> Retourner à l'accueil </a>
+	</div>
+</DefaultLayout>

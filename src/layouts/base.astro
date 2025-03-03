@@ -1,0 +1,87 @@
+---
+import '@styles/tailwind.css';
+import '@styles/global.scss';
+import '@styles/normalize.scss';
+//import '@fontsource-variable/montserrat';
+//import '@fontsource-variable/raleway';
+
+import { ClientRouter } from 'astro:transitions';
+import { Head } from 'astro-capo';
+import { SEO } from 'astro-seo';
+import { Schema } from 'astro-seo-schema';
+
+import CookieBanner from '@components/site/global/CookieBanner.astro';
+
+import { getSchemas } from '@lib/schema.org';
+
+import { enableReactComponents } from '@legendapp/state/config/enableReactComponents';
+enableReactComponents();
+
+interface Props {
+	title?: string;
+	description?: string;
+}
+
+const schemas = getSchemas(Astro.url);
+const { title = 'Default title', description = 'Default description' } = Astro.props as Props;
+---
+
+<!doctype html>
+<html lang='fr'>
+	<Head>
+		<SEO
+			title={title}
+			titleTemplate='Your project | %s'
+			titleDefault='Your project'
+			description={description}
+			charset='utf-8'
+			openGraph={{
+				basic: {
+					title: title,
+					type: 'website',
+					image: '/icon.png',
+					url: Astro.url.href,
+				},
+				image: {
+					alt: 'Your project logo',
+				},
+				optional: {
+					siteName: 'Your project',
+					locale: 'fr_FR',
+				},
+			}}
+			twitter={{
+				title: title,
+				description: description,
+				card: 'summary_large_image',
+				site: '@yourproject',
+				creator: '@yourproject',
+				image: '/icon.png',
+				imageAlt: 'Your project logo',
+			}}
+			extend={{
+				link: [
+					{ rel: 'icon', href: '/favicon.svg' },
+					{ rel: 'apple-touch-icon', href: '/icon.png' },
+					{ rel: 'sitemap', href: '/sitemap-index.xml' },
+					{ rel: 'manifest', href: '/site.webmanifest', crossorigin: 'use-credentials' },
+				],
+				meta: [
+					{ name: 'viewport', content: 'width=device-width, initial-scale=1' },
+					{ name: 'theme-color', content: '#3936D9' },
+					{ name: 'generator', content: Astro.generator },
+				],
+			}}
+		/>
+
+		<ClientRouter />
+
+		<Schema item={schemas.website} />
+		<Schema item={schemas.organization} />
+	</Head>
+
+	<body>
+		<slot />
+		<CookieBanner />
+	</body>
+</html>

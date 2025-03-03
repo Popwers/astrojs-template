@@ -1,0 +1,63 @@
+---
+import { actions, isInputError } from 'astro:actions';
+
+import ErrorInput from '@components/site/global/input/ErrorInput.astro';
+import PasswordChecker from '@components/site/global/input/PasswordChecker.tsx';
+import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
+import SubmitButton from '@components/site/global/input/SubmitButton';
+import LoginLayout from '@layouts/login.astro';
+
+import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
+
+const result = Astro.getActionResult(actions.auth.register);
+if (result && !result.error && result.data) {
+	Astro.cookies.set('mail-confirmation', result.data.email, {
+		...DEFAULT_COOKIE_OPTIONS,
+		expires: new Date(Date.now() + 1000 * 60 * 60 * 1),
+		maxAge: 1000 * 60 * 60 * 1,
+	});
+
+	return Astro.redirect('/register/mail-confirmation');
+}
+
+const inputErrors = isInputError(result?.error) ? result.error.fields : {};
+---
+
+<LoginLayout title='Inscription' description='Créer votre compte'>
+	<h1 class='h3'>S’inscrire</h1>
+	<p class='text-blue-saturated'>
+		Vous possédez déjà un compte ? <a class='text-blue-saturated font-bold' href='/login'
+			>Connectez-vous</a
+		>
+	</p>
+
+	<form class='mt-16' method='POST' action={actions.auth.register}>
+		<div class='form-group'>
+			<label for='email'>Adresse mail</label>
+			<input
+				transition:persist
+				type='email'
+				id='email'
+				name='email'
+				inputmode='email'
+				autocomplete='username'
+				placeholder='votre@email.com'
+				required
+			/>
+			<ErrorInput errors={inputErrors.email} />
+		</div>
+		<PasswordChecker client:load />
+		<ErrorInput errors={inputErrors.password} />
+		<ErrorInput errors={inputErrors.passwordConfirmation} />
+
+		<ReturnInfo result={result} />
+
+		<SubmitButton client:load className='mt-12 w-full' label='S’inscrire' />
+		<p class='text-sm text-blue-saturated'>
+			En cliquant sur “S’inscrire” vous acceptez les <a
+				class='text-blue-saturated font-bold'
+				href='/terms'>termes et conditions d’utilisations</a
+			>.
+		</p>
+	</form>
+</LoginLayout>

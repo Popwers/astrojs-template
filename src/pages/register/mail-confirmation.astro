@@ -1,0 +1,33 @@
+---
+import { actions, isInputError } from 'astro:actions';
+
+import ErrorInput from '@components/site/global/input/ErrorInput.astro';
+import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
+import SubmitButton from '@components/site/global/input/SubmitButton';
+import LoginLayout from '@layouts/login.astro';
+
+const email = Astro.cookies.get('mail-confirmation')?.value;
+if (!email) return Astro.redirect('/register', 302);
+
+const result = Astro.getActionResult(actions.auth.confirmMail);
+const inputErrors = isInputError(result?.error) ? result.error.fields : {};
+---
+
+<LoginLayout
+	title='Confirmation de votre adresse email'
+	description='Nous allons vous envoyer un email de confirmation.'>
+	<h1 class='h3'>Confirmation de votre adresse email</h1>
+	<p class='text-blue-saturated'>
+		Nous vous avons envoyé un mail à <span class='font-bold'>{email}</span>.
+		<br />Suivez les instructions pour activer votre compte.
+	</p>
+
+	<form class='mt-16' method='POST' action={actions.auth.confirmMail}>
+		<input type='hidden' name='email' value={email} />
+		<p>Vous n’avez pas reçu de mail ?</p>
+		<ErrorInput errors={inputErrors.email} />
+
+		<SubmitButton client:load className='mt-2 w-full bordered' label='Renvoyer un mail' />
+		<ReturnInfo result={result} />
+	</form>
+</LoginLayout>

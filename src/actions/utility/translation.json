@@ -1,0 +1,22 @@
+{
+	"This provider is disabled": "Ce fournisseur est désactivé",
+	"Invalid identifier or password": "Adresse email ou mot de passe incorrect",
+	"Your account email is not confirmed": "Votre adresse email n'est pas confirmée",
+	"Your account has been blocked by an administrator": "Votre compte a été bloqué par un administrateur",
+	"You must be authenticated to reset your password": "Vous devez être connecté pour réinitialiser votre mot de passe",
+	"The provided current password is invalid": "Le mot de passe actuel fourni est invalide",
+	"Your new password must be different than your current password": "Votre nouveau mot de passe doit être différent de votre mot de passe actuel",
+	"Passwords do not match": "Les mots de passe ne correspondent pas",
+	"Incorrect code provided": "Code incorrect fourni",
+	"Register action is currently disabled": "Vous ne pouvez pas vous enregistrer pour l'instant",
+	"Email or Username are already taken": "Cette adresse email est déjà utilisée",
+	"Error sending confirmation email": "Erreur lors de l'envoi de l'email de confirmation",
+	"Invalid token": "Token invalide",
+	"Already confirmed": "Déjà confirmé",
+	"User blocked": "Compte bloqué",
+	"Unable to connect. Is the computer able to access the url?": "Le serveur est injoignable, veuillez réessayer dans quelques instants",
+	"Forbidden": "Vous n'êtes pas autorisé à accéder à cette ressource",
+	"The operation was aborted due to timeout": "Le serveur est injoignable, veuillez réessayer dans quelques instants",
+	"Internal Server Error": "Une erreur serveur est survenue, veuillez réessayer dans quelques instants",
+	"fetch failed": "Nous ne parvenons pas à récupérer les données sur le serveur, veuillez réessayer dans quelques instants"
+}

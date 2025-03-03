@@ -1,0 +1,75 @@
+---
+import { actions, isInputError } from 'astro:actions';
+
+import Avatar from '@components/site/global/Avatar.astro';
+import AvatarInput from '@components/site/global/input/AvatarInput';
+import ErrorInput from '@components/site/global/input/ErrorInput.astro';
+import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
+import SelectInput from '@components/site/global/input/SelectInput';
+import SubmitButton from '@components/site/global/input/SubmitButton';
+import DashboardLayout from '@layouts/dashboard.astro';
+
+import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
+
+const result = Astro.getActionResult(actions.user.update);
+if (result && !result.error) {
+	Astro.cookies.set('user_data', result.data.user, DEFAULT_COOKIE_OPTIONS);
+	Astro.locals.user = result.data.user;
+}
+const inputErrors = isInputError(result?.error) ? result.error.fields : {};
+
+const { username, email } = Astro.locals.user ?? {};
+const title: string = 'Mon profil';
+const description: string = 'Modifier mes informations personnelles';
+---
+
+<DashboardLayout title={title} description={description} dashboardTitle={title}>
+	<ReturnInfo result={result} box={true} successMessage='Vos informations ont bien été mises à jour' />
+
+	<AvatarInput client:only='react'>
+		<Avatar blueIcon />
+	</AvatarInput>
+
+	<form method='POST' action={actions.user.update}>
+		<div class='flex flex-col lg:flex-row lg:gap-6 mt-12'>
+			<div class='form-group w-full'>
+				<label for='username'>Nom</label>
+				<input
+					type='text'
+					id='username'
+					value={username}
+					name='username'
+					autocomplete='family-name'
+					placeholder='Nom prénom ou dénomination'
+					required
+				/>
+				<ErrorInput errors={inputErrors.username} />
+			</div>
+		</div>
+		<div class='flex flex-col lg:flex-row lg:gap-6'>
+			<div class='form-group w-full'>
+				<label for='email'>Adresse mail</label>
+				<input
+					type='email'
+					inputmode='email'
+					id='email'
+					value={email}
+					name='email'
+					autocomplete='username'
+					placeholder='votre@email.com'
+					required
+				/>
+				<ErrorInput errors={inputErrors.email} />
+			</div>
+			<div class='form-group w-full'>
+				<label for='job'>Vous êtes ?</label>
+				{
+					/* <SelectInput client:load id='job' name='job' defaultValue={job} options={JOB_OPTIONS} /> */
+				}
+				<ErrorInput errors={inputErrors.job} />
+			</div>
+		</div>
+
+		<SubmitButton client:load className='mt-12' label='Enregistrer' />
+	</form>
+</DashboardLayout>

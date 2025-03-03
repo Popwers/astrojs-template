@@ -1,0 +1,45 @@
+---
+import BaseLayout from '@layouts/index.astro';
+
+import { Image } from 'astro:assets';
+import arrow from '@assets/icons/arrow_blue_light.svg';
+
+interface Props {
+	title?: string;
+	description?: string;
+	dashboardTitle: string;
+	dashboardSubtitle?: string;
+}
+
+const {
+	title = 'Default title',
+	description = 'Default description',
+	dashboardTitle,
+	dashboardSubtitle,
+} = Astro.props as Props;
+const pathname: string = Astro.url.pathname.replace(/\/$/, '');
+const isDashboard: boolean = pathname === '/dashboard';
+---
+
+<BaseLayout title={title} description={description}>
+	{
+		!isDashboard && (
+			<a
+				class='font-medium flex items-center gap-2 mb-4 md:mb-10 text-blue-saturated group w-fit'
+				href='/dashboard'>
+				<Image
+					class='relative -top-[1px] group-hover:-translate-x-1 transition-transform'
+					src={arrow}
+					alt='Retour'
+					densities={[1.5, 2]}
+					loading='eager'
+				/>
+				Retour
+			</a>
+		)
+	}
+	<h1 class='h3 !mb-12'>{dashboardTitle}</h1>
+	{dashboardSubtitle && <p class='text-blue-saturated -mt-12 !mb-12'>{dashboardSubtitle}</p>}
+
+	<slot />
+</BaseLayout>

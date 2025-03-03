@@ -1,0 +1,24 @@
+---
+import Avatar from '@components/site/global/Avatar.astro';
+---
+
+{
+	Astro.locals?.user ? (
+		<a href='/dashboard'>
+			<Avatar menu />
+		</a>
+	) : (
+		<ul class='flex flex-col justify-center items-center gap-4 xl:flex-row'>
+			<li class='order-2 lg:order-1'>
+				<a href='/login' class='hover:text-blue'>
+					Se connecter
+				</a>
+			</li>
+			<li class='order-1 lg:order-2'>
+				<a href='/register' class='btn fit'>
+					S'inscrire
+				</a>
+			</li>
+		</ul>
+	)
+}

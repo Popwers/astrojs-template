@@ -1,0 +1,40 @@
+---
+import { actions, isInputError } from 'astro:actions';
+
+import ErrorInput from '@components/site/global/input/ErrorInput.astro';
+import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
+import SubmitButton from '@components/site/global/input/SubmitButton';
+import LoginLayout from '@layouts/login.astro';
+
+const email = Astro.cookies.get('wait-mail-password')?.value;
+if (!email) return Astro.redirect('/lost-password', 302);
+
+const result = Astro.getActionResult(actions.password.forgotPassword);
+const inputErrors = isInputError(result?.error) ? result.error.fields : {};
+---
+
+<LoginLayout
+	title='Mot de passe oublié - Email envoyé'
+	description='Nous allons vous envoyer un email pour réinitialiser votre mot de passe.'
+	mode='lost-password'>
+	<h1 class='h3'>Email envoyé</h1>
+	<p class='text-blue-saturated'>
+		Nous vous avons envoyé un mail à <span class='font-bold'>{email}</span>. Suivez les instructions pour
+		changer votre mot de passe.
+	</p>
+
+	<form class='mt-16' method='POST' action={actions.password.forgotPassword}>
+		<input type='hidden' name='email' value={email} />
+		<p>Vous n’avez pas reçu de mail ?</p>
+		<ErrorInput errors={inputErrors.email} />
+
+		<SubmitButton client:load className='mt-2 w-full bordered' label='Renvoyer un mail' />
+		<ReturnInfo result={result} />
+	</form>
+
+	<p class='absolute bottom-12 lg:bottom-32'>
+		Vous vous êtes trompé de mail ? <a class='text-blue font-bold' href='/lost-password'
+			>Changer l’adresse mail</a
+		>
+	</p>
+</LoginLayout>

@@ -1,4 +1,8 @@
 /// <reference path="../.astro/types.d.ts" />
 /// <reference types="astro/client" />
-
-interface ImportMetaEnv {}
+declare namespace App {
+	interface Locals {
+		user: User;
+		userToken: string;
+	}
+}

@@ -1,0 +1,56 @@
+---
+import { isInputError } from 'astro:actions';
+import type { ActionError } from 'astro:actions';
+
+import { DEFAULT_COOKIE_OPTIONS_DELETE } from '@data/cookieOptions';
+
+interface Props {
+	result:
+		| {
+				// biome-ignore lint/suspicious/noExplicitAny: data can be anything
+				data?: { [key: string]: any; message?: string };
+				error?: ActionError | { message?: string };
+		  }
+		| undefined;
+	box?: boolean;
+	successMessage?: string;
+}
+
+const { result, box = false, successMessage } = Astro.props as Props;
+
+const inputErrors = result?.error && isInputError(result.error) ? result.error.fields : {};
+const isAInputError = Object.keys(inputErrors).length > 0;
+
+const success = result && !result.error && (result.data?.message || successMessage);
+const warning = result?.data?.warningMessage;
+const error = result?.error && !isAInputError;
+const boxClass = 'p-3 px-6 rounded-lg text-white';
+const code = result?.data?.code;
+
+// If the user changes his email, we need to logout and redirect to the login page
+if (code === 'user-change-email') {
+	Astro.cookies.delete('user_data', DEFAULT_COOKIE_OPTIONS_DELETE);
+	Astro.cookies.delete('user_token', DEFAULT_COOKIE_OPTIONS_DELETE);
+	Astro.locals.user = null;
+	Astro.locals.userToken = '';
+}
+---
+
+{
+	success && (
+		<p class={`${box ? 'bg-green ' + boxClass : 'text-green text-sm'}`}>
+			{successMessage ? successMessage : result.data?.message}
+		</p>
+	)
+}
+{warning && <p class={`${box ? 'bg-orange-400 ' + boxClass : 'text-orange-400 text-sm'}`}>{warning}</p>}
+{error && <p class={`${box ? 'bg-red ' + boxClass : 'text-red text-sm'}`}>{result.error?.message}</p>}
+
+<script is:inline define:vars={{ code }}>
+	// @ts-nocheck
+	if (code === 'user-change-email') {
+		setTimeout(() => {
+			window.location.href = '/login';
+		}, 4000);
+	}
+</script>

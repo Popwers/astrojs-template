@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@theme static {
+	/* Fonts */
+	--font-default: "Montserrat Variable", sans-serif;
+	--font-title: "Raleway Variable", sans-serif;
+
+	/* Typography */
+	--text-sm: 0.875rem;
+	--text-base: 1rem;
+	--text-md: 1.25rem;
+	--text-lg: 1.5rem;
+	--text-xl: 1.9rem;
+	--text-2xl: 2.75rem;
+	--text-3xl: 2.9rem;
+
+	--text-lg-mobile: 1.7rem;
+	--text-xl-mobile: 2rem;
+	--text-2xl-mobile: 2.5rem;
+
+	/* Breakpoints */
+	--breakpoint-2xl: 1400px;
+
+	/* Colors */
+	--color-black: #0e0a0a;
+	--color-white: #ffffff;
+	--color-blue-light: #f0f3fa;
+	--color-blue-saturated: #5478c0;
+	--color-blue: #3936d9;
+	--color-blue-dark: #15205f;
+	--color-red: #dc2626;
+	--color-green: #41b97d;
+
+	/* Gradients */
+	--gradient-dark-blue: linear-gradient(-90deg, var(--color-blue) 0%, var(--color-blue-dark) 170%);
+	--gradient-saturated-blue: linear-gradient(
+		-90deg,
+		var(--color-white) 0%,
+		var(--color-blue-saturated) 170%
+	);
+	--gradient-blue: linear-gradient(-90deg, var(--color-blue) 0%, var(--color-blue-saturated) 170%);
+
+	/* Shadows */
+	--shadow-custom:
+		0px 0px 0px 1px rgb(165 165 165 / 0.04),
+		-9px 9px 9px -0.5px rgb(0 0 0 / 0.04),
+		-18px 18px 18px -1.5px rgb(0 0 0 / 0.08),
+		-37px 37px 37px -3px rgb(0 0 0 / 0.16),
+		-75px 75px 75px -6px rgb(0 0 0 / 0.24),
+		-150px 150px 150px -12px rgb(0 0 0 / 0.48);
+
+	/* Animations */
+	--animate-spring-1: 400ms
+		linear(
+			0,
+			0.1197026495870106,
+			0.34132592017413366,
+			0.553494798767316,
+			0.7190546761222908,
+			0.8344774369975683,
+			0.9087550510618267,
+			0.9534382982963007,
+			0.9786190567996723,
+			0.9918180846073696,
+			0.9981193356367843,
+			1.0007143031133323,
+			1
+		);
+	--animate-spring-2: 550ms
+		linear(
+			0,
+			0.2605551443906251,
+			0.7094219190850426,
+			1.0343468065530732,
+			1.1579808777894467,
+			1.1389478029811235,
+			1.0674318954825115,
+			1.0060259141541008,
+			0.9769535195550304,
+			0.974998755367624,
+			0.9855606374600311,
+			0.9966724734535389,
+			1.0029533788484515,
+			1,
+			1.00291597304075,
+			1.0009933182069146,
+			0.9997161500145786,
+			1
+		);
+}
+
+@utility container {
+	margin-inline: auto;
+	padding-inline: 1.5rem;
+
+	@media (min-width: 768px) {
+		padding-inline: 2rem;
+	}
+
+	@media (min-width: 1400px) {
+		max-width: 1400px;
+	}
+}

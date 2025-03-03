@@ -1,14 +1,8 @@
 ---
-import '@styles/global.scss';
-import '@styles/normalize.scss';
-//import '@fontsource-variable/montserrat';
-//import '@fontsource-variable/raleway';
+import BaseLayout from '@layouts/base.astro';
 
-import { SEO } from 'astro-seo';
-import { ViewTransitions } from 'astro:transitions';
-
-import Footer from '../components/site/global/Footer.astro';
-import Header from '../components/site/global/Header.astro';
+import Footer from '@components/site/global/Footer.astro';
+import Navbar from '@components/site/global/navigation/Navbar.astro';
 
 interface Props {
 	title?: string;
@@ -16,66 +10,14 @@ interface Props {
 }
 
 const { title = 'Default title', description = 'Default description' } = Astro.props as Props;
-//const pathname = Astro.url.pathname.replace(/\/$/, '');
 ---
 
-<!doctype html>
-<html lang='fr'>
-	<head>
-		<SEO
-			title={title}
-			titleTemplate='Site title | %s'
-			titleDefault='Site title'
-			description={description}
-			charset='utf-8'
-			openGraph={{
-				basic: {
-					title: title,
-					type: 'website',
-					image: '/icon.png',
-					url: Astro.url.href,
-				},
-				image: {
-					alt: 'Site title logo',
-				},
-				optional: {
-					siteName: 'Site title',
-					locale: 'fr_FR',
-				},
-			}}
-			twitter={{
-				title: title,
-				description: description,
-				card: 'summary_large_image',
-				site: '@site',
-				creator: '@site',
-				image: '/icon.png',
-				imageAlt: 'Site title logo',
-			}}
-			extend={{
-				link: [
-					{ rel: 'icon', href: '/favicon.svg' },
-					{ rel: 'manifest', href: '/site.webmanifest' },
-					{ rel: 'apple-touch-icon', href: '/icon.png' },
-					{ rel: 'sitemap', href: '/sitemap-index.xml' },
-				],
-				meta: [
-					{ name: 'viewport', content: 'width=device-width, initial-scale=1' },
-					{ name: 'theme-color', content: '#4542bd' },
-					{ name: 'generator', content: Astro.generator },
-				],
-			}}
-		/>
-
-		<link rel='manifest' href='/site.webmanifest' crossorigin='use-credentials' />
-		<ViewTransitions />
-	</head>
-
-	<body class=`container`>
-		<Header />
-		<main>
-			<slot />
-		</main>
-		<Footer />
-	</body>
-</html>
+<BaseLayout title={title} description={description}>
+	<header class='container'>
+		<Navbar />
+	</header>
+	<main class='container'>
+		<slot />
+	</main>
+	<Footer />
+</BaseLayout>

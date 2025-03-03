@@ -1,0 +1,104 @@
+---
+import { Image } from 'astro:assets';
+import { spring } from 'motion';
+
+import menuArray from '@data/menu';
+
+import Loader from '@components/site/global/Loader.astro';
+import AvatarIsland from '@components/site/global/navigation/AvatarIsland.astro';
+import MenuItem from '@components/site/global/navigation/MenuItem.astro';
+
+import Logo from '@assets/logo.svg';
+
+interface MenuItems {
+	link: string;
+	name: string;
+	submenus?: MenuItems[];
+}
+
+const menus: MenuItems[] = menuArray.header;
+---
+
+<nav class='flex justify-between items-center xl:justify-normal py-10 md:py-14 mb-10 md:mb-14 lg:mb-16'>
+	<a href='/'>
+		<Image
+			src={Logo}
+			class='relative z-50 w-auto h-11 ml-4 lg:ml-0'
+			alt='logo'
+			densities={[1.5, 2]}
+			loading='eager'
+		/>
+	</a>
+
+	<div
+		class='flex flex-col justify-center items-center gap-[5px] cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 group xl:hidden menu-button z-[99]'>
+		<span
+			class='w-8 h-[3px] bg-blue-dark rounded-full block group-hover:bg-blue group-active:bg-blue transition-all duration-300 menu-line-1 data-active:translate-y-[8px] data-active:-rotate-45'
+		></span>
+		<span
+			class='w-8 h-[3px] bg-blue-dark rounded-full block group-hover:bg-blue group-active:bg-blue transition-all duration-300 menu-line-2 data-active:opacity-0'
+		></span>
+		<span
+			class='w-8 h-[3px] bg-blue-dark rounded-full block group-hover:bg-blue group-active:bg-blue transition-all duration-300 menu-line-3 data-active:translate-y-[-8px] data-active:rotate-45'
+		></span>
+	</div>
+
+	<div
+		class='menu fixed flex opacity-0 translate-x-full inset-0 z-50 bg-white flex-col justify-center items-center xl:translate-x-0 xl:opacity-100 xl:relative xl:z-50 xl:bg-transparent xl:flex-row xl:justify-between xl:flex-1 data-active:translate-x-0 data-active:opacity-100'>
+		<ul
+			class='flex flex-col justify-center items-center gap-4 mb-10 xl:flex-row xl:mb-0 xl:ml-8 xl:gap-0'>
+			{
+				menus.map(({ link, name, submenus }: MenuItems) => (
+					<MenuItem link={link} name={name} submenus={submenus} />
+				))
+			}
+		</ul>
+
+		<AvatarIsland server:defer>
+			<Loader class='w-[186px] h-[56px]' slot='fallback' />
+		</AvatarIsland>
+	</div>
+</nav>
+
+<style lang='scss' define:vars={{ spring: spring(0.3, 0.1) }}>
+	.menu {
+		transition:
+			transform var(--spring),
+			translate var(--spring),
+			opacity var(--spring);
+	}
+</style>
+
+<script>
+	const init = () => {
+		const menu = document.querySelector('.menu');
+		const menuButton = document.querySelector('.menu-button');
+		const menuLine1 = document.querySelector('.menu-line-1');
+		const menuLine2 = document.querySelector('.menu-line-2');
+		const menuLine3 = document.querySelector('.menu-line-3');
+
+		// On init add initClass to prevent multiple event listener
+		if (!menuButton?.classList.contains('init')) {
+			menuButton?.classList.add('init');
+
+			menuButton?.addEventListener('click', () => {
+				menu?.toggleAttribute('data-active');
+				menuLine1?.toggleAttribute('data-active');
+				menuLine2?.toggleAttribute('data-active');
+				menuLine3?.toggleAttribute('data-active');
+
+				document.body.style.overflow = menu?.getAttribute('data-active') ? 'hidden' : 'auto';
+			});
+
+			// On windows resize, close menu
+			window.addEventListener('resize', () => {
+				if (window.innerWidth >= 1280 && menu?.getAttribute('data-active')) {
+					menuButton?.dispatchEvent(new Event('click'));
+				}
+			});
+		}
+	};
+
+	init();
+	document.addEventListener('astro:page-load', init);
+</script>

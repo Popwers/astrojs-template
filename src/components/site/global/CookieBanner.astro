@@ -1,0 +1,151 @@
+<div
+	id='cookie-banner'
+	class='fixed bottom-4 left-4 bg-white rounded-2xl shadow-2xl p-10 z-50 xl:w-1/3 lg:1/2 w-[calc(100%-2rem)] opacity-0 pointer-events-none transition-opacity duration-300 ease-out'>
+	<p class='h3'>🍪 Nous respectons votre vie privée !</p>
+	<p class='mb-10'>
+		Your project utilise des cookies essentiels pour assurer son bon fonctionnement. Pour améliorer nos
+		services, nous proposons également d'utiliser des cookies d'analyse qui nous permettent de comprendre
+		comment vous utilisez notre site. Ces derniers ne seront activés qu'avec votre consentement explicite.
+		Pour plus d'informations, consultez notre <a class='underline' href='/politique-confidentialite'
+			>politique de confidentialité</a
+		>.
+	</p>
+	<div class='flex gap-4'>
+		<button id='customize-cookies' class='tertiary fit w-full'>Personnaliser</button>
+		<button id='accept-all-cookies' class='fit w-full'>Tout accepter</button>
+	</div>
+</div>
+
+<div
+	id='cookie-modal'
+	class='fixed inset-0 bg-black/50 z-50 opacity-0 pointer-events-none transition-opacity duration-300 ease-out'>
+	<div
+		class='fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-4xl bg-white rounded-2xl shadow-2xl p-10'>
+		<p class='h3'>Paramètres des cookies</p>
+
+		<ul class='list-none mb-10'>
+			<li>
+				<p class='font-medium text-blue-dark mb-0'>Cookies essentiels</p>
+				<div class='flex items-center justify-between gap-4'>
+					<p class='text-sm text-gray-600 mt-0'>
+						Ces cookies sont indispensables au fonctionnement du site. Ils permettent
+						l'utilisation des fonctionnalités de base comme la navigation et l'accès aux espaces
+						sécurisés. Le site ne peut pas fonctionner correctement sans ces cookies.
+					</p>
+					<label for='functional-cookies' class='flex items-center gap-2 cursor-not-allowed'>
+						<input
+							type='checkbox'
+							id='functional-cookies'
+							class='cursor-not-allowed'
+							checked
+							disabled
+						/>
+						<span class='text-sm text-gray-600 mt-0'>Activer</span>
+					</label>
+				</div>
+			</li>
+			<li>
+				<p class='font-medium text-blue-dark mb-0'>Cookies d'analyse</p>
+				<div class='flex items-center justify-between gap-4'>
+					<p class='text-sm text-gray-600 mt-0'>
+						Ces cookies nous permettent de mesurer l'audience de notre site, de voir quelles pages
+						sont les plus consultées et comment le site est utilisé. Toutes ces informations sont
+						anonymes et nous aident à améliorer votre expérience. Vous pouvez désactiver ces
+						cookies sans impact sur votre navigation.
+					</p>
+					<label for='analytics-cookies' class='flex items-center gap-2 cursor-pointer'>
+						<input type='checkbox' id='analytics-cookies' class='cursor-pointer' checked />
+						<span class='text-sm text-gray-600 mt-0'>Activer</span>
+					</label>
+				</div>
+			</li>
+		</ul>
+
+		<div class='flex justify-end'>
+			<button id='save-preferences' class='primary fit'>Enregistrer les préférences</button>
+		</div>
+	</div>
+</div>
+
+<script>
+	import { updateConsent } from '@stores/consentStore';
+	import { animate } from 'motion';
+
+	const init = () => {
+		const banner = document.getElementById('cookie-banner') as HTMLDivElement;
+		const modal = document.getElementById('cookie-modal') as HTMLDivElement;
+		const customizeBtn = document.getElementById('customize-cookies') as HTMLButtonElement;
+		const acceptAllBtn = document.getElementById('accept-all-cookies') as HTMLButtonElement;
+		const savePreferencesBtn = document.getElementById('save-preferences') as HTMLButtonElement;
+		const analyticsCheckbox = document.getElementById('analytics-cookies') as HTMLInputElement;
+
+		// On init add initClass to prevent multiple event listener
+		if (!banner?.classList.contains('init')) {
+			banner?.classList.add('init');
+
+			// If the user has already consented, hide the banner
+			const hasConsented = localStorage.getItem('cookie-consent');
+
+			/**
+			 * On click, accept all cookies
+			 */
+			acceptAllBtn?.addEventListener('click', () => {
+				updateConsent({
+					functional: true,
+					analytics: true,
+				});
+				animate(
+					banner,
+					{ opacity: 0, y: 100, scale: 0.9, pointerEvents: 'none' },
+					{ type: 'spring', bounce: 0.15 },
+				);
+			});
+
+			/**
+			 * On click, customize cookies
+			 */
+			customizeBtn?.addEventListener('click', () => {
+				animate(
+					banner,
+					{ opacity: 0, y: 100, scale: 0.9, pointerEvents: 'none' },
+					{ type: 'spring', bounce: 0.15 },
+				);
+				animate(modal, { opacity: 1, pointerEvents: 'auto' }, { type: 'spring', bounce: 0.15 });
+			});
+
+			/**
+			 * On click, save preferences
+			 */
+			savePreferencesBtn?.addEventListener('click', () => {
+				updateConsent({
+					functional: true,
+					analytics: analyticsCheckbox.checked,
+				});
+				animate(modal, { opacity: 0 }, { type: 'spring', bounce: 0.15 });
+			});
+
+			/**
+			 * -------------------------------------
+			 * ------------ ANIMATE ---------------
+			 * -------------------------------------
+			 */
+
+			// Initial state
+			animate(banner, { opacity: 0, y: 100, scale: 0.9, pointerEvents: 'none' }, { duration: 0 });
+			animate(modal, { opacity: 0, pointerEvents: 'none' }, { duration: 0 });
+
+			if (!hasConsented) {
+				setTimeout(() => {
+					animate(
+						banner,
+						{ opacity: 1, y: 0, scale: 1, pointerEvents: 'auto' },
+						{ type: 'spring', bounce: 0.15 },
+					);
+				}, 4000);
+			}
+		}
+	};
+
+	init();
+	document.addEventListener('astro:page-load', init);
+</script>

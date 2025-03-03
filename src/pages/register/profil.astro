@@ -1,0 +1,55 @@
+---
+import { actions, isInputError } from 'astro:actions';
+
+import ErrorInput from '@components/site/global/input/ErrorInput.astro';
+import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
+import SelectInput from '@components/site/global/input/SelectInput.tsx';
+import SubmitButton from '@components/site/global/input/SubmitButton';
+import LoginLayout from '@layouts/login.astro';
+
+import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
+
+import type { User } from '@interfaces/user';
+
+const result = Astro.getActionResult(actions.user.profile);
+if (result && !result.error) {
+	const data = result.data as User;
+	Astro.cookies.set('user_data', data, DEFAULT_COOKIE_OPTIONS);
+
+	return Astro.redirect('/dashboard');
+}
+
+const inputErrors = isInputError(result?.error) ? result.error.fields : {};
+---
+
+<LoginLayout
+	title='Inscription - Votre profil'
+	description='Renseignez vos informations personnelles'
+	mode='profil'>
+	<h1 class='h3'>Votre profil</h1>
+
+	<form class='mt-16' method='POST' action={actions.user.profile}>
+		<div class='form-group'>
+			<label for='username'>Comment vous appelez-vous ?</label>
+			<input
+				transition:persist
+				type='text'
+				id='username'
+				name='username'
+				autocomplete='family-name'
+				placeholder='Nom prénom ou dénomination'
+				required
+			/>
+			<ErrorInput errors={inputErrors.username} />
+		</div>
+		<div class='form-group'>
+			<label for='job'>Vous êtes ?</label>
+			{/* <SelectInput transition:persist client:load id='job' name='job' options={JOB_OPTIONS} /> */}
+			<ErrorInput errors={inputErrors.job} />
+		</div>
+
+		<ReturnInfo result={result} />
+
+		<SubmitButton client:load className='mt-12 w-full' label='Créer mon compte' />
+	</form>
+</LoginLayout>

@@ -1,0 +1,66 @@
+---
+import { actions, isInputError } from 'astro:actions';
+
+import ErrorInput from '@components/site/global/input/ErrorInput.astro';
+import PasswordInput from '@components/site/global/input/PasswordInput';
+import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
+import SubmitButton from '@components/site/global/input/SubmitButton';
+import LoginLayout from '@layouts/login.astro';
+
+import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
+import type { StrapiUserData } from '@interfaces/strapi';
+
+const result = Astro.getActionResult(actions.auth.login);
+if (result && !result.error) {
+	const { jwt, user } = result.data as StrapiUserData;
+	Astro.cookies.set('user_token', jwt, DEFAULT_COOKIE_OPTIONS);
+	Astro.cookies.set('user_data', user, DEFAULT_COOKIE_OPTIONS);
+
+	return Astro.redirect('/dashboard');
+}
+
+const inputErrors = isInputError(result?.error) ? result.error.fields : {};
+---
+
+<LoginLayout title='Connexion' description='Se connecter à votre compte'>
+	<h1 class='h3'>Se connecter</h1>
+	<p class='text-blue-saturated'>
+		Vous ne possédez pas de compte ? <a class='text-blue-saturated font-bold' href='/register'
+			>Inscrivez-vous</a
+		>
+	</p>
+
+	<form class='mt-16' method='POST' action={actions.auth.login}>
+		<div class='form-group'>
+			<label for='email'>Adresse mail</label>
+			<input
+				transition:persist
+				type='email'
+				id='email'
+				inputmode='email'
+				autocomplete='username'
+				name='email'
+				placeholder='votre@email.com'
+				required
+			/>
+			<ErrorInput errors={inputErrors.email} />
+		</div>
+
+		<PasswordInput
+			client:load
+			label='Mot de passe'
+			id='password'
+			name='password'
+			autocomplete='current-password'
+			placeholder='Mot de passe'
+		/>
+
+		<div class='form-group'>
+			<a class='text-blue-saturated font-bold' href='/lost-password'>Mot de passe oublié ?</a>
+		</div>
+
+		<ReturnInfo result={result} />
+
+		<SubmitButton client:load className='mt-12 w-full' label='Se connecter' />
+	</form>
+</LoginLayout>

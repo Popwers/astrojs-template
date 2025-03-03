@@ -1,0 +1,49 @@
+---
+import { actions, isInputError } from 'astro:actions';
+
+import ErrorInput from '@components/site/global/input/ErrorInput.astro';
+import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
+import SubmitButton from '@components/site/global/input/SubmitButton';
+import LoginLayout from '@layouts/login.astro';
+
+import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
+
+const result = Astro.getActionResult(actions.password.forgotPassword);
+if (result && !result.error && result.data) {
+	Astro.cookies.set('wait-mail-password', result.data.email, {
+		...DEFAULT_COOKIE_OPTIONS,
+		expires: new Date(Date.now() + 1000 * 60 * 60 * 1),
+		maxAge: 1000 * 60 * 60 * 1,
+	});
+	return Astro.redirect('/lost-password/wait-mail');
+}
+
+const inputErrors = isInputError(result?.error) ? result.error.fields : {};
+---
+
+<LoginLayout title='Mot de passe oublié' description='Réinitialiser votre mot de passe' mode='lost-password'>
+	<h1 class='h3'>Vous avez oublié votre mot de passe ?</h1>
+	<p class='text-blue-saturated'>
+		Nous allons vous envoyer un email pour réinitialiser votre mot de passe.
+	</p>
+
+	<form class='mt-16' method='POST' action={actions.password.forgotPassword}>
+		<div class='form-group'>
+			<label for='email'>Adresse mail</label>
+			<input
+				type='email'
+				id='email'
+				name='email'
+				inputmode='email'
+				autocomplete='username'
+				placeholder='votre@email.com'
+				required
+			/>
+			<ErrorInput errors={inputErrors.email} />
+		</div>
+
+		<ReturnInfo result={result} />
+
+		<SubmitButton client:load className='mt-12 w-full' label='Réinitialiser mon mot de passe' />
+	</form>
+</LoginLayout>

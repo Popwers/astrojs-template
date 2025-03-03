@@ -1,0 +1,16 @@
+---
+export const prerender = true;
+
+import DefaultLayout from '@layouts/index.astro';
+
+const title: string = 'Page non trouvée';
+const description: string = "La page que vous recherchez n'existe pas";
+---
+
+<DefaultLayout title={title} description={description}>
+	<div class='flex flex-col items-center justify-center min-h-40 text-center px-4'>
+		<h1 class='text-4xl font-bold mb-4'>Page non trouvée</h1>
+		<p class='mb-8'>{description}</p>
+		<a href='/' class='btn secondary'> Retourner à l'accueil </a>
+	</div>
+</DefaultLayout>

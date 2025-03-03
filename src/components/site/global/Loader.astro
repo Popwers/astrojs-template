@@ -1,0 +1,19 @@
+---
+interface Props {
+	class?: string;
+	dotsColor?: string;
+}
+
+const { class: className, dotsColor = 'current', ...props } = Astro.props as Props;
+---
+
+<div {...props} class={`flex justify-center items-center space-x-2 h-[3.4rem] ${className}`}>
+	{
+		[0, 0.175, 0.35].map(delay => (
+			<span
+				class={`inline-block w-1.5 h-1.5 bg-${dotsColor} rounded-full animate-bounce duration-700 transition-discrete`}
+				style={{ animationDelay: `${delay}s` }}
+			/>
+		))
+	}
+</div>

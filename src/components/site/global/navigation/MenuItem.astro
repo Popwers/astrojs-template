@@ -1,0 +1,239 @@
+---
+import { spring } from 'motion';
+
+interface MenuItems {
+	link: string;
+	name: string;
+	submenus?: MenuItems[];
+	isFooter?: boolean;
+}
+
+const { link, name, submenus, isFooter = false } = Astro.props as MenuItems;
+---
+
+<li class={isFooter ? 'isFooter' : ''}>
+	<a href={link} class={submenus ? 'haveSubmenus' : ''}>
+		<span>
+			{name}
+			<br />
+			{name}
+		</span>
+	</a>
+	{
+		submenus && (
+			<ul class='submenus'>
+				{submenus.map(({ link, name }: MenuItems) => (
+					<li>
+						<a href={link}>{name}</a>
+					</li>
+				))}
+			</ul>
+		)
+	}
+</li>
+
+<style lang='scss' define:vars={{ spring: spring(0.3, 0.1) }}>
+	li {
+		position: relative;
+		margin: 0 0.5rem;
+		padding: 0.7rem 0;
+
+		a {
+			position: relative;
+			display: block;
+			font-weight: 500;
+			font-family: var(--title-font);
+			padding: 0 1rem;
+			width: fit-content;
+			height: 1rem;
+			overflow: hidden;
+
+			span {
+				display: block;
+				height: 1rem;
+				line-height: 1;
+				transition:
+					transform var(--spring),
+					translate var(--spring);
+			}
+
+			&:hover {
+				color: var(--color-blue);
+
+				span {
+					transform: translateY(-100%);
+				}
+
+				&:after {
+					opacity: 1;
+					transform: translateY(-50%) scale(1);
+				}
+
+				&.haveSubmenus:before {
+					top: 6px;
+					transform: rotate(-45deg);
+					border-color: var(--color-blue);
+				}
+			}
+
+			&:after {
+				content: '';
+				position: absolute;
+				top: calc(50% - 1px);
+				left: 0px;
+				transform: translateY(-50%) scale(0);
+				width: 6px;
+				height: 6px;
+				border-radius: 10px;
+				background: var(--color-blue);
+				opacity: 0;
+				transition:
+					transform var(--spring),
+					opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+			}
+
+			&.haveSubmenus {
+				padding-right: 2rem;
+				&:before {
+					content: '';
+					position: absolute;
+					top: -1px;
+					right: 0.6rem;
+					transform: rotate(135deg);
+					width: 12px;
+					height: 12px;
+					border-top: 2px solid var(--color-black);
+					border-right: 2px solid var(--color-black);
+					border-radius: 1px;
+					transition:
+						transform var(--spring),
+						border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+						top var(--spring);
+				}
+			}
+		}
+
+		> ul {
+			background-color: var(--color-white);
+			border-radius: 5px;
+			position: absolute;
+			top: 70%;
+			left: 0;
+			width: max-content;
+			opacity: 0;
+			pointer-events: none;
+			z-index: 999;
+			transition:
+				opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+				top var(--spring);
+
+			li {
+				margin: 0;
+				padding: 0;
+
+				a {
+					text-align: left;
+					padding: 0.6rem 1rem;
+					overflow: auto;
+					height: auto;
+
+					&:after {
+						content: none;
+					}
+				}
+			}
+		}
+
+		&:hover > ul,
+		> ul:hover {
+			opacity: 1;
+			top: 100%;
+			pointer-events: all;
+		}
+
+		&:hover > .haveSubmenus {
+			color: var(--color-blue);
+
+			span {
+				transform: translateY(-100%);
+			}
+
+			&:after {
+				opacity: 1;
+				transform: translateY(-50%) scale(1);
+			}
+
+			&:before {
+				top: 6px;
+				transform: rotate(-45deg);
+				border-color: var(--color-blue);
+			}
+		}
+
+		&.isFooter {
+			margin: 1rem 0 !important;
+			padding: 0 !important;
+
+			a {
+				margin: 0 !important;
+				padding: 0 0.85rem !important;
+			}
+		}
+
+		@media screen and (max-width: 1279px) {
+			&:not(.isFooter) {
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+
+				> ul {
+					position: initial;
+					opacity: 1;
+					pointer-events: all;
+					display: flex;
+					flex-direction: column;
+					align-items: center;
+					margin: 0;
+
+					li {
+						padding: 0.3rem 0 !important;
+					}
+				}
+
+				.haveSubmenus {
+					margin-bottom: 1rem !important;
+				}
+			}
+		}
+
+		@media screen and (max-width: 1023px) {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+
+			> ul {
+				position: initial;
+				opacity: 1;
+				pointer-events: all;
+				display: flex;
+				flex-direction: column;
+				align-items: center;
+				margin: 0;
+
+				li {
+					padding: 0.3rem 0 !important;
+				}
+			}
+
+			.haveSubmenus {
+				margin-bottom: 1rem !important;
+			}
+
+			&.isFooter {
+				a {
+					margin: 0 auto !important;
+				}
+			}
+		}
+	}
+</style>

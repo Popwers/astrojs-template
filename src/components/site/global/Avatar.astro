@@ -1,0 +1,51 @@
+---
+import { Image } from 'astro:assets';
+import { STRAPI_URL } from 'astro:env/server';
+import fetchApi from '@lib/strapi';
+
+import user_icon from '@assets/icons/user.svg';
+import user_blue_icon from '@assets/icons/user_blue.svg';
+
+import type { User } from '@interfaces/user';
+
+interface Props {
+	blueIcon?: boolean;
+	menu?: boolean;
+}
+
+const { blueIcon, menu } = Astro.props as Props;
+const { username = '' } = Astro.locals?.user ?? {};
+const { avatar } =
+	(await fetchApi<User>({
+		endpoint: 'users/me',
+		wrappedByKey: '',
+		token: Astro.locals.userToken,
+		query: {
+			fields: 'id',
+			'populate[avatar][fields]': 'url',
+		},
+	})) || {};
+
+const defaultIcon = blueIcon ? user_blue_icon : user_icon;
+const avatarUrl =
+	avatar?.url && new URL(avatar.url.replace('/uploads/', '/uploads/medium_'), STRAPI_URL).toString();
+const fromRemote = avatar?.url && avatarUrl;
+const name = username.includes('username_') ? 'Mon espace' : username;
+
+const wrapperClass: string = `rounded-full flex items-center justify-center overflow-hidden ${menu ? 'bg-blue-light w-14 h-14' : blueIcon ? 'bg-blue-light w-36 h-36' : 'bg-white w-24 h-24'}`;
+---
+
+<div class={`flex items-center ${menu ? 'flex-row' : 'flex-col'}`}>
+	<div class={wrapperClass}>
+		<Image
+			{...fromRemote ? { src: avatarUrl } : { src: defaultIcon }}
+			class={fromRemote ? 'object-cover' : 'w-1/2 h-1/2 object-contain'}
+			alt="Avatar de l'utilisateur"
+			densities={[1.5, 2]}
+			loading='eager'
+			width={768}
+			height={768}
+		/>
+	</div>
+	{menu && <p class='ml-4 font-medium'>{name}</p>}
+</div>

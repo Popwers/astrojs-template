@@ -1,0 +1,16 @@
+---
+const { errors } = Astro.props as { errors: string[] };
+---
+
+{
+	errors &&
+		(errors.length > 1 ? (
+			<ul class='p-0'>
+				{errors.map(error => (
+					<li class='text-red text-sm mb-1'>{error}</li>
+				))}
+			</ul>
+		) : (
+			<p class='text-red text-sm'>{errors[0]}</p>
+		))
+}

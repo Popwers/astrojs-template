@@ -1,0 +1,43 @@
+---
+import { actions, isInputError } from 'astro:actions';
+
+import ErrorInput from '@components/site/global/input/ErrorInput.astro';
+import PasswordChecker from '@components/site/global/input/PasswordChecker.tsx';
+import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
+import SubmitButton from '@components/site/global/input/SubmitButton';
+import LoginLayout from '@layouts/login.astro';
+
+import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
+import type { StrapiUserData } from '@interfaces/strapi';
+
+const result = Astro.getActionResult(actions.password.resetPassword);
+if (result && !result.error) {
+	const { jwt, user } = result.data as StrapiUserData;
+	Astro.cookies.set('user_token', jwt, DEFAULT_COOKIE_OPTIONS);
+	Astro.cookies.set('user_data', user, DEFAULT_COOKIE_OPTIONS);
+
+	return Astro.redirect('/dashboard');
+}
+
+const inputErrors = isInputError(result?.error) ? result.error.fields : {};
+
+const code = Astro.url.searchParams.get('code');
+if (!code) return Astro.redirect('/lost-password');
+---
+
+<LoginLayout
+	title='Changer votre mot de passe'
+	description='Changer votre mot de passe pour accéder à votre compte'
+	mode='reset-password'>
+	<h1 class='h3'>Changer votre mot de passe</h1>
+
+	<form class='mt-16' method='POST' action={actions.password.resetPassword}>
+		<input type='hidden' name='code' value={code} />
+		<PasswordChecker isNewPassword client:load />
+		<ErrorInput errors={inputErrors.password} />
+		<ErrorInput errors={inputErrors.passwordConfirmation} />
+
+		<ReturnInfo result={result} />
+		<SubmitButton client:load className='mt-12 w-full' label='Confirmer' />
+	</form>
+</LoginLayout>

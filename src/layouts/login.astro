@@ -1,0 +1,63 @@
+---
+import BaseLayout from '@layouts/base.astro';
+
+//import { Image } from 'astro:assets';
+//import LostPasswordIllustration from '@assets/illustrations/password_illustration.svg';
+//import ProfilIllustration from '@assets/illustrations/profil_illustration.svg';
+//import LoginIllustration from '@assets/illustrations/signin_illustration.svg';
+
+interface Props {
+	title?: string;
+	description?: string;
+	mode?: 'login' | 'profil' | 'lost-password' | 'reset-password';
+}
+
+const {
+	title = 'Connexion / Inscription',
+	description = 'Page de connexion / inscription à Your project',
+	mode = 'login',
+} = Astro.props as Props;
+---
+
+<BaseLayout title={title} description={description}>
+	<div class='flex flex-col lg:flex-row bg-white lg:bg-transparent min-h-screen'>
+		<aside class='lg:w-1/2'>
+			{
+				(mode === 'login' || mode === 'lost-password') && (
+					<a class='block mt-12 ml-12 text-blue-saturated font-medium title' href='/'>
+						Retour à l'accueil
+					</a>
+				)
+			}
+			<div class='relative h-[calc(100%-4.5rem)] lg:min-h-[600px]'>
+				{
+					/*<Image
+					src={mode === 'login'
+						? LoginIllustration
+						: mode === 'profil'
+							? ProfilIllustration
+							: LostPasswordIllustration}
+					class='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-5 hidden lg:block'
+					alt='Illustration de connexion'
+					densities={[1.5, 2]}
+					loading='eager'
+				/>*/
+				}
+			</div>
+		</aside>
+		<main
+			class='flex-1 w-full lg:w-1/2 lg:min-w-[750px] p-12 lg:p-32 bg-white lg:rounded-l-[60px] relative min-h-[750px]'>
+			<slot />
+		</main>
+	</div>
+</BaseLayout>
+
+<style lang='scss'>
+	body {
+		background: var(--gradient-saturated-blue);
+	}
+
+	a.title {
+		font-family: var(--title-font);
+	}
+</style>
