@@ -6,12 +6,13 @@ interface FetchProps {
 	wrappedByKey?: string;
 	wrappedByList?: boolean;
 	token?: string;
+	returnError?: boolean;
 }
 
 interface SubmitProps {
 	endpoint: string;
 	body?:
-		| Record<string, string | number | boolean | File | FileList | undefined | number[] | object>
+		| Record<string, string | number | boolean | File | FileList | undefined | number[] | object | null>
 		| FormData;
 	token?: string;
 	method?: 'POST' | 'PUT' | 'DELETE';

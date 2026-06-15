@@ -31,7 +31,7 @@ const { username, email } = Astro.locals.user ?? {};
 <DashboardLayout title={title} description={description} dashboardTitle={title}>
 	<section class='flex flex-col lg:flex-row gap-6 mb-12'>
 		<CardWrapper className='bg-blue-light text-center relative'>
-			<Avatar showTitle />
+			<Avatar />
 			<p class='h4 !mt-4 !mb-8'>
 				{username}<br />
 				<span class='relative -top-2 text-base text-blue-saturated'>{email}</span>

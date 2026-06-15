@@ -27,7 +27,7 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 		<p>Vous n’avez pas reçu de mail ?</p>
 		<ErrorInput errors={inputErrors.email} />
 
-		<SubmitButton client:load className='mt-2 w-full bordered' label='Renvoyer un mail' />
+		<SubmitButton client:idle className='mt-2 w-full bordered' label='Renvoyer un mail' />
 		<ReturnInfo result={result} />
 	</form>
 </LoginLayout>

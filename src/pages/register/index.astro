@@ -52,7 +52,7 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 
 		<ReturnInfo result={result} />
 
-		<SubmitButton client:load className='mt-12 w-full' label='S’inscrire' />
+		<SubmitButton client:idle className='mt-12 w-full' label='S’inscrire' />
 		<p class='text-sm text-blue-saturated'>
 			En cliquant sur “S’inscrire” vous acceptez les <a
 				class='text-blue-saturated font-bold'

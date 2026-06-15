@@ -14,7 +14,7 @@ export const ORGANIZATION_DESCRIPTION = '';
 export const CONTACT_EMAIL = 'contact@your-project.fr';
 
 /**
- * @description Company informations
+ * @description Company information
  */
 export const COMPANY_INFO = {
 	legalName: '',

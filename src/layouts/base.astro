@@ -6,13 +6,14 @@ import '@styles/normalize.scss';
 //import '@fontsource-variable/raleway';
 
 import { ClientRouter } from 'astro:transitions';
-import { Head } from 'astro-capo';
+import { pwaInfo } from 'virtual:pwa-info';
 import { SEO } from 'astro-seo';
 import { Schema } from 'astro-seo-schema';
 
 import CookieBanner from '@components/site/global/CookieBanner.astro';
 
 import { getSchemas } from '@lib/schema.org';
+import { withPwaAssetVersion } from '@lib/pwaAssets';
 
 import { enableReactComponents } from '@legendapp/state/config/enableReactComponents';
 enableReactComponents();
@@ -24,11 +25,18 @@ interface Props {
 
 const schemas = getSchemas(Astro.url);
 const { title = 'Default title', description = 'Default description' } = Astro.props as Props;
+const shouldRegisterPwa = import.meta.env.PROD || pwaInfo?.pwaInDevEnvironment;
+const shouldCleanupDevServiceWorkers = import.meta.env.DEV;
+
+// SPA view transitions (ClientRouter) are disabled on the dashboard because
+// server:defer islands don't survive client-side navigation. Dashboard pages
+// always do a full load. Only login/register pages use Astro transition:* directives.
+const enableViewTransitions = !Astro.url.pathname.startsWith('/dashboard');
 ---
 
 <!doctype html>
 <html lang='fr'>
-	<Head>
+	<head>
 		<SEO
 			title={title}
 			titleTemplate='Your project | %s'
@@ -62,9 +70,13 @@ const { title = 'Default title', description = 'Default description' } = Astro.p
 			extend={{
 				link: [
 					{ rel: 'icon', href: '/favicon.svg' },
-					{ rel: 'apple-touch-icon', href: '/icon.png' },
+					{ rel: 'apple-touch-icon', href: withPwaAssetVersion('/apple-touch-icon-180x180.png') },
 					{ rel: 'sitemap', href: '/sitemap-index.xml' },
-					{ rel: 'manifest', href: '/site.webmanifest', crossorigin: 'use-credentials' },
+					{
+						rel: 'manifest',
+						href: withPwaAssetVersion('/manifest.webmanifest'),
+						crossorigin: 'use-credentials',
+					},
 				],
 				meta: [
 					{ name: 'viewport', content: 'width=device-width, initial-scale=1' },
@@ -74,11 +86,31 @@ const { title = 'Default title', description = 'Default description' } = Astro.p
 			}}
 		/>
 
-		<ClientRouter />
+		{enableViewTransitions && <ClientRouter />}
 
 		<Schema item={schemas.website} />
 		<Schema item={schemas.organization} />
-	</Head>
+
+		{
+			shouldCleanupDevServiceWorkers && (
+				<script is:inline>
+					{`if ('serviceWorker' in navigator) {
+	window.addEventListener('load', async () => {
+		const registrations = await navigator.serviceWorker.getRegistrations();
+		await Promise.all(registrations.map(registration => registration.unregister()));
+
+		if ('caches' in window) {
+			const cacheKeys = await caches.keys();
+			await Promise.all(cacheKeys.map(cacheKey => caches.delete(cacheKey)));
+		}
+	});
+}`}
+				</script>
+			)
+		}
+		{shouldRegisterPwa && <script src='/src/pwa.ts'></script>}
+		{pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
+	</head>
 
 	<body>
 		<slot />

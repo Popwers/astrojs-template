@@ -1,8 +1,7 @@
-import { defineAction } from 'astro:actions';
-import scopedRequest from '@actions/utility/scopedRequest';
-
 import { confirmMail, login, register } from '@actions/schema/auth';
-import { DEFAULT_COOKIE_OPTIONS_DELETE } from '@data/cookieOptions';
+import scopedRequest from '@actions/utility/scopedRequest';
+import { clearUserSession } from '@lib/session';
+import { defineAction } from 'astro:actions';
 
 /**
  * Define authentication and registration actions
@@ -11,7 +10,7 @@ export const auth = {
 	login: defineAction({
 		accept: 'form',
 		input: login,
-		handler: async input => {
+		handler: async (input) => {
 			const { email, password } = input;
 			return await scopedRequest({
 				endpoint: 'auth/local',
@@ -26,14 +25,15 @@ export const auth = {
 	register: defineAction({
 		accept: 'form',
 		input: register,
-		handler: async input => {
-			const { email, password } = input;
+		handler: async (input) => {
+			const { email, password, master } = input;
 			if (
 				await scopedRequest({
 					endpoint: 'auth/local/register',
 					body: {
 						email,
 						password,
+						...(master ? { master } : {}),
 					},
 				})
 			) {
@@ -47,7 +47,7 @@ export const auth = {
 	confirmMail: defineAction({
 		accept: 'form',
 		input: confirmMail,
-		handler: async input => {
+		handler: async (input) => {
 			const { email } = input;
 			if (
 				await scopedRequest({
@@ -58,7 +58,7 @@ export const auth = {
 				})
 			) {
 				return {
-					message: 'Un mail de confirmation a été envoyé à votre adresse email.',
+					message: 'A confirmation email has been sent to your email address.',
 				};
 			}
 		},
@@ -67,14 +67,11 @@ export const auth = {
 	logout: defineAction({
 		accept: 'form',
 		handler: async (_, context) => {
-			context.cookies.delete('user_data', DEFAULT_COOKIE_OPTIONS_DELETE);
-			context.cookies.delete('user_token', DEFAULT_COOKIE_OPTIONS_DELETE);
-			context.locals.user = null;
-			context.locals.userToken = '';
+			clearUserSession(context);
 
 			return {
 				disconnect: true,
-				message: 'Vous êtes déconnecté.',
+				message: 'You are now logged out.',
 			};
 		},
 	}),

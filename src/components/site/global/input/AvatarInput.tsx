@@ -1,6 +1,6 @@
+import { Memo, Reactive, Show, useObservable } from '@legendapp/state/react';
 import { type ActionError, actions } from 'astro:actions';
 import { navigate } from 'astro:transitions/client';
-import { Memo, Reactive, Show, useObservable } from '@legendapp/state/react';
 import { useRef } from 'react';
 
 /**
@@ -40,7 +40,7 @@ export default ({ children }: { children: React.ReactNode }) => {
 			const response = await actions.user.updateAvatar(formData);
 
 			if (response.error) errorMessage.set(response.error);
-			else navigate(window.location.href);
+			else await navigate(window.location.href);
 		} catch (error) {
 			errorMessage.set(error as ActionError | Error);
 		} finally {
@@ -50,13 +50,13 @@ export default ({ children }: { children: React.ReactNode }) => {
 
 	return (
 		<div className='flex flex-wrap items-center gap-6'>
-			<div className='relative rounded-full overflow-hidden'>
+			<div className='relative overflow-hidden rounded-full'>
 				{children}
 				<Reactive.span $className={dotsClass}>
-					{[0, 0.175, 0.35].map(delay => (
+					{[0, 0.175, 0.35].map((delay) => (
 						<span
 							key={`loading-dot-${delay}`}
-							className='inline-block w-1.5 h-1.5 bg-white rounded-full animate-bounce duration-700 transition-discrete'
+							className='inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-white transition-discrete duration-700'
 							style={{ animationDelay: `${delay}s` }}
 						/>
 					))}
@@ -71,7 +71,7 @@ export default ({ children }: { children: React.ReactNode }) => {
 					type='file'
 					id='avatar'
 					name='avatar'
-					className='opacity-0 absolute inset-0 -z-10'
+					className='absolute inset-0 -z-10 opacity-0'
 					onChange={handleChange}
 					ref={inputRef}
 				/>

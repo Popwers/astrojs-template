@@ -9,5 +9,5 @@ export const onRequest = sequence(
 	userDataHydratation,
 	checkRegistration,
 	restrictedWhenNotLogged,
-	restrictedWhenLogged
+	restrictedWhenLogged,
 );

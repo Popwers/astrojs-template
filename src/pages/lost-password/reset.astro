@@ -8,13 +8,19 @@ import SubmitButton from '@components/site/global/input/SubmitButton';
 import LoginLayout from '@layouts/login.astro';
 
 import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
+import { updateUserCookie } from '@lib/userCookie';
 import type { StrapiUserData } from '@interfaces/strapi';
+import type { User } from '@interfaces/user';
 
 const result = Astro.getActionResult(actions.password.resetPassword);
 if (result && !result.error) {
 	const { jwt, user } = result.data as StrapiUserData;
+	if (!jwt || !user) {
+		console.error('Password reset succeeded but payload is missing jwt/user — likely upstream API returned non-JSON.');
+		return Astro.redirect('/login?error=server-unavailable');
+	}
 	Astro.cookies.set('user_token', jwt, DEFAULT_COOKIE_OPTIONS);
-	Astro.cookies.set('user_data', user, DEFAULT_COOKIE_OPTIONS);
+	Astro.locals.user = updateUserCookie(Astro.cookies, user) as User;
 
 	return Astro.redirect('/dashboard');
 }
@@ -38,6 +44,6 @@ if (!code) return Astro.redirect('/lost-password');
 		<ErrorInput errors={inputErrors.passwordConfirmation} />
 
 		<ReturnInfo result={result} />
-		<SubmitButton client:load className='mt-12 w-full' label='Confirmer' />
+		<SubmitButton client:idle className='mt-12 w-full' label='Confirmer' />
 	</form>
 </LoginLayout>

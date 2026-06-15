@@ -1,7 +1,7 @@
-import { ActionError } from 'astro:actions';
-import { submitApi } from '@lib/strapi';
-
 import type { SubmitProps } from '@interfaces/strapi';
+import { submitApi } from '@lib/strapi';
+import { ActionError } from 'astro:actions';
+
 import TRANSLATIONS from './translation.json';
 
 const scopedRequest = async ({
@@ -26,7 +26,7 @@ const scopedRequest = async ({
 					response.error.details && Object.keys(response.error.details).length > 0
 						? `: ${Object.values(response.error.details)
 								.flat()
-								.map(detail => (typeof detail === 'string' ? detail : detail.message))
+								.map((detail) => (typeof detail === 'string' ? detail : detail.message))
 								.join(', ')}`
 						: ''
 				}`,

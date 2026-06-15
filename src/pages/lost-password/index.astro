@@ -44,6 +44,6 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 
 		<ReturnInfo result={result} />
 
-		<SubmitButton client:load className='mt-12 w-full' label='Réinitialiser mon mot de passe' />
+		<SubmitButton client:idle className='mt-12 w-full' label='Réinitialiser mon mot de passe' />
 	</form>
 </LoginLayout>

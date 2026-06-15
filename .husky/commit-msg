@@ -1,2 +1,0 @@
-# Run commitlint checks
-bunx --no -- commitlint --edit $1

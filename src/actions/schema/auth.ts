@@ -1,4 +1,4 @@
-import { z } from 'astro:schema';
+import { z } from 'astro/zod';
 
 /**
  * -----------------------------------------------------
@@ -6,18 +6,14 @@ import { z } from 'astro:schema';
  * -----------------------------------------------------
  */
 
-const emailSchema = z
-	.string({
-		required_error: "L'adresse email est requise",
-	})
-	.email({
-		message: "L'adresse email est invalide.",
-	});
+const emailSchema = z.email({
+	error: "L'adresse email est invalide.",
+});
 
 const login = z.object({
 	email: emailSchema,
 	password: z.string({
-		required_error: 'Le mot de passe est requis',
+		error: 'Le mot de passe est requis',
 	}),
 });
 
@@ -28,20 +24,21 @@ const login = z.object({
 const register = z
 	.object({
 		email: emailSchema,
+		master: z.string().optional(),
 		password: z
 			.string({
-				required_error: 'Le mot de passe est requis',
+				error: 'Le mot de passe est requis',
 			})
 			.min(8, 'Le mot de passe doit contenir au moins 8 caractères')
 			.regex(/[A-Z]/, 'Le mot de passe doit contenir au moins une majuscule')
 			.regex(/[a-z]/, 'Le mot de passe doit contenir au moins une minuscule')
 			.regex(/[0-9]/, 'Le mot de passe doit contenir au moins un chiffre')
 			.regex(
-				/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/,
-				'Le mot de passe doit contenir au moins un caractère spécial'
+				/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/,
+				'Le mot de passe doit contenir au moins un caractère spécial',
 			),
 		passwordConfirmation: z.string({
-			required_error: 'La confirmation du mot de passe est requise',
+			error: 'La confirmation du mot de passe est requise',
 		}),
 	})
 	.superRefine(({ passwordConfirmation, password }, ctx) => {

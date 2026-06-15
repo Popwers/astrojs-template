@@ -1,53 +1,89 @@
-import fetchApi from '@lib/strapi';
+import { REFRESH_INTERVAL } from '@data/userOptions';
+import type { FetchProps, StrapiError } from '@interfaces/strapi';
+import type { User } from '@interfaces/user';
+import { clearUserSession } from '@lib/session';
+import { getUserFromCookie, updateUserCookie } from '@lib/userCookie';
+import { isPersistableUser } from '@lib/userRefresh';
+import type { APIContext, MiddlewareNext } from 'astro';
 import { defineMiddleware } from 'astro/middleware';
 
-import type { StrapiError } from '@interfaces/strapi';
-import type { User } from '@interfaces/user';
-import type { APIContext } from 'astro';
+type LoadUser = (params: FetchProps) => Promise<User | StrapiError>;
 
-import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
-import { REFRESH_INTERVAL } from '@data/userOptions';
+async function defaultLoadUser(params: FetchProps): Promise<User | StrapiError> {
+	const { default: fetchApi } = await import('@lib/strapi');
+
+	return (await fetchApi<User | StrapiError>(params)) as User | StrapiError;
+}
 
 /**
- * Hydrate the user data and token in the locals object
+ * Hydrate the user data and token in the locals object.
+ * Cookie contains only minimal data (~200 bytes).
+ * Full user data is fetched from API on refresh.
  */
-export default defineMiddleware(async (context, next) => {
+export async function hydrateUserData(
+	context: APIContext,
+	next: MiddlewareNext,
+	loadUser: LoadUser = defaultLoadUser,
+) {
 	try {
 		if (context.cookies.has('user_data') && context.cookies.has('user_token')) {
 			context.locals.userToken = context.cookies.get('user_token')?.value ?? '';
 
-			const userDataCookie = context.cookies.get('user_data')?.json() ?? null;
+			const cookieUser = getUserFromCookie(context.cookies);
 			const lastUpdate = context.cookies.get('user_data_timestamp')?.value ?? null;
 			const shouldRefresh = !lastUpdate || Date.now() - Number(lastUpdate) > REFRESH_INTERVAL;
 
-			// Use cached data if it's fresh enough
-			if (userDataCookie && !shouldRefresh) context.locals.user = userDataCookie;
-			else await refreshUserData(context);
+			// Cookie only has minimal data — set it as base
+			if (cookieUser) context.locals.user = cookieUser as User;
+
+			if (shouldRefresh) {
+				const response = await refreshUserData(context, loadUser);
+				if (response) return response;
+			}
 		}
 	} catch (error) {
 		console.error('Error in user data hydration:', error);
 	}
 
 	return next();
-});
+}
 
-async function refreshUserData(context: APIContext) {
-	const userData = (await fetchApi({
+export default defineMiddleware((context, next) => hydrateUserData(context, next));
+
+export async function refreshUserData(context: APIContext, loadUser: LoadUser = defaultLoadUser) {
+	// Fetch full user data from API
+	const userData = await loadUser({
 		endpoint: 'users/me',
 		token: context.locals.userToken,
 		wrappedByKey: '',
-	})) as User | StrapiError;
+		returnError: true,
+		// Populate the avatar relation so the refreshed cookie keeps avatar_url;
+		// otherwise Strapi omits the relation and updateUserCookie writes null.
+		query: {
+			'populate[avatar][fields]': 'url',
+		},
+	});
 
 	if ('error' in userData) {
 		if (userData.error.status === 401) {
-			context.cookies.delete('user_token');
-			context.cookies.delete('user_data');
-			context.cookies.delete('user_data_timestamp');
+			clearUserSession(context);
 			return context.redirect('/login', 302);
 		}
-	} else {
-		context.cookies.set('user_data', userData, DEFAULT_COOKIE_OPTIONS);
-		context.cookies.set('user_data_timestamp', Date.now().toString(), DEFAULT_COOKIE_OPTIONS);
-		context.locals.user = userData;
+
+		// Non-401 failure: keep the existing (stale) cookie data serving rather
+		// than logging the user out on a transient CMS blip. A persistent failure
+		// degrades quietly here — only logged, not surfaced. See
+		// docs/error-handling.md ("Middleware" + "Observability gap").
+		console.error('Failed to refresh user data:', userData.error);
+		return;
 	}
+
+	if (!isPersistableUser(userData)) {
+		console.warn('Skipped user refresh because the API payload was incomplete.');
+		return;
+	}
+
+	// Update cookie with minimal data, but store full user in locals
+	updateUserCookie(context.cookies, userData);
+	context.locals.user = userData;
 }

@@ -8,18 +8,36 @@ import SubmitButton from '@components/site/global/input/SubmitButton';
 import LoginLayout from '@layouts/login.astro';
 
 import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
+import { updateUserCookie } from '@lib/userCookie';
 import type { StrapiUserData } from '@interfaces/strapi';
+import type { User } from '@interfaces/user';
 
 const result = Astro.getActionResult(actions.auth.login);
+
+// Validate the redirect target to prevent open-redirect attacks.
+// Accept only paths starting with a single `/` not followed by `/` or `\`;
+// browsers normalize `/\` to `//` (scheme-relative), so it must be rejected too.
+const loginRedirectPath = (() => {
+	const rawRedirect = Astro.url.searchParams.get('redirect');
+	if (!rawRedirect || !/^\/(?![/\\])/.test(rawRedirect)) return '/dashboard';
+	return rawRedirect;
+})();
+
 if (result && !result.error) {
 	const { jwt, user } = result.data as StrapiUserData;
+	if (!jwt || !user) {
+		console.error('Login succeeded but payload is missing jwt/user — likely upstream API returned non-JSON.');
+		return Astro.redirect('/login?error=server-unavailable');
+	}
 	Astro.cookies.set('user_token', jwt, DEFAULT_COOKIE_OPTIONS);
-	Astro.cookies.set('user_data', user, DEFAULT_COOKIE_OPTIONS);
+	Astro.locals.user = updateUserCookie(Astro.cookies, user) as User;
 
-	return Astro.redirect('/dashboard');
+	return Astro.redirect(loginRedirectPath);
 }
 
 const inputErrors = isInputError(result?.error) ? result.error.fields : {};
+const sessionError = Astro.url.searchParams.get('error');
+const hasServerUnavailableError = sessionError === 'server-unavailable';
 ---
 
 <LoginLayout title='Connexion' description='Se connecter à votre compte'>
@@ -29,6 +47,14 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 			>Inscrivez-vous</a
 		>
 	</p>
+
+	{
+		hasServerUnavailableError && (
+			<div class='mt-10 rounded-(--radius-sm) bg-orange-100 px-4 py-3 text-sm font-medium text-orange-800'>
+				Le serveur ne répond pas pour le moment. Reconnecte-toi dans quelques minutes.
+			</div>
+		)
+	}
 
 	<form class='mt-16' method='POST' action={actions.auth.login}>
 		<div class='form-group'>
@@ -61,6 +87,6 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 
 		<ReturnInfo result={result} />
 
-		<SubmitButton client:load className='mt-12 w-full' label='Se connecter' />
+		<SubmitButton client:idle className='mt-12 w-full' label='Se connecter' />
 	</form>
 </LoginLayout>

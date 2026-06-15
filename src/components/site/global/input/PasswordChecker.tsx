@@ -20,7 +20,7 @@ export default ({ isNewPassword = false }: PasswordCheckerProps) => {
 		uppercase: () => /[A-Z]/.test(password.get()),
 		lowercase: () => /[a-z]/.test(password.get()),
 		number: () => /[0-9]/.test(password.get()),
-		special: () => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password.get()),
+		special: () => /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password.get()),
 		value: () => {
 			let value = 0;
 			if (strength.size()) value += 20;
@@ -62,7 +62,7 @@ export default ({ isNewPassword = false }: PasswordCheckerProps) => {
 				label={isNewPassword ? 'Nouveau mot de passe' : 'Mot de passe'}
 				placeholder={isNewPassword ? 'Nouveau mot de passe' : 'Mot de passe'}
 				autocomplete='new-password'
-				onChange={e => {
+				onChange={(e) => {
 					password.set(e.target.value);
 				}}
 			/>
@@ -73,12 +73,12 @@ export default ({ isNewPassword = false }: PasswordCheckerProps) => {
 				name='passwordConfirmation'
 				autocomplete='new-password'
 				placeholder='Confirmer votre mot de passe'
-				onChange={e => {
+				onChange={(e) => {
 					passwordConfirmation.set(e.target.value);
 				}}
 			/>
 
-			<div className='mt-4 w-full bg-blue-light rounded-full h-2.5'>
+			<div className='bg-blue-light mt-4 h-2.5 w-full rounded-full'>
 				<Reactive.div
 					$className={progressBarClass}
 					role='progressbar'

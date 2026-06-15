@@ -24,7 +24,7 @@ export const updateConsent = (preferences: { analytics: boolean; functional: boo
 			JSON.stringify({
 				hasConsented: true,
 				preferences,
-			})
+			}),
 		);
 	} catch (error) {
 		console.error('Error saving consent to localStorage', error);
@@ -35,7 +35,7 @@ export const updateConsent = (preferences: { analytics: boolean; functional: boo
 };
 
 /**
- * The consent store
+ * Observable store tracking the user's cookie consent and category preferences.
  */
 const consentStore = observable({
 	hasConsented: false,

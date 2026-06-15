@@ -1,3 +1,16 @@
+interface MenuItem {
+	link: string;
+	name: string;
+	icon?: string;
+	external?: boolean;
+	submenus?: MenuItem[];
+}
+
+interface Menu {
+	header: MenuItem[];
+	footer: MenuItem[];
+}
+
 /**
  * @description Menu for the header and footer
  */
@@ -44,4 +57,4 @@ export default {
 			name: 'Menu 1',
 		},
 	],
-};
+} as Menu;

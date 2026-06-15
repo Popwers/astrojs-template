@@ -1,30 +1,26 @@
-import { ActionError, defineAction } from 'astro:actions';
+import { deleteAccount, profile, updateAvatar, updateUser } from '@actions/schema/user';
 import scopedRequest from '@actions/utility/scopedRequest';
-
-import { profile, updateAvatar, updateUser } from '@actions/schema/user';
+import { requireAuth } from '@lib/authGuard';
+import { defineAction } from 'astro:actions';
 
 /**
- * Define user actions
+ * Define user profile actions
  */
 export const user = {
 	profile: defineAction({
 		accept: 'form',
 		input: profile,
 		handler: async (input, context) => {
-			if (!context.locals.user)
-				throw new ActionError({
-					code: 'UNAUTHORIZED',
-					message: 'Vous devez être connecté pour modifier votre profil.',
-				});
+			const { user, token } = requireAuth(context, 'You must be logged in to update your profile.');
 
 			const { username } = input;
 
 			return await scopedRequest({
-				endpoint: `users/${context.locals.user.id}`,
+				endpoint: `users/${user.id}`,
 				body: {
 					username,
 				},
-				token: context.locals.userToken,
+				token,
 				method: 'PUT',
 			});
 		},
@@ -34,26 +30,22 @@ export const user = {
 		accept: 'form',
 		input: updateUser,
 		handler: async (input, context) => {
-			if (!context.locals.user)
-				throw new ActionError({
-					code: 'UNAUTHORIZED',
-					message: 'Vous devez être connecté pour modifier votre profil.',
-				});
+			const { user, token } = requireAuth(context, 'You must be logged in to update your profile.');
 
 			const { email, username } = input;
 
 			const response = await scopedRequest({
-				endpoint: `users/${context.locals.user.id}`,
+				endpoint: `users/${user.id}`,
 				body: {
 					email,
 					username,
-					confirmed: email === context.locals.user.email,
+					confirmed: email === user.email,
 				},
-				token: context.locals.userToken,
+				token,
 				method: 'PUT',
 			});
 
-			if ('email' in response && response.email !== context.locals.user.email) {
+			if ('email' in response && response.email !== user.email) {
 				await scopedRequest({
 					endpoint: 'auth/send-email-confirmation',
 					body: {
@@ -64,7 +56,7 @@ export const user = {
 				return {
 					user: response,
 					warningMessage:
-						'Veuillez vérifier votre nouvelle adresse email. Vous aller être redirigé vers la page de connexion dans 4 secondes.',
+						'Please verify your new email address. You will be redirected to the login page in 4 seconds.',
 					code: 'user-change-email',
 				};
 			}
@@ -79,26 +71,41 @@ export const user = {
 		accept: 'form',
 		input: updateAvatar,
 		handler: async (input, context) => {
-			if (!context.locals.user)
-				throw new ActionError({
-					code: 'UNAUTHORIZED',
-					message: 'Vous devez être connecté pour modifier votre avatar.',
-				});
+			const { token } = requireAuth(context, 'You must be logged in to update your avatar.');
 
 			const { avatar } = input;
 
-			const response = await scopedRequest({
+			return await scopedRequest({
 				endpoint: 'users/avatar',
 				body: {
 					files: {
 						avatar: avatar as File,
 					},
 				},
-				token: context.locals.userToken,
+				token,
 				contentType: 'multipart/form-data',
 			});
+		},
+	}),
 
-			return response;
+	deleteAccount: defineAction({
+		accept: 'form',
+		input: deleteAccount,
+		handler: async (_, context) => {
+			const { user, token } = requireAuth(context, 'You must be logged in to delete your account.');
+
+			// Self-deletion only: the id comes from the session, never from client
+			// input, so a user can never target another account (IDOR).
+			await scopedRequest({
+				endpoint: `users/${user.id}`,
+				token,
+				method: 'DELETE',
+			});
+
+			return {
+				disconnect: true,
+				message: 'Your account has been permanently deleted.',
+			};
 		},
 	}),
 };

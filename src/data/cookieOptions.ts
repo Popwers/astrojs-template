@@ -1,35 +1,51 @@
 import type { AstroCookieSetOptions } from 'astro';
 
 /**
- * @description Cookie expiration time
+ * Cookie expiration time: 7 days in seconds.
  */
-const EXPIRES_IN = 60 * 60 * 24 * 7; // 7 days
+const EXPIRES_IN = 60 * 60 * 24 * 7;
+const SHOULD_USE_SECURE_COOKIES = import.meta.env.PROD;
 
 /**
- * @description Default options for cookies
+ * Shared base cookie options (path, secure, httpOnly, sameSite).
  */
-const BASE = {
-	path: '/',
-	secure: true,
-	httpOnly: true,
-	sameSite: 'lax',
-} as const;
+function createBaseCookieOptions(secure: boolean) {
+	return {
+		path: '/',
+		secure,
+		httpOnly: true,
+		sameSite: 'lax',
+	} as const satisfies AstroCookieSetOptions;
+}
 
 /**
- * @description Default options for cookies
+ * Default options for setting authenticated-session cookies.
  */
-const DEFAULT_COOKIE_OPTIONS: AstroCookieSetOptions = {
-	...BASE,
-	expires: new Date(Date.now() + 1000 * EXPIRES_IN),
-	maxAge: EXPIRES_IN,
-};
+function createCookieOptions(secure: boolean): AstroCookieSetOptions {
+	return {
+		...createBaseCookieOptions(secure),
+		expires: new Date(Date.now() + 1000 * EXPIRES_IN),
+		maxAge: EXPIRES_IN,
+	};
+}
 
 /**
- * @description Default options for cookies to delete
+ * Default options for deleting cookies (no expiry, clears immediately).
  */
-const DEFAULT_COOKIE_OPTIONS_DELETE: AstroCookieSetOptions = {
-	...BASE,
-};
+function createDeleteCookieOptions(secure: boolean): AstroCookieSetOptions {
+	return {
+		...createBaseCookieOptions(secure),
+	};
+}
+
+const DEFAULT_COOKIE_OPTIONS = createCookieOptions(SHOULD_USE_SECURE_COOKIES);
+const DEFAULT_COOKIE_OPTIONS_DELETE = createDeleteCookieOptions(SHOULD_USE_SECURE_COOKIES);
 
 export default DEFAULT_COOKIE_OPTIONS;
-export { DEFAULT_COOKIE_OPTIONS_DELETE };
+export {
+	createBaseCookieOptions,
+	createCookieOptions,
+	createDeleteCookieOptions,
+	DEFAULT_COOKIE_OPTIONS_DELETE,
+	EXPIRES_IN,
+};

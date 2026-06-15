@@ -16,6 +16,7 @@
 	"User blocked": "Compte bloqué",
 	"Unable to connect. Is the computer able to access the url?": "Le serveur est injoignable, veuillez réessayer dans quelques instants",
 	"Forbidden": "Vous n'êtes pas autorisé à accéder à cette ressource",
+	"The operation timed out.": "Le serveur est injoignable, veuillez réessayer dans quelques instants",
 	"The operation was aborted due to timeout": "Le serveur est injoignable, veuillez réessayer dans quelques instants",
 	"Internal Server Error": "Une erreur serveur est survenue, veuillez réessayer dans quelques instants",
 	"fetch failed": "Nous ne parvenons pas à récupérer les données sur le serveur, veuillez réessayer dans quelques instants"

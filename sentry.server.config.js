@@ -1,11 +1,15 @@
 import * as Sentry from '@sentry/astro';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 
-if (process.env.NODE_ENV === 'production') {
-	/*Sentry.init({
+// Set your project DSN here to enable Sentry in production.
+const SENTRY_DSN = '';
+
+// No `@sentry/profiling-node`: it is a native NAPI addon that calls `uv_default_loop`
+// at init, which the Bun runtime (popwers/mini-bun) does not support (oven-sh/bun#18546)
+// and crashes the server at startup. Error reporting + tracing work without it.
+if (process.env.NODE_ENV === 'production' && SENTRY_DSN) {
+	Sentry.init({
 		environment: process.env.NODE_ENV,
-		dsn: '',
-		integrations: [nodeProfilingIntegration()],
+		dsn: SENTRY_DSN,
 
 		tracesSampler: ({ name, parentSampled }) => {
 			// Do not sample health checks ever
@@ -21,6 +25,5 @@ if (process.env.NODE_ENV === 'production') {
 		},
 
 		tracesSampleRate: 0.5,
-		profilesSampleRate: 1.0,
-	});*/
+	});
 }

@@ -1,9 +1,9 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @theme static {
 	/* Fonts */
-	--font-default: "Montserrat Variable", sans-serif;
-	--font-title: "Raleway Variable", sans-serif;
+	--font-default: 'Montserrat Variable', sans-serif;
+	--font-title: 'Raleway Variable', sans-serif;
 
 	/* Typography */
 	--text-sm: 0.875rem;
@@ -40,14 +40,16 @@
 	);
 	--gradient-blue: linear-gradient(-90deg, var(--color-blue) 0%, var(--color-blue-saturated) 170%);
 
+	/* Radius */
+	--radius-sm: 10px;
+	--radius-md: 20px;
+	--radius-lg: 40px;
+
 	/* Shadows */
 	--shadow-custom:
-		0px 0px 0px 1px rgb(165 165 165 / 0.04),
-		-9px 9px 9px -0.5px rgb(0 0 0 / 0.04),
-		-18px 18px 18px -1.5px rgb(0 0 0 / 0.08),
-		-37px 37px 37px -3px rgb(0 0 0 / 0.16),
-		-75px 75px 75px -6px rgb(0 0 0 / 0.24),
-		-150px 150px 150px -12px rgb(0 0 0 / 0.48);
+		0px 0px 0px 1px rgb(165 165 165 / 0.04), -9px 9px 9px -0.5px rgb(0 0 0 / 0.04),
+		-18px 18px 18px -1.5px rgb(0 0 0 / 0.08), -37px 37px 37px -3px rgb(0 0 0 / 0.16),
+		-75px 75px 75px -6px rgb(0 0 0 / 0.24), -150px 150px 150px -12px rgb(0 0 0 / 0.48);
 
 	/* Animations */
 	--animate-spring-1: 400ms

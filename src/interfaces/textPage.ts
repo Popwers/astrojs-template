@@ -1,8 +1,8 @@
-import type { RootNode } from 'node_modules/@strapi/blocks-react-renderer/dist/BlocksRenderer';
+import type { BlocksContent } from '@strapi/blocks-react-renderer';
 
 export default interface TextPage {
 	documentId: string;
-	Contenu: RootNode[];
+	Contenu: BlocksContent;
 	createdAt?: string;
 	updatedAt?: string;
 	publishedAt?: string;

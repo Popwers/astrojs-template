@@ -12,7 +12,6 @@
 	a,
 	.button,
 	.btn,
-	.select-controller,
 	.no-selection {
 		user-select: none;
 		-webkit-user-select: none;
@@ -120,7 +119,6 @@
 	.h6 {
 		font-family: var(--font-default);
 		font-size: var(--text-lg);
-
 	}
 
 	p {
@@ -264,6 +262,14 @@
 	}
 
 	/* ######################## FORM ######################## */
+
+	button,
+	input,
+	optgroup,
+	select,
+	textarea {
+		line-height: 1.7 !important;
+	}
 
 	form {
 		.form-group {
@@ -421,97 +427,6 @@
 				border-color: var(--color-blue);
 			}
 		}
-
-		.select-controller {
-			position: relative;
-
-			select {
-				display: none;
-			}
-
-			.select-items div,
-			.select-selected {
-				color: var(--color-blue-dark);
-				font-size: 1rem;
-				padding: 1.2rem 0.7rem;
-				cursor: pointer;
-			}
-
-			.select-selected {
-				position: relative;
-				font-family: var(--font-default);
-				color: var(--color-blue-dark);
-				display: block;
-				width: 100%;
-				font-size: 1rem;
-				padding: 1.2rem 0.7rem;
-				padding-right: 1.6rem;
-				-webkit-appearance: none;
-				appearance: none;
-				border: 1px solid var(--color-blue-saturated);
-				border-radius: 0.5rem;
-				outline: none;
-				transition:
-					border 0.3s ease,
-					color 0.3s ease;
-
-				&.preholder {
-					font-style: italic;
-					color: var(--color-blue-saturated);
-				}
-
-				&:after {
-					content: '';
-					position: absolute;
-					bottom: calc(50% - 6px);
-					right: 0.7rem;
-					width: 1rem;
-					height: 1rem;
-					width: 0;
-					height: 0;
-					border-left: 8px solid transparent;
-					border-right: 8px solid transparent;
-					border-top: 12px solid var(--color-blue-saturated);
-					border-radius: 3px;
-					display: block;
-					transition: transform 0.3s ease;
-				}
-			}
-
-			.select-items {
-				position: absolute;
-				background-color: var(--color-white);
-				border: 1px solid var(--color-blue);
-				border-radius: 0.5rem;
-				top: calc(100% + 0.5rem);
-				left: 0;
-				right: 0;
-				z-index: 5;
-				max-height: 40vh;
-				overflow: auto;
-				transition: opacity 0.3s ease, max-height 0.3s ease;
-
-				div {
-					transition: background 0.3s ease;
-				}
-			}
-
-			.select-hide {
-				pointer-events: none;
-				opacity: 0;
-				max-height: 0vh;
-			}
-
-			.select-items div:hover,
-			.same-as-selected {
-				background-color: var(--color-blue-light);
-			}
-
-			.select-items div:first-child {
-				color: var(--color-blue-saturated);
-				font-size: 0.9rem;
-			}
-		}
 	}
 }
 
@@ -568,13 +483,11 @@
 
 	h1,
 	.h1 {
-
 		margin-bottom: 1.5rem;
 	}
 
 	h2,
 	.h2 {
-
 		margin-bottom: 1.3rem;
 	}
 

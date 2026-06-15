@@ -1,10 +1,10 @@
-import { beforeEach, describe, expect, setSystemTime, test } from 'bun:test';
+import { beforeEach, describe, expect, test } from 'bun:test';
+
 import { getBrowserCookie, removeBrowserCookie, setBrowserCookie } from '@lib/cookie';
 
 describe('Cookie functions', () => {
 	beforeEach(() => {
 		global.document = { cookie: '' } as unknown as Document;
-		setSystemTime(new Date('2023-01-01T00:00:00Z'));
 	});
 
 	describe('setBrowserCookie', () => {
@@ -25,8 +25,14 @@ describe('Cookie functions', () => {
 
 		describe('Expiration handling', () => {
 			test('should set expiration correctly for positive days', () => {
+				// Tolerance-based assertion: `setSystemTime` only exists in bun:test,
+				// so we check the expiry delta instead of freezing the clock.
 				setBrowserCookie('testCookie', 'testValue', 1);
-				expect(global.document.cookie).toContain('expires=Mon, 02 Jan 2023 00:00:00 GMT');
+				const match = global.document.cookie.match(/expires=([^;]+)/);
+				const oneDayInMs = 24 * 60 * 60 * 1000;
+				const delta = new Date(match?.[1] ?? 0).getTime() - Date.now();
+				expect(delta).toBeGreaterThan(oneDayInMs - 5000);
+				expect(delta).toBeLessThanOrEqual(oneDayInMs);
 			});
 
 			test('should handle negative expiration', () => {

@@ -30,11 +30,11 @@ const isDashboard: boolean = pathname === '/dashboard';
 				<Image
 					class='relative -top-[1px] group-hover:-translate-x-1 transition-transform'
 					src={arrow}
-					alt='Retour'
+					alt='Return to dashboard'
 					densities={[1.5, 2]}
 					loading='eager'
 				/>
-				Retour
+				Return
 			</a>
 		)
 	}
@@ -42,4 +42,50 @@ const isDashboard: boolean = pathname === '/dashboard';
 	{dashboardSubtitle && <p class='text-blue-saturated -mt-12 !mb-12'>{dashboardSubtitle}</p>}
 
 	<slot />
+
+	{/* Scroll-reveal: reveal `.dash-rise` blocks as they enter the viewport. */}
+	<script>
+		const reveal = (el: Element) => el.classList.add('is-visible');
+		const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		const supported = 'IntersectionObserver' in window && !reduced;
+
+		let io: IntersectionObserver | null = null;
+		if (supported) {
+			io = new IntersectionObserver(
+				entries => {
+					for (const entry of entries) {
+						if (entry.isIntersecting) {
+							reveal(entry.target);
+							io?.unobserve(entry.target);
+						}
+					}
+				},
+				{ rootMargin: '0px 0px -8% 0px', threshold: 0.08 },
+			);
+		}
+
+		const scan = () => {
+			const els = document.querySelectorAll('.dash-rise:not(.is-visible):not([data-revealed])');
+			els.forEach(el => {
+				el.setAttribute('data-revealed', '');
+				if (io) io.observe(el);
+				else reveal(el); // No IO or reduced-motion — show immediately.
+			});
+		};
+
+		let scheduled = false;
+		const scheduleScan = () => {
+			if (scheduled) return;
+			scheduled = true;
+			requestAnimationFrame(() => {
+				scheduled = false;
+				scan();
+			});
+		};
+
+		scan();
+		document.addEventListener('astro:page-load', scan);
+		// Catch late-mounting React islands / server:defer content.
+		new MutationObserver(scheduleScan).observe(document.body, { childList: true, subtree: true });
+	</script>
 </BaseLayout>

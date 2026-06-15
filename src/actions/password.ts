@@ -1,16 +1,15 @@
-import { defineAction } from 'astro:actions';
-import scopedRequest from '@actions/utility/scopedRequest';
-
 import { forgotPassword, resetPassword } from '@actions/schema/password';
+import scopedRequest from '@actions/utility/scopedRequest';
+import { defineAction } from 'astro:actions';
 
 /**
- * Define password lost actions
+ * Define password reset actions
  */
 export const password = {
 	forgotPassword: defineAction({
 		accept: 'form',
 		input: forgotPassword,
-		handler: async input => {
+		handler: async (input) => {
 			const { email } = input;
 			if (
 				await scopedRequest({
@@ -21,7 +20,7 @@ export const password = {
 				})
 			) {
 				return {
-					message: 'Un mail de confirmation a été envoyé à votre adresse email.',
+					message: 'A confirmation email has been sent to your email address.',
 					email,
 				};
 			}
@@ -31,7 +30,7 @@ export const password = {
 	resetPassword: defineAction({
 		accept: 'form',
 		input: resetPassword,
-		handler: async input => {
+		handler: async (input) => {
 			const { code, password, passwordConfirmation } = input;
 			return await scopedRequest({
 				endpoint: 'auth/reset-password',

@@ -27,15 +27,15 @@ const setBrowserCookie = (cname: string, cvalue: string, exdays?: number): void 
 const getBrowserCookie = (cname: string): string => {
 	if (!cname) throw new Error('Cookie name must not be empty');
 
-	const name: string = `${encodeURIComponent(cname)}=`;
-	const decodedCookie: string = decodeURIComponent(document.cookie);
-	const ca: string[] = decodedCookie.split(';');
+	const name = `${encodeURIComponent(cname)}=`;
+	const decodedCookie = decodeURIComponent(document.cookie);
+	const ca = decodedCookie.split(';');
 	for (let c of ca) {
 		c = c.trim();
 		if (c.startsWith(name)) {
 			try {
 				return decodeURIComponent(c.substring(name.length));
-			} catch (e) {
+			} catch {
 				return c.substring(name.length);
 			}
 		}

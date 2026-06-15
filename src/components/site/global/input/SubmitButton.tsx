@@ -1,6 +1,6 @@
 import { reactive, useObservable } from '@legendapp/state/react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Props {
 	className?: string;
@@ -27,15 +27,11 @@ export default ({ className, label, id, tabIndex, disabled }: Props) => {
 	const isBordered = className?.includes('bordered');
 	const buttonRef = useRef<HTMLButtonElement>(null);
 
-	const handleSubmit = () => {
+	const handleSubmit = useCallback(() => {
 		isLoading.set(true);
 		setTimeout(() => setIsLongLoading(true), 1000);
-	};
+	}, [isLoading]);
 
-	/**
-	 * Handle the submit event
-	 */
-	// biome-ignore lint/correctness/useExhaustiveDependencies: prevent update from loading state
 	useEffect(() => {
 		const button = buttonRef.current;
 		if (!button) return;
@@ -49,7 +45,7 @@ export default ({ className, label, id, tabIndex, disabled }: Props) => {
 			isLoading.set(false);
 			setIsLongLoading(false);
 		};
-	}, []);
+	}, [handleSubmit, isLoading]);
 
 	return (
 		<$MotionButton
@@ -84,22 +80,20 @@ export default ({ className, label, id, tabIndex, disabled }: Props) => {
 			tabIndex={tabIndex}
 			ref={buttonRef}
 			id={id}
-			$disabled={() => isLoading.get() || isLongLoading || disabled}
-		>
+			$disabled={() => isLoading.get() || isLongLoading || disabled}>
 			<AnimatePresence mode='popLayout' initial={false}>
 				<motion.span
 					initial={{ opacity: 0, y: -100 }}
 					animate={{ opacity: 1, y: 0 }}
 					exit={{ opacity: 0, y: 100 }}
 					className='h-4'
-					key={isLongLoading ? 'loading' : 'label'}
-				>
+					key={isLongLoading ? 'loading' : 'label'}>
 					{isLongLoading ? (
-						<span className='flex justify-center items-center space-x-2'>
-							{[0, 0.175, 0.35].map(delay => (
+						<span className='flex items-center justify-center space-x-2'>
+							{[0, 0.175, 0.35].map((delay) => (
 								<span
 									key={`loading-dot-${delay}`}
-									className='inline-block w-1.5 h-1.5 bg-current rounded-full animate-bounce duration-700 transition-discrete'
+									className='inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-current transition-discrete duration-700'
 									style={{ animationDelay: `${delay}s` }}
 								/>
 							))}

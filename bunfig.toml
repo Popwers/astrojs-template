@@ -1,0 +1,5 @@
+[test]
+# Map Astro virtual modules (astro:actions, astro:env/server, astro:schema) to
+# their test stubs. See tests/setup/bunAstroStubs.ts for why this is not in
+# tsconfig.json paths (Astro 6 would alias them into the real build).
+preload = ["./tests/setup/bunAstroStubs.ts"]

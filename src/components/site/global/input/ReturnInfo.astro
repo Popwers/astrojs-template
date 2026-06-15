@@ -4,11 +4,17 @@ import type { ActionError } from 'astro:actions';
 
 import { DEFAULT_COOKIE_OPTIONS_DELETE } from '@data/cookieOptions';
 
+interface ActionData {
+	[key: string]: unknown;
+	message?: string;
+	warningMessage?: string;
+	code?: string;
+}
+
 interface Props {
 	result:
 		| {
-				// biome-ignore lint/suspicious/noExplicitAny: data can be anything
-				data?: { [key: string]: any; message?: string };
+				data?: ActionData;
 				error?: ActionError | { message?: string };
 		  }
 		| undefined;

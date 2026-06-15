@@ -1,22 +1,22 @@
 {
 	"extends": "astro/tsconfigs/strict",
 	"compilerOptions": {
-		"baseUrl": ".",
 		"paths": {
-			"@pages/*": ["src/pages/*"],
-			"@styles/*": ["src/styles/*"],
-			"@layouts/*": ["src/layouts/*"],
-			"@components/*": ["src/components/*"],
-			"@assets/*": ["src/assets/*"],
-			"@data/*": ["src/data/*"],
-			"@lib/*": ["src/lib/*"],
-			"@interfaces/*": ["src/interfaces/*"],
-			"@stores/*": ["src/stores/*"],
-			"@actions/*": ["src/actions/*"]
+			"@pages/*": ["./src/pages/*"],
+			"@styles/*": ["./src/styles/*"],
+			"@layouts/*": ["./src/layouts/*"],
+			"@components/*": ["./src/components/*"],
+			"@assets/*": ["./src/assets/*"],
+			"@data/*": ["./src/data/*"],
+			"@lib/*": ["./src/lib/*"],
+			"@interfaces/*": ["./src/interfaces/*"],
+			"@stores/*": ["./src/stores/*"],
+			"@actions/*": ["./src/actions/*"]
 		},
 		"jsx": "react-jsx",
 		"jsxImportSource": "react",
-		"checkJs": true
+		"checkJs": true,
+		"types": ["astro/client", "vite-plugin-pwa/vanillajs", "vite-plugin-pwa/info", "bun"]
 	},
 	"include": [".astro/types.d.ts", "**/*"],
 	"exclude": ["dist"]

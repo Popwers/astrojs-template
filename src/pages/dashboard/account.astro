@@ -5,18 +5,28 @@ import Avatar from '@components/site/global/Avatar.astro';
 import AvatarInput from '@components/site/global/input/AvatarInput';
 import ErrorInput from '@components/site/global/input/ErrorInput.astro';
 import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
-import SelectInput from '@components/site/global/input/SelectInput';
 import SubmitButton from '@components/site/global/input/SubmitButton';
 import DashboardLayout from '@layouts/dashboard.astro';
 
-import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
+import { clearUserSession } from '@lib/session';
+import { updateUserCookie } from '@lib/userCookie';
+
+import type { User } from '@interfaces/user';
+
+// A successful account deletion tears down the session and bounces to the home page.
+const deleteResult = Astro.getActionResult(actions.user.deleteAccount);
+if (deleteResult && !deleteResult.error) {
+	clearUserSession(Astro);
+	return Astro.redirect('/');
+}
 
 const result = Astro.getActionResult(actions.user.update);
 if (result && !result.error) {
-	Astro.cookies.set('user_data', result.data.user, DEFAULT_COOKIE_OPTIONS);
-	Astro.locals.user = result.data.user;
+	const updatedUser = result.data.user as User;
+	Astro.locals.user = updateUserCookie(Astro.cookies, updatedUser) as User;
 }
 const inputErrors = isInputError(result?.error) ? result.error.fields : {};
+const deleteError = deleteResult?.error?.message ?? null;
 
 const { username, email } = Astro.locals.user ?? {};
 const title: string = 'Mon profil';
@@ -61,15 +71,33 @@ const description: string = 'Modifier mes informations personnelles';
 				/>
 				<ErrorInput errors={inputErrors.email} />
 			</div>
-			<div class='form-group w-full'>
-				<label for='job'>Vous êtes ?</label>
-				{
-					/* <SelectInput client:load id='job' name='job' defaultValue={job} options={JOB_OPTIONS} /> */
-				}
-				<ErrorInput errors={inputErrors.job} />
-			</div>
 		</div>
 
-		<SubmitButton client:load className='mt-12' label='Enregistrer' />
+		<SubmitButton client:idle className='mt-12' label='Enregistrer' />
 	</form>
+
+	<section class='border-red mt-16 rounded-lg border p-6'>
+		<h2 class='text-red text-xl font-medium'>Zone de danger</h2>
+		<p class='mt-2 text-sm'>
+			La suppression de votre compte est définitive et irréversible. Toutes vos données seront
+			effacées.
+		</p>
+
+		{deleteError && <p class='text-red mt-4 text-sm'>{deleteError}</p>}
+
+		<form method='POST' action={actions.user.deleteAccount} class='mt-6'>
+			<div class='form-group flex items-start gap-3'>
+				<input type='checkbox' id='confirmation' name='confirmation' value='true' required />
+				<label for='confirmation' class='text-sm'>
+					Je comprends que cette action est définitive et je souhaite supprimer mon compte.
+				</label>
+			</div>
+
+			<SubmitButton
+				client:idle
+				className='mt-6 w-full bordered !border-red !text-red'
+				label='Supprimer définitivement mon compte'
+			/>
+		</form>
+	</section>
 </DashboardLayout>

@@ -1,15 +1,22 @@
-import { STRAPI_TOKEN, STRAPI_URL } from 'astro:env/server';
-
 import type { FetchProps, StrapiData, StrapiError, StrapiUserData, SubmitProps } from '@interfaces/strapi';
 import type { User } from '@interfaces/user';
+import convertToFormData from '@lib/form';
+import { createFetchFallback, createSubmitFallback, parseApiResponseBody } from '@lib/strapiClient';
+import { createStrapiError, isStrapiError, normalizeStrapiError } from '@lib/strapiError';
+import { STRAPI_TOKEN, STRAPI_URL } from 'astro:env/server';
 
 /**
- * Récupère les données de l'API Strapi
- * @param endpoint - Le point d'accès à partir duquel la recherche doit être effectuée
- * @param query - Les paramètres de requête à ajouter à l'url
- * @param wrappedByKey - La clé pour décapsuler la réponse
- * @param wrappedByList - Si la réponse est une liste, déroulez-la.
- * @returns
+ * Fetch data from the Strapi API.
+ * @param endpoint - The endpoint to fetch from.
+ * @param query - The query parameters to append to the URL.
+ * @param wrappedByKey - The key used to unwrap the response.
+ * @param wrappedByList - If the response is a list, unwrap it.
+ * @param token - Optional user token (falls back to the server-side STRAPI_TOKEN).
+ * @param returnError - Controls the failure mode. `false` (default) returns a
+ * safe empty fallback so content pages render empty instead of 500-ing — an
+ * availability trade-off, see `docs/error-handling.md`. `true` returns the
+ * structured Strapi error so the caller can handle the `'error' in result` branch.
+ * @returns The unwrapped API payload, or (on failure) the fallback or the error.
  */
 export default async function fetchApi<T>({
 	endpoint,
@@ -17,11 +24,12 @@ export default async function fetchApi<T>({
 	wrappedByKey = 'data',
 	wrappedByList,
 	token,
+	returnError = false,
 }: FetchProps): Promise<T> {
 	try {
-		if (endpoint.startsWith('/')) endpoint = endpoint.slice(1);
+		const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
 
-		const url = new URL(`${STRAPI_URL}/api/${endpoint}`);
+		const url = new URL(`${STRAPI_URL}/api/${normalizedEndpoint}`);
 		if (query) {
 			for (const [key, value] of Object.entries(query)) {
 				url.searchParams.append(key, value);
@@ -33,25 +41,53 @@ export default async function fetchApi<T>({
 			},
 			signal: AbortSignal.timeout(30000),
 		});
-		let data = await response.json();
 
-		if (wrappedByKey) data = data?.[wrappedByKey] || [];
-		if (wrappedByList) data = data?.[0] || {};
+		const fallbackMessage = `API error: ${response.status} on ${endpoint}`;
+		const parsedResponse = await parseApiResponseBody(response);
+		if (!response.ok) {
+			const error = normalizeStrapiError(parsedResponse.payload, response.status, fallbackMessage);
+			console.error(`API error: ${error.error.status} on ${endpoint}`, error.error.message);
+			return returnError ? (error as T) : createFetchFallback<T>({ wrappedByKey, wrappedByList });
+		}
+
+		if (parsedResponse.parseError) {
+			console.warn(`Successful API response on ${endpoint} returned a non-JSON body.`);
+			return createFetchFallback<T>({ wrappedByKey, wrappedByList });
+		}
+
+		if (!parsedResponse.hasBody) {
+			return createFetchFallback<T>({ wrappedByKey, wrappedByList });
+		}
+
+		const payload = parsedResponse.payload;
+		if (isStrapiError(payload)) return payload as T;
+
+		let data: unknown = payload;
+
+		if (wrappedByKey) {
+			data = (data as Record<string, unknown> | null | undefined)?.[wrappedByKey] ?? [];
+		}
+		if (wrappedByList) {
+			data = (data as unknown[] | null | undefined)?.[0] ?? {};
+		}
 
 		return data as T;
 	} catch (error) {
 		console.error('API call failed:', error);
-		return wrappedByKey ? ([] as T) : wrappedByList ? ({} as T) : ({} as T);
+		return returnError
+			? (createStrapiError(500, error instanceof Error ? error.message : 'An error occurred') as T)
+			: createFetchFallback<T>({ wrappedByKey, wrappedByList });
 	}
 }
 
 /**
- * Soumet une requête à l'API Strapi
- * @param endpoint - Le point d'accès à partir duquel la requête doit être effectuée
- * @param body - Le corps de la requête
- * @param token - Le token pour l'authentification
- * @param method - La méthode de la requête
- * @returns
+ * Submit a request to the Strapi API.
+ * @param endpoint - The endpoint to send the request to.
+ * @param body - The request body.
+ * @param token - The authentication token.
+ * @param method - The HTTP method to use.
+ * @param contentType - The content type of the request.
+ * @returns The API response, or a structured Strapi error on failure.
  */
 export async function submitApi({
 	endpoint,
@@ -61,52 +97,57 @@ export async function submitApi({
 	contentType = 'application/json',
 }: SubmitProps): Promise<StrapiUserData | StrapiData | StrapiError | User> {
 	try {
-		if (endpoint.startsWith('/')) endpoint = endpoint.slice(1);
+		const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
 
 		// Handle multipart/form-data body
-		if (contentType === 'multipart/form-data' && body && typeof body === 'object') {
-			const formData = new FormData();
+		const requestBody =
+			contentType === 'multipart/form-data' && body && typeof body === 'object'
+				? convertToFormData(body as Record<string, unknown>)
+				: body;
 
-			// Handle nested objects and files
-			for (const [key, value] of Object.entries(body)) {
-				if (value && typeof value === 'object') {
-					// Handle files object
-					if (key === 'files') {
-						for (const [fileKey, fileValue] of Object.entries(value)) {
-							if (fileValue instanceof Blob || fileValue instanceof File) {
-								formData.append(`files.${fileKey}`, fileValue);
-							}
-						}
-					} else formData.append(key, JSON.stringify(value));
-				} else formData.append(key, value);
-			}
-			body = formData;
-		}
-
-		const url = new URL(`${STRAPI_URL}/api/${endpoint}`);
+		const url = new URL(`${STRAPI_URL}/api/${normalizedEndpoint}`);
 		const response = await fetch(url.toString(), {
 			method: method,
 			headers: {
-				...(contentType === 'multipart/form-data' && { Accept: 'application/json' }),
-				...(contentType === 'application/json' && { 'Content-Type': contentType }),
+				...(contentType === 'multipart/form-data' && {
+					Accept: 'application/json',
+				}),
+				...(contentType === 'application/json' && {
+					'Content-Type': contentType,
+				}),
 				...(token && { Authorization: `Bearer ${token}` }),
 			},
-			body: contentType === 'application/json' ? JSON.stringify(body) : (body as FormData),
+			body:
+				contentType === 'application/json' ? JSON.stringify(requestBody) : (requestBody as FormData),
 			signal: AbortSignal.timeout(30000),
 		});
 
-		const data = await response.json();
+		const fallbackMessage = `API error: ${response.status} on ${endpoint}`;
+		const parsedResponse = await parseApiResponseBody(response);
+		if (!response.ok) {
+			const error = normalizeStrapiError(parsedResponse.payload, response.status, fallbackMessage);
+			console.error(`API error: ${error.error.status} on ${endpoint}`, error.error.message);
+			return error;
+		}
+
+		if (parsedResponse.parseError) {
+			console.warn(`Successful API response on ${endpoint} returned a non-JSON body.`);
+			return createStrapiError(
+				502,
+				`Non-JSON response received from API on ${endpoint} (status ${response.status})`,
+			);
+		}
+
+		if (!parsedResponse.hasBody) {
+			return createSubmitFallback<StrapiUserData | StrapiData | StrapiError | User>();
+		}
+
+		const data = parsedResponse.payload;
+		if (isStrapiError(data)) return data;
 
 		return data as StrapiUserData | StrapiData | StrapiError;
 	} catch (error) {
 		console.error('API call failed:', error);
-		return {
-			error: {
-				status: 500,
-				name: 'ServerError',
-				message: error instanceof Error ? error.message : 'Une erreur est survenue',
-				details: {},
-			},
-		} as StrapiError;
+		return createStrapiError(500, error instanceof Error ? error.message : 'An error occurred');
 	}
 }

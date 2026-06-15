@@ -1,7 +1,6 @@
-import { Reactive, useObservable } from '@legendapp/state/react';
-
 import eye_icon from '@assets/icons/eye.svg';
 import eye_close_icon from '@assets/icons/eye_close.svg';
+import { Reactive, useObservable } from '@legendapp/state/react';
 
 interface PasswordInputProps {
 	id: string;
@@ -50,7 +49,7 @@ export default ({
 					onClick={() => isPasswordVisible.toggle()}
 					$src={imgToShow}
 					alt='Voir le mot de passe'
-					className='absolute right-4 top-1/2 -translate-y-1/2 w-5 h-5 cursor-pointer'
+					className='absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2 cursor-pointer'
 				/>
 			</div>
 		</div>
