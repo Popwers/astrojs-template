@@ -46,7 +46,7 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 			/>
 			<ErrorInput errors={inputErrors.email} />
 		</div>
-		<PasswordChecker client:load />
+		<PasswordChecker client:idle />
 		<ErrorInput errors={inputErrors.password} />
 		<ErrorInput errors={inputErrors.passwordConfirmation} />
 

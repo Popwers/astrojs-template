@@ -39,7 +39,7 @@ if (!code) return Astro.redirect('/lost-password');
 
 	<form class='mt-16' method='POST' action={actions.password.resetPassword}>
 		<input type='hidden' name='code' value={code} />
-		<PasswordChecker isNewPassword client:load />
+		<PasswordChecker isNewPassword client:idle />
 		<ErrorInput errors={inputErrors.password} />
 		<ErrorInput errors={inputErrors.passwordConfirmation} />
 
