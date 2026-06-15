@@ -12,6 +12,7 @@
     "generate-pwa-assets": "pwa-assets-generator --preset minimal-2023 public/icon.png"
   },
   "dependencies": {
+    "@astrojs/compiler-rs": "^0.2.2",
     "@astrojs/node": "^10.1.4",
     "@astrojs/react": "^5.0.7",
     "@astrojs/sitemap": "^3.7.3",

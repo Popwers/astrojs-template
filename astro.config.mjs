@@ -16,6 +16,13 @@ export default defineConfig({
 		mode: 'standalone',
 	}),
 	site: 'https://your-project.fr',
+	// Opt into the experimental Rust-based `.astro` compiler (replaces the Go
+	// implementation): faster builds and stronger diagnostics. Requires the
+	// `@astrojs/compiler-rs` package, which is a runtime dependency so the
+	// Docker build stage (installed with `--no-dev`) can resolve it.
+	experimental: {
+		rustCompiler: true,
+	},
 	integrations: [
 		react(),
 		sitemap(),
