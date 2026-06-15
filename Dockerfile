@@ -9,10 +9,14 @@ RUN apk add --no-cache libstdc++
 FROM base AS deps
 COPY package.json bun.lock ./
 RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
-    bun install --no-dev --frozen-lockfile
+    bun install --production --frozen-lockfile
 
-# --- build: reuse deps tree, transpile + bundle ------------------------------
-FROM deps AS build
+# --- build: full install (incl. devDeps), transpile + bundle -----------------
+# Starts from `base`, not `deps`: the build needs devDependencies (the Rust
+# `.astro` compiler `@astrojs/compiler-rs`, oxlint, etc.) which `deps` omits via
+# `--no-dev`. Keeping these out of the `deps` tree is what keeps the runtime
+# image lean — `runtime` copies node_modules from `deps`, never from here.
+FROM base AS build
 # Sentry build-time inputs (passed by the CI/CD platform as build args).
 # SENTRY_AUTH_TOKEN uploads source maps; SOURCE_COMMIT becomes the release name
 # so errors map to the deployed commit.
@@ -21,6 +25,9 @@ ARG SENTRY_AUTH_TOKEN
 ARG SOURCE_COMMIT
 ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN \
     SENTRY_RELEASE=$SOURCE_COMMIT
+COPY package.json bun.lock ./
+RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
+    bun install --frozen-lockfile
 COPY . .
 RUN bun run build
 
