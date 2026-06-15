@@ -1,6 +1,6 @@
 # Astro Starter Kit
 
-Astro 5 SSR template with React 18 islands, Strapi auth plumbing, PWA support and Sentry monitoring. Runs on Bun.
+Astro 6 SSR template with React 19 islands, Strapi auth plumbing, PWA support and Sentry monitoring. Runs on Bun.
 
 ## Setup
 
@@ -20,6 +20,17 @@ bun run dev           # Dev server at localhost:4321
 | `SENTRY_RELEASE` | No | — | Deployed git SHA, so errors map to the commit that introduced them. |
 
 The `STRAPI_*` defaults exist only so a fresh clone builds and boots without configuration; they point at no real backend. Auth and data calls will fail until you set real values in `.env`.
+
+## New project checklist
+
+When starting a real project from this template:
+
+- [ ] Rename the project: `name` in `package.json`, `release.repositoryUrl` in `package.json`.
+- [ ] Set the canonical site URL: `site` in `astro.config.mjs` (and the `image.domains` / `remotePatterns` host).
+- [ ] Fill `.env` from `.env.example`: `STRAPI_URL`, `STRAPI_TOKEN` (replace the placeholder defaults).
+- [ ] Wire Sentry: org/project in `astro.config.mjs`, DSN in `sentry.client.config.js` / `sentry.server.config.js`.
+- [ ] Install the git hooks once per clone: `vp config`.
+- [ ] Regenerate PWA assets from your own icon: `bun run generate-pwa-assets`.
 
 ## Project Structure
 
