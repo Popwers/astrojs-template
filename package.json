@@ -24,7 +24,7 @@
     "@types/react-dom": "^19",
     "@vite-pwa/assets-generator": "^1.0.2",
     "@vite-pwa/astro": "^1.2.0",
-    "astro": "^6.4.6",
+    "astro": "^6.4.7",
     "astro-seo": "^1.1.0",
     "astro-seo-schema": "^6.0.0",
     "motion": "^12.26.2",
@@ -54,7 +54,7 @@
     "baseline-browser-mapping": "^2.10.0",
     "yaml": "^2.8.3",
     "esbuild": "^0.28.1",
-    "astro": "^6.4.6"
+    "astro": "^6.4.7"
   },
   "trustedDependencies": [
     "core-js",
