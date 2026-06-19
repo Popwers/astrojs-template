@@ -1,18 +1,21 @@
 ---
-import TextRenderer from '@components/site/global/TextRenderer';
-import DefaultLayout from '@layouts/index.astro';
+// Static legal content changes rarely — prerender at build time for instant delivery.
+// Content falls back to empty array when Strapi is unreachable (see fetchApi returnError default).
+export const prerender = true;
 
-import type TextPage from '@interfaces/textPage';
-import fetchApi from '@lib/strapi';
+import TextRenderer from "@components/site/global/TextRenderer";
+import type TextPage from "@interfaces/textPage";
+import DefaultLayout from "@layouts/index.astro";
+import fetchApi from "@lib/strapi";
 
 const data = await fetchApi<TextPage>({
-	endpoint: 'politique-confidentialite',
-	query: { fields: 'Contenu' },
+	endpoint: "politique-confidentialite",
+	query: { fields: "Contenu" },
 });
 const content = data?.Contenu ?? [];
 
-const title: string = 'Politique de confidentialité';
-const description: string = 'Page de la politique de confidentialité du site';
+const title: string = "Politique de confidentialité";
+const description: string = "Page de la politique de confidentialité du site";
 ---
 
 <DefaultLayout title={title} description={description}>

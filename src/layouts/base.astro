@@ -1,21 +1,25 @@
 ---
-import '@styles/tailwind.css';
-import '@styles/global.scss';
-import '@styles/normalize.scss';
-//import '@fontsource-variable/montserrat';
-//import '@fontsource-variable/raleway';
+import "@styles/tailwind.css";
+import "@styles/global.scss";
+import "@styles/normalize.scss";
+import "@fontsource-variable/montserrat";
+import "@fontsource-variable/raleway";
 
-import { ClientRouter } from 'astro:transitions';
-import { pwaInfo } from 'virtual:pwa-info';
-import { SEO } from 'astro-seo';
-import { Schema } from 'astro-seo-schema';
+import { ClientRouter } from "astro:transitions";
+import { pwaInfo } from "virtual:pwa-info";
+import CookieBanner from "@components/site/global/CookieBanner.astro";
+// Vite resolves and hashes these URLs at build time so the preload href is always correct.
+// biome-ignore lint/correctness/noUnusedImports: used in template <link rel="preload">
+import montserratWoff2 from "@fontsource-variable/montserrat/files/montserrat-latin-wght-normal.woff2";
+// biome-ignore lint/correctness/noUnusedImports: used in template <link rel="preload">
+import ralewayWoff2 from "@fontsource-variable/raleway/files/raleway-latin-wght-normal.woff2";
+import { enableReactComponents } from "@legendapp/state/config/enableReactComponents";
+import { withPwaAssetVersion } from "@lib/pwaAssets";
 
-import CookieBanner from '@components/site/global/CookieBanner.astro';
+import { getSchemas } from "@lib/schema.org";
+import { SEO } from "astro-seo";
+import { Schema } from "astro-seo-schema";
 
-import { getSchemas } from '@lib/schema.org';
-import { withPwaAssetVersion } from '@lib/pwaAssets';
-
-import { enableReactComponents } from '@legendapp/state/config/enableReactComponents';
 enableReactComponents();
 
 interface Props {
@@ -24,14 +28,15 @@ interface Props {
 }
 
 const schemas = getSchemas(Astro.url);
-const { title = 'Default title', description = 'Default description' } = Astro.props as Props;
+const { title = "Default title", description = "Default description" } =
+	Astro.props as Props;
 const shouldRegisterPwa = import.meta.env.PROD || pwaInfo?.pwaInDevEnvironment;
 const shouldCleanupDevServiceWorkers = import.meta.env.DEV;
 
 // SPA view transitions (ClientRouter) are disabled on the dashboard because
 // server:defer islands don't survive client-side navigation. Dashboard pages
 // always do a full load. Only login/register pages use Astro transition:* directives.
-const enableViewTransitions = !Astro.url.pathname.startsWith('/dashboard');
+const enableViewTransitions = !Astro.url.pathname.startsWith("/dashboard");
 ---
 
 <!doctype html>
@@ -77,6 +82,9 @@ const enableViewTransitions = !Astro.url.pathname.startsWith('/dashboard');
 						href: withPwaAssetVersion('/manifest.webmanifest'),
 						crossorigin: 'use-credentials',
 					},
+					// Preload critical font variants to avoid invisible text on first paint.
+					{ rel: 'preload', href: montserratWoff2, as: 'font', type: 'font/woff2', crossorigin: 'anonymous' },
+					{ rel: 'preload', href: ralewayWoff2, as: 'font', type: 'font/woff2', crossorigin: 'anonymous' },
 				],
 				meta: [
 					{ name: 'viewport', content: 'width=device-width, initial-scale=1' },

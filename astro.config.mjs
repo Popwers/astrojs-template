@@ -1,21 +1,21 @@
-import node from '@astrojs/node';
-import react from '@astrojs/react';
-import sitemap from '@astrojs/sitemap';
-import playformCompress from '@playform/compress';
-import sentry from '@sentry/astro';
-import tailwindcss from '@tailwindcss/vite';
-import AstroPWA from '@vite-pwa/astro';
-import { defineConfig, envField } from 'astro/config';
+import node from "@astrojs/node";
+import react from "@astrojs/react";
+import sitemap from "@astrojs/sitemap";
+import playformCompress from "@playform/compress";
+import sentry from "@sentry/astro";
+import tailwindcss from "@tailwindcss/vite";
+import AstroPWA from "@vite-pwa/astro";
+import { defineConfig, envField } from "astro/config";
 
 export default defineConfig({
 	server: {
 		host: true,
 	},
-	output: 'server',
+	output: "server",
 	adapter: node({
-		mode: 'standalone',
+		mode: "standalone",
 	}),
-	site: 'https://your-project.fr',
+	site: "https://your-project.fr",
 	// Opt into the experimental Rust-based `.astro` compiler (replaces the Go
 	// implementation): faster builds and stronger diagnostics. Provided by the
 	// `@astrojs/compiler-rs` devDependency — a build-time-only compiler, so the
@@ -29,30 +29,32 @@ export default defineConfig({
 		playformCompress({ HTML: false }),
 		sentry({
 			sourceMapsUploadOptions: {
-				org: 'your-org',
-				project: 'your-project',
+				org: "your-org",
+				project: "your-project",
 				authToken: process.env.SENTRY_AUTH_TOKEN,
 			},
 		}),
 		AstroPWA({
 			manifest: false,
-			registerType: 'autoUpdate',
+			registerType: "autoUpdate",
 			injectRegister: null,
-			includeAssets: ['favicon.png', 'icon.png'],
-			strategies: 'injectManifest',
-			srcDir: 'src',
-			filename: 'sw.ts',
+			includeAssets: ["favicon.png", "icon.png"],
+			strategies: "injectManifest",
+			srcDir: "src",
+			filename: "sw.ts",
 			workbox: {
-				navigateFallback: '/',
-				globPatterns: ['**/*.{css,js,html,svg,png,ico,txt}'],
+				navigateFallback: "/",
+				globPatterns: ["**/*.{css,js,html,svg,png,ico,txt}"],
 				navigateFallbackAllowlist: [/^\/$/],
 				runtimeCaching: [
 					{
 						urlPattern: ({ url, sameOrigin, request }) =>
-							sameOrigin && request.mode === 'navigate' && !url.pathname.match(/^\/$/),
-						handler: 'NetworkFirst',
+							sameOrigin &&
+							request.mode === "navigate" &&
+							!url.pathname.match(/^\/$/),
+						handler: "NetworkFirst",
 						options: {
-							cacheName: 'offline-ssr-pages-cache',
+							cacheName: "offline-ssr-pages-cache",
 							/* check the options in the workbox-build docs */
 							matchOptions: {
 								ignoreVary: true,
@@ -90,7 +92,7 @@ export default defineConfig({
 			},
 			devOptions: {
 				enabled: false,
-				type: 'module',
+				type: "module",
 				navigateFallbackAllowlist: [/^\/$/],
 			},
 		}),
@@ -98,50 +100,76 @@ export default defineConfig({
 	prefetch: {
 		prefetchAll: true,
 	},
-	cacheDir: './buildCache',
+	cacheDir: "./buildCache",
 	env: {
 		schema: {
 			STRAPI_URL: envField.string({
-				context: 'server',
-				access: 'secret',
-				default: 'https://api.your-project.fr',
+				context: "server",
+				access: "secret",
+				default: "https://api.your-project.fr",
 			}),
 			STRAPI_TOKEN: envField.string({
-				context: 'server',
-				access: 'secret',
-				default: 'replace-me-with-a-strapi-api-token',
+				context: "server",
+				access: "secret",
+				default: "replace-me-with-a-strapi-api-token",
 			}),
 		},
 	},
 	image: {
-		domains: import.meta.env.DEV ? undefined : ['api.your-project.fr'],
+		domains: import.meta.env.DEV ? undefined : ["api.your-project.fr"],
 		remotePatterns: import.meta.env.DEV
 			? undefined
 			: [
 					{
-						protocol: 'https',
-						hostname: 'api.your-project.fr',
+						protocol: "https",
+						hostname: "api.your-project.fr",
 					},
 				],
 	},
 	vite: {
 		plugins: [tailwindcss()],
+		// Modern output target: skip legacy transpilation/polyfills for smaller, faster bundles.
+		build: {
+			target: "esnext",
+			modulePreload: {
+				polyfill: false,
+			},
+			rollupOptions: {
+				output: {
+					// Per-package vendor chunks for independent cache invalidation. Astro's own
+					// framework packages stay in the default chunk: splitting them breaks the
+					// astro:env runtime init order (TDZ on _getEnv/setGetEnv).
+					manualChunks(id) {
+						if (!id.includes("node_modules")) return;
+						if (
+							id.includes("/node_modules/astro/") ||
+							id.includes("/node_modules/@astrojs/")
+						)
+							return;
+						const pkg = id.split("node_modules/")[1]?.split("/")[0];
+						if (pkg) {
+							return `vendor-${pkg.replace("@", "").replace("/", "-")}`;
+						}
+					},
+				},
+			},
+		},
 		// Force a single React copy and pre-bundle every React-island dependency up front.
 		// Without this, Vite discovers island deps lazily on first navigation, re-optimizes
 		// mid-session, and any already-open tab mixes two React generations — surfacing as
 		// "Invalid hook call" / "useRef of null" until a hard refresh.
 		resolve: {
-			dedupe: ['react', 'react-dom'],
+			dedupe: ["react", "react-dom"],
 		},
 		optimizeDeps: {
 			include: [
-				'react',
-				'react-dom',
-				'react-dom/client',
-				'react/jsx-runtime',
-				'react/jsx-dev-runtime',
-				'motion/react',
-				'@legendapp/state/react',
+				"react",
+				"react-dom",
+				"react-dom/client",
+				"react/jsx-runtime",
+				"react/jsx-dev-runtime",
+				"motion/react",
+				"@legendapp/state/react",
 			],
 		},
 	},

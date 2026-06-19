@@ -49,7 +49,6 @@ export default ({ className, label, id, tabIndex, disabled }: Props) => {
 
 	return (
 		<$MotionButton
-			layout
 			$animate={() => ({
 				opacity: disabled ? 0.5 : 1,
 				backgroundColor:
