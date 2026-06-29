@@ -1,3 +1,5 @@
+import { prepareAvatar } from '@data/imageCompression';
+import { AVATAR_INPUT_ACCEPT } from '@data/userOptions';
 import { Memo, Reactive, Show, useObservable } from '@legendapp/state/react';
 import { type ActionError, actions } from 'astro:actions';
 import { useEffect, useRef } from 'react';
@@ -5,11 +7,13 @@ import { useEffect, useRef } from 'react';
 /**
  * AvatarInput component
  * Wrapper around an input to change the avatar, with optimistic UI preview.
+ * Compresses (and HEIC-decodes) the file client-side before uploading.
  * On success the preview URL is retained; on error it reverts to the previous avatar.
  * @param {React.ReactNode} props.children - The server-rendered avatar (Astro island child)
  * @returns {React.ReactNode} The AvatarInput component
  */
 export default ({ children }: { children: React.ReactNode }) => {
+	const isPreparing = useObservable(false);
 	const isLoading = useObservable(false);
 	const errorMessage = useObservable<ActionError | Error | null>(null);
 	// Holds the object URL for the optimistic preview; null means show the server-rendered child.
@@ -24,29 +28,39 @@ export default ({ children }: { children: React.ReactNode }) => {
 		};
 	}, [optimisticUrl]);
 
+	const isBusy = () => isPreparing.get() || isLoading.get();
+
 	const labelClass = () =>
-		`btn fit tertiary relative ${isLoading.get() ? 'opacity-50 !pointer-events-none' : 'opacity-100'}`;
+		`btn fit tertiary relative ${isBusy() ? 'opacity-50 !pointer-events-none' : 'opacity-100'}`;
 
 	const dotsClass = () =>
-		`absolute inset-0 z-10 after:z-[-1] after:absolute after:inset-0 after:bg-black flex justify-center items-center space-x-2 transition-opacity after:transition-opacity ${isLoading.get() ? 'opacity-100 after:opacity-30' : 'opacity-0 after:opacity-0'}`;
+		`absolute inset-0 z-10 after:z-[-1] after:absolute after:inset-0 after:bg-black flex justify-center items-center space-x-2 transition-opacity after:transition-opacity ${isBusy() ? 'opacity-100 after:opacity-30' : 'opacity-0 after:opacity-0'}`;
 
 	/**
-	 * Handle the change event of the input and submit the form.
-	 * Shows an optimistic preview immediately; rolls back on error.
+	 * Handle the change event of the input.
+	 * Phase 1 — decode + compress (may take a moment for HEIC originals).
+	 * Phase 2 — upload the prepared file with an optimistic preview; rolls back on error.
 	 */
 	const handleChange = async () => {
-		isLoading.set(true);
+		const input = inputRef.current;
+		if (!input || !input.files?.[0]) return;
+
+		const rawFile = input.files[0];
 		errorMessage.set(null);
 
-		const input = inputRef.current;
-		if (!input || !input.files?.[0]) {
-			isLoading.set(false);
+		// Phase 1: decode HEIC and compress. The control is disabled but no preview yet.
+		isPreparing.set(true);
+		const { file, error: prepareError } = await prepareAvatar(rawFile);
+		isPreparing.set(false);
+
+		if (!file || prepareError) {
+			errorMessage.set(new Error(prepareError ?? 'Erreur lors de la préparation du fichier.'));
 			return;
 		}
 
-		const file = input.files[0];
+		// Phase 2: upload the prepared file with an optimistic preview.
+		isLoading.set(true);
 
-		// Optimistically preview the selected file before the upload completes.
 		const previousUrl = optimisticUrl.peek();
 		const previewUrl = URL.createObjectURL(file);
 		optimisticUrl.set(previewUrl);
@@ -101,12 +115,19 @@ export default ({ children }: { children: React.ReactNode }) => {
 
 			<Reactive.label htmlFor='avatar' $className={labelClass}>
 				<Memo>
-					{() => (isLoading.get() ? 'En cours de chargement...' : 'Changer l’image de profil')}
+					{() =>
+						isPreparing.get()
+							? 'Préparation...'
+							: isLoading.get()
+								? 'En cours de chargement...'
+								: 'Changer l’image de profil'
+					}
 				</Memo>
 				<input
 					type='file'
 					id='avatar'
 					name='avatar'
+					accept={AVATAR_INPUT_ACCEPT}
 					className='absolute inset-0 -z-10 opacity-0'
 					onChange={handleChange}
 					ref={inputRef}
