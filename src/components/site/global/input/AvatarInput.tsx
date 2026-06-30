@@ -116,11 +116,16 @@ export default ({ children }: { children: React.ReactNode }) => {
 			<Reactive.label htmlFor='avatar' $className={labelClass}>
 				<Memo>
 					{() =>
-						isPreparing.get()
-							? 'Préparation...'
-							: isLoading.get()
-								? 'En cours de chargement...'
-								: 'Changer l’image de profil'
+						isPreparing.get() ? (
+							<span className='flex items-center gap-2'>
+								<span className='inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent' />
+								Préparation...
+							</span>
+						) : isLoading.get() ? (
+							'En cours de chargement...'
+						) : (
+							'Changer l’image de profil'
+						)
 					}
 				</Memo>
 				<input
