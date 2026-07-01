@@ -12,10 +12,10 @@ RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
     bun install --production --frozen-lockfile
 
 # --- build: full install (incl. devDeps), transpile + bundle -----------------
-# Starts from `base`, not `deps`: the build needs devDependencies (the Rust
-# `.astro` compiler `@astrojs/compiler-rs`, oxlint, etc.) which `deps` omits via
-# `--no-dev`. Keeping these out of the `deps` tree is what keeps the runtime
-# image lean — `runtime` copies node_modules from `deps`, never from here.
+# Starts from `base`, not `deps`: the build needs devDependencies (the Tailwind
+# and PWA Vite integrations, the SCSS compiler, type tooling, etc.) which `deps`
+# omits via `--production`. Keeping these out of the `deps` tree is what keeps the
+# runtime image lean — `runtime` copies node_modules from `deps`, never from here.
 FROM base AS build
 # Sentry build-time inputs (passed by the CI/CD platform as build args).
 # SENTRY_AUTH_TOKEN uploads source maps; SOURCE_COMMIT becomes the release name

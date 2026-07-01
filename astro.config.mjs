@@ -24,13 +24,6 @@ export default defineConfig({
 	security: {
 		actionBodySizeLimit: ACTION_BODY_SIZE_LIMIT,
 	},
-	// Opt into the experimental Rust-based `.astro` compiler (replaces the Go
-	// implementation): faster builds and stronger diagnostics. Provided by the
-	// `@astrojs/compiler-rs` devDependency — a build-time-only compiler, so the
-	// Docker `build` stage installs devDeps while the runtime image stays lean.
-	experimental: {
-		rustCompiler: true,
-	},
 	integrations: [
 		react(),
 		sitemap(),
