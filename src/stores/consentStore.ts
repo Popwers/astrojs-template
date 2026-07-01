@@ -11,7 +11,6 @@ interface ConsentState {
 /**
  * Update the consent state
  * @param preferences - The preferences to update
- * @returns {void}
  */
 export const updateConsent = (preferences: { analytics: boolean; functional: boolean }) => {
 	consentStore.set({

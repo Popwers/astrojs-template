@@ -9,8 +9,8 @@ import { useEffect, useRef } from 'react';
  * Wrapper around an input to change the avatar, with optimistic UI preview.
  * Compresses (and HEIC-decodes) the file client-side before uploading.
  * On success the preview URL is retained; on error it reverts to the previous avatar.
- * @param {React.ReactNode} props.children - The server-rendered avatar (Astro island child)
- * @returns {React.ReactNode} The AvatarInput component
+ * @param props.children - The server-rendered avatar (Astro island child)
+ * @returns The AvatarInput component
  */
 export default ({ children }: { children: React.ReactNode }) => {
 	const isPreparing = useObservable(false);

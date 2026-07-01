@@ -14,12 +14,12 @@ const $MotionButton = reactive(motion.button);
 
 /**
  * Submit button with loading state and animation
- * @param {string} props.className - Class name for the button
- * @param {string} props.label - Label for the button
- * @param {string} props.id - Id for the button
- * @param {number} props.tabIndex - Tab index for the button
- * @param {boolean} props.disabled - Disabled state for the button
- * @returns {JSX.Element}
+ * @param props.className - Class name for the button
+ * @param props.label - Label for the button
+ * @param props.id - Id for the button
+ * @param props.tabIndex - Tab index for the button
+ * @param props.disabled - Disabled state for the button
+ * @returns The submit button component
  */
 export default ({ className, label, id, tabIndex, disabled }: Props) => {
 	const isLoading = useObservable(false);

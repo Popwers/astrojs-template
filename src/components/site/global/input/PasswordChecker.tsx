@@ -8,8 +8,8 @@ interface PasswordCheckerProps {
 
 /**
  * Password checker component used to check the strength of a password
- * @param {boolean} props.isNewPassword - If the password is for a new account or a reset password
- * @returns {React.ReactNode} - The password checker component
+ * @param props.isNewPassword - If the password is for a new account or a reset password
+ * @returns The password checker component
  */
 export default ({ isNewPassword = false }: PasswordCheckerProps) => {
 	const password = useObservable('');

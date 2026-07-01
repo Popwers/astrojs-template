@@ -14,15 +14,6 @@ import type { User } from '@interfaces/user';
 
 const result = Astro.getActionResult(actions.auth.login);
 
-// Validate the redirect target to prevent open-redirect attacks.
-// Accept only paths starting with a single `/` not followed by `/` or `\`;
-// browsers normalize `/\` to `//` (scheme-relative), so it must be rejected too.
-const loginRedirectPath = (() => {
-	const rawRedirect = Astro.url.searchParams.get('redirect');
-	if (!rawRedirect || !/^\/(?![/\\])/.test(rawRedirect)) return '/dashboard';
-	return rawRedirect;
-})();
-
 if (result && !result.error) {
 	const { jwt, user } = result.data as StrapiUserData;
 	if (!jwt || !user) {
@@ -32,7 +23,16 @@ if (result && !result.error) {
 	Astro.cookies.set('user_token', jwt, DEFAULT_COOKIE_OPTIONS);
 	Astro.locals.user = updateUserCookie(Astro.cookies, user) as User;
 
-	return Astro.redirect(loginRedirectPath);
+	// Validate the redirect target to prevent open-redirect attacks.
+	// Accept only paths starting with a single `/` not followed by `/` or `\`;
+	// browsers normalize `/\` to `//` (scheme-relative), so it must be rejected too.
+	return Astro.redirect(
+		(() => {
+			const rawRedirect = Astro.url.searchParams.get('redirect');
+			if (!rawRedirect || !/^\/(?![/\\])/.test(rawRedirect)) return '/dashboard';
+			return rawRedirect;
+		})(),
+	);
 }
 
 const inputErrors = isInputError(result?.error) ? result.error.fields : {};
