@@ -90,7 +90,7 @@ export default defineConfig({
 		ignorePatterns: ['dist/**', '.cache/**', 'public/**', 'node_modules/**', '**/*.esm.js'],
 		options: {
 			typeAware: true,
-			typeCheck: false,
+			typeCheck: true,
 		},
 		// Curated overrides on top of oxlint `recommended`; keep the set tight.
 		rules: {
