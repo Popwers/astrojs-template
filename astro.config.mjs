@@ -27,7 +27,10 @@ export default defineConfig({
 	integrations: [
 		react(),
 		sitemap(),
-		playformCompress({ HTML: false }),
+		// CSS: false — csso silently drops every `@media (width >= …)` range-syntax block
+		// emitted by Tailwind 4 (kept as-is since Vite 8/Astro 7), wiping all responsive
+		// styles in production. Vite already minifies CSS, so csso only added ~1% anyway.
+		playformCompress({ HTML: false, CSS: false }),
 		sentry({
 			sourceMapsUploadOptions: {
 				org: 'your-org',
