@@ -8,19 +8,18 @@ import SubmitButton from '@components/site/global/input/SubmitButton';
 import LoginLayout from '@layouts/login.astro';
 
 import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
+import { isStrapiUserData } from '@lib/strapi';
 import { updateUserCookie } from '@lib/userCookie';
-import type { StrapiUserData } from '@interfaces/strapi';
-import type { User } from '@interfaces/user';
 
 const result = Astro.getActionResult(actions.password.resetPassword);
 if (result && !result.error) {
-	const { jwt, user } = result.data as StrapiUserData;
-	if (!jwt || !user) {
+	if (!isStrapiUserData(result.data)) {
 		console.error('Password reset succeeded but payload is missing jwt/user — likely upstream API returned non-JSON.');
 		return Astro.redirect('/login?error=server-unavailable');
 	}
+	const { jwt, user } = result.data;
 	Astro.cookies.set('user_token', jwt, DEFAULT_COOKIE_OPTIONS);
-	Astro.locals.user = updateUserCookie(Astro.cookies, user) as User;
+	Astro.locals.user = updateUserCookie(Astro.cookies, user);
 
 	return Astro.redirect('/dashboard');
 }

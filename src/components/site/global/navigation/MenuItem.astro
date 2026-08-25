@@ -1,14 +1,14 @@
 ---
 import { spring } from 'motion';
 
-interface MenuItems {
+interface Props {
 	link: string;
 	name: string;
-	submenus?: MenuItems[];
+	submenus?: Props[];
 	isFooter?: boolean;
 }
 
-const { link, name, submenus, isFooter = false } = Astro.props as MenuItems;
+const { link, name, submenus, isFooter = false } = Astro.props;
 ---
 
 <li class={isFooter ? 'isFooter' : ''}>
@@ -22,7 +22,7 @@ const { link, name, submenus, isFooter = false } = Astro.props as MenuItems;
 	{
 		submenus && (
 			<ul class='submenus'>
-				{submenus.map(({ link, name }: MenuItems) => (
+				{submenus.map(({ link, name }: Props) => (
 					<li>
 						<a href={link}>{name}</a>
 					</li>

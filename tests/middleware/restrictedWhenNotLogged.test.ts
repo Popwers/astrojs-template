@@ -1,80 +1,14 @@
 import { describe, expect, it } from 'bun:test';
 
 import middleware from '../../src/middleware/restrictedWhenNotLogged';
-
-type CookieValue = string | number | Record<string, unknown>;
-type TestUser = Record<string, unknown> | null;
-
-interface TestContext {
-	cookies: ReturnType<typeof createCookies>;
-	locals: {
-		user: TestUser;
-		userToken: string;
-	};
-	url: URL;
-	redirect: (path: string, status: number) => Response;
-}
-
-function createCookies(initialValues: Record<string, CookieValue>) {
-	const store = new Map<string, CookieValue>(Object.entries(initialValues));
-
-	return {
-		has(name: string) {
-			return store.has(name);
-		},
-		get(name: string) {
-			if (!store.has(name)) return undefined;
-
-			const value = store.get(name);
-			return {
-				value: typeof value === 'string' ? value : JSON.stringify(value),
-				json: () => value,
-			};
-		},
-		set(name: string, value: CookieValue) {
-			store.set(name, value);
-		},
-		delete(name: string) {
-			store.delete(name);
-		},
-		store,
-	};
-}
-
-function createContext(path: string, initialCookies: Record<string, CookieValue>): TestContext {
-	const cookies = createCookies(initialCookies);
-
-	return {
-		cookies,
-		locals: {
-			user: null,
-			userToken: '',
-		},
-		url: new URL('https://example.com' + path),
-		redirect(redirectPath: string, status: number) {
-			return new Response(null, {
-				status,
-				headers: { Location: redirectPath },
-			});
-		},
-	};
-}
-
-/** Runs the middleware and asserts it resolved to a Response (the runtime contract under test). */
-async function run(context: TestContext, next: () => Promise<Response>): Promise<Response> {
-	const result = await middleware(context as never, next);
-	if (!(result instanceof Response)) {
-		throw new Error('middleware did not return a Response');
-	}
-	return result;
-}
+import { createMiddlewareContext, runMiddleware } from '../utils/middlewareContext';
 
 describe('restrictedWhenNotLogged middleware', () => {
 	it('redirects to /login when user_token cookie is missing on a protected path', async () => {
-		const context = createContext('/dashboard', { user_data: { id: 1 } });
+		const context = createMiddlewareContext('/dashboard', { user_data: { id: 1 } });
 
 		let nextCalled = false;
-		const response = await run(context, async () => {
+		const response = await runMiddleware(middleware, context, async () => {
 			nextCalled = true;
 			return new Response('ok');
 		});
@@ -85,7 +19,7 @@ describe('restrictedWhenNotLogged middleware', () => {
 	});
 
 	it('calls next when both cookies present and locals.user is complete', async () => {
-		const context = createContext('/dashboard', {
+		const context = createMiddlewareContext('/dashboard', {
 			user_token: 'valid-token',
 			user_data: { id: 1, documentId: 'doc-1', email: 'a@b.com', username: 'alice' },
 		});
@@ -93,7 +27,7 @@ describe('restrictedWhenNotLogged middleware', () => {
 		context.locals.userToken = 'valid-token';
 
 		let nextCalled = false;
-		const response = await run(context, async () => {
+		const response = await runMiddleware(middleware, context, async () => {
 			nextCalled = true;
 			return new Response('ok', { status: 200 });
 		});
@@ -103,7 +37,7 @@ describe('restrictedWhenNotLogged middleware', () => {
 	});
 
 	it('deletes cookies, clears locals, and redirects to /login when locals.user is missing email', async () => {
-		const context = createContext('/dashboard', {
+		const context = createMiddlewareContext('/dashboard', {
 			user_token: 'valid-token',
 			user_data: { id: 1 },
 		});
@@ -112,7 +46,7 @@ describe('restrictedWhenNotLogged middleware', () => {
 		context.locals.userToken = 'valid-token';
 
 		let nextCalled = false;
-		const response = await run(context, async () => {
+		const response = await runMiddleware(middleware, context, async () => {
 			nextCalled = true;
 			return new Response('ok');
 		});
@@ -127,10 +61,10 @@ describe('restrictedWhenNotLogged middleware', () => {
 	});
 
 	it('calls next on an unprotected path even when cookies are missing', async () => {
-		const context = createContext('/', {});
+		const context = createMiddlewareContext('/', {});
 
 		let nextCalled = false;
-		const response = await run(context, async () => {
+		const response = await runMiddleware(middleware, context, async () => {
 			nextCalled = true;
 			return new Response('ok', { status: 200 });
 		});

@@ -28,4 +28,4 @@ export interface ActionAPIContext {
 
 export const defineAction = <T>(definition: T): T => definition;
 
-export const isInputError = (_error: unknown): boolean => false;
+export const isInputError = (_error?: ActionError): boolean => false;

@@ -9,7 +9,7 @@ interface Props {
 	description?: string;
 }
 
-const { title = 'Default title', description = 'Default description' } = Astro.props as Props;
+const { title = 'Default title', description = 'Default description' } = Astro.props;
 ---
 
 <BaseLayout title={title} description={description}>

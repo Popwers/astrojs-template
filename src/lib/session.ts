@@ -22,6 +22,6 @@ export function clearUserSession(context: ClearUserSessionContext) {
 	context.cookies.delete('user_token', DEFAULT_COOKIE_OPTIONS_DELETE);
 	context.cookies.delete('user_data', DEFAULT_COOKIE_OPTIONS_DELETE);
 	context.cookies.delete('user_data_timestamp', DEFAULT_COOKIE_OPTIONS_DELETE);
-	context.locals.user = null as unknown as App.Locals['user'];
+	context.locals.user = null;
 	context.locals.userToken = '';
 }

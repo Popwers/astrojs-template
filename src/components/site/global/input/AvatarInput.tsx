@@ -83,7 +83,7 @@ export default ({ children }: { children: React.ReactNode }) => {
 		} catch (error) {
 			URL.revokeObjectURL(previewUrl);
 			optimisticUrl.set(previousUrl);
-			errorMessage.set(error as ActionError | Error);
+			errorMessage.set(error instanceof Error ? error : new Error(String(error)));
 		} finally {
 			isLoading.set(false);
 		}

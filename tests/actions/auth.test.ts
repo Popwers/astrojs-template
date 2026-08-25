@@ -1,35 +1,25 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 
 import { auth } from '@actions/auth';
-import type { ActionAPIContext } from 'astro:actions';
+import type { JsonValue } from '@interfaces/json';
 
-import { handlerOf } from '../utils/actionHandler';
+import { messageOf } from '../utils/actionError';
+import { createActionContext, handlerOf } from '../utils/actionHandler';
+import { installFetchStub } from '../utils/fetchStub';
 
 let originalFetch: typeof globalThis.fetch;
 let originalError: typeof console.error;
 
+/** Install a fetch stub resolving to the given Response (or throwing if a thunk throws). */
 function stubFetch(response: Response | (() => never)) {
-	globalThis.fetch = (async () =>
-		typeof response === 'function' ? response() : response) as unknown as typeof globalThis.fetch;
+	installFetchStub(async () => (response instanceof Response ? response : response()));
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
+function jsonResponse(body: JsonValue, status = 200): Response {
 	return new Response(JSON.stringify(body), {
 		status,
 		headers: { 'content-type': 'application/json' },
 	});
-}
-
-/** Minimal context whose cookie deletes are recorded so logout's session clear is observable. */
-function makeContext() {
-	const deleted: string[] = [];
-	const locals = { user: { id: 1 } as unknown, userToken: 'jwt-1' };
-	const context = {
-		cookies: { delete: (name: string) => deleted.push(name) },
-		locals,
-	} as unknown as ActionAPIContext;
-
-	return { context, deleted, locals };
 }
 
 beforeEach(() => {
@@ -49,7 +39,7 @@ describe('auth.login', () => {
 
 		const result = await handlerOf(auth.login)(
 			{ email: 'a@b.com', password: 'secret123' },
-			{} as ActionAPIContext,
+			createActionContext(),
 		);
 
 		expect(result).toEqual({ jwt: 'token-1', user: { id: 1, email: 'a@b.com' } });
@@ -71,10 +61,10 @@ describe('auth.login', () => {
 		);
 
 		try {
-			await handlerOf(auth.login)({ email: 'a@b.com', password: 'wrong' }, {} as ActionAPIContext);
+			await handlerOf(auth.login)({ email: 'a@b.com', password: 'wrong' }, createActionContext());
 			throw new Error('expected login to throw');
 		} catch (error) {
-			expect((error as Error).message).toBe('Adresse email ou mot de passe incorrect');
+			expect(messageOf(error)).toBe('Adresse email ou mot de passe incorrect');
 		}
 	});
 });
@@ -85,7 +75,7 @@ describe('auth.register', () => {
 
 		const result = await handlerOf(auth.register)(
 			{ email: 'new@b.com', password: 'secret123', master: undefined },
-			{} as ActionAPIContext,
+			createActionContext(),
 		);
 
 		expect(result).toEqual({ email: 'new@b.com' });
@@ -94,14 +84,17 @@ describe('auth.register', () => {
 
 describe('auth.logout', () => {
 	it('clears the session cookies and returns the disconnect flag', async () => {
-		const { context, deleted, locals } = makeContext();
+		const context = createActionContext({ id: 1 }, 'jwt-1', {
+			user_token: 'jwt-1',
+			user_data: { id: 1 },
+		});
 
 		const result = await handlerOf(auth.logout)(undefined, context);
 
 		expect(result).toEqual({ disconnect: true, message: 'You are now logged out.' });
-		expect(deleted).toContain('user_token');
-		expect(deleted).toContain('user_data');
-		expect(locals.user).toBeNull();
-		expect(locals.userToken).toBe('');
+		expect(context.cookies.store.has('user_token')).toBe(false);
+		expect(context.cookies.store.has('user_data')).toBe(false);
+		expect(context.locals.user).toBeNull();
+		expect(context.locals.userToken).toBe('');
 	});
 });

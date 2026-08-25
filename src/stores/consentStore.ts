@@ -36,18 +36,20 @@ export const updateConsent = (preferences: { analytics: boolean; functional: boo
 /**
  * Observable store tracking the user's cookie consent and category preferences.
  */
-const consentStore = observable({
+const initialConsent: ConsentState = {
 	hasConsented: false,
 	preferences: {
 		analytics: false,
 		functional: false,
 	},
-} as ConsentState);
+};
+
+const consentStore = observable(initialConsent);
 
 /**
  * Load consent preferences from localStorage
  */
-if (typeof window !== 'undefined') {
+if (!import.meta.env.SSR) {
 	const savedConsent = localStorage.getItem('cookie-consent');
 	if (savedConsent) {
 		const parsed = JSON.parse(savedConsent);

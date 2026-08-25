@@ -1,7 +1,15 @@
+import type { JsonValue } from '@interfaces/json';
+import { parseJson } from '@lib/json';
+
 interface ParsedApiResponse {
 	hasBody: boolean;
 	parseError: boolean;
-	payload?: unknown;
+	payload?: JsonValue;
+}
+
+interface FetchFallbackProps {
+	wrappedByKey?: string;
+	wrappedByList?: boolean;
 }
 
 const parseApiResponseBody = async (response: Response): Promise<ParsedApiResponse> => {
@@ -17,7 +25,7 @@ const parseApiResponseBody = async (response: Response): Promise<ParsedApiRespon
 		return {
 			hasBody: true,
 			parseError: false,
-			payload: JSON.parse(rawBody),
+			payload: parseJson(rawBody),
 		};
 	} catch {
 		const preview = rawBody.length > 500 ? `${rawBody.slice(0, 500)}...` : rawBody;
@@ -32,18 +40,17 @@ const parseApiResponseBody = async (response: Response): Promise<ParsedApiRespon
 	}
 };
 
-const createFetchFallback = <T>({
-	wrappedByKey,
-	wrappedByList,
-}: {
-	wrappedByKey?: string;
-	wrappedByList?: boolean;
-}): T => {
-	if (wrappedByKey) return [] as T;
-	if (wrappedByList) return {} as T;
-	return {} as T;
+const createFetchFallback = <T>({ wrappedByKey }: FetchFallbackProps): T => {
+	// SAFETY: `T` is the payload contract the caller declared on `fetchApi<T>`; no
+	// payload was decoded here. The value returned is the empty form of that
+	// contract — a list when the response is unwrapped by key, an empty object
+	// otherwise — which is the documented degraded mode (docs/error-handling.md).
+	return (wrappedByKey ? [] : {}) as T;
 };
 
+// SAFETY: same contract as `createFetchFallback`: `T` is caller-declared and an
+// empty object is the documented empty value returned for a body-less response.
 const createSubmitFallback = <T>(): T => ({}) as T;
 
 export { createFetchFallback, createSubmitFallback, parseApiResponseBody };
+export type { FetchFallbackProps, ParsedApiResponse };

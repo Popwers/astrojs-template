@@ -29,7 +29,7 @@ interface Props {
 
 const schemas = getSchemas(Astro.url);
 const { title = "Default title", description = "Default description" } =
-	Astro.props as Props;
+	Astro.props;
 const shouldRegisterPwa = import.meta.env.PROD || pwaInfo?.pwaInDevEnvironment;
 const shouldCleanupDevServiceWorkers = import.meta.env.DEV;
 

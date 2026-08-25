@@ -33,7 +33,7 @@ export const auth = {
 					body: {
 						email,
 						password,
-						...(master ? { master } : {}),
+						master: master || undefined,
 					},
 				})
 			) {

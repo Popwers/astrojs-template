@@ -9,11 +9,34 @@ interface FetchProps {
 	returnError?: boolean;
 }
 
+/**
+ * Files attached to a multipart submission, keyed by the Strapi field they fill.
+ */
+interface SubmitFiles {
+	[field: string]: File | File[] | undefined;
+}
+
+/**
+ * A single field of a JSON or multipart submission body.
+ */
+type SubmitBodyValue =
+	| File
+	| FileList
+	| SubmitFiles
+	| boolean
+	| null
+	| number
+	| number[]
+	| string
+	| undefined;
+
+interface SubmitBody {
+	[field: string]: SubmitBodyValue;
+}
+
 interface SubmitProps {
 	endpoint: string;
-	body?:
-		| Record<string, string | number | boolean | File | FileList | undefined | number[] | object | null>
-		| FormData;
+	body?: FormData | SubmitBody;
 	token?: string;
 	method?: 'POST' | 'PUT' | 'DELETE';
 	contentType?: 'application/json' | 'multipart/form-data';
@@ -46,4 +69,13 @@ interface StrapiData {
 		  };
 }
 
-export type { FetchProps, StrapiData, StrapiError, StrapiUserData, SubmitProps };
+export type {
+	FetchProps,
+	StrapiData,
+	StrapiError,
+	StrapiUserData,
+	SubmitBody,
+	SubmitBodyValue,
+	SubmitFiles,
+	SubmitProps,
+};

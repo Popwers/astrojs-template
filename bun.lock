@@ -28,6 +28,7 @@
       },
       "devDependencies": {
         "@astrojs/check": "^0.9.9",
+        "@oxlint/plugins": "1.68.0",
         "@playform/compress": "^0.2.3",
         "@semantic-release/changelog": "^6.0.3",
         "@semantic-release/git": "^10.0.1",

@@ -1,5 +1,9 @@
 ---
-const { errors } = Astro.props as { errors: string[] };
+interface Props {
+	errors: string[];
+}
+
+const { errors } = Astro.props;
 ---
 
 {

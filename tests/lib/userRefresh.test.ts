@@ -3,20 +3,19 @@ import { describe, expect, it } from 'bun:test';
 import type { User } from '@interfaces/user';
 import { isPersistableUser, mergeUsers, resolveUserAfterRefresh } from '@lib/userRefresh';
 
-const createUser = (overrides: Partial<User> = {}): User =>
-	({
-		id: 1,
-		documentId: 'user-document-id',
-		email: 'john@example.com',
-		provider: 'local',
-		confirmed: true,
-		blocked: false,
-		createdAt: new Date(),
-		updatedAt: new Date(),
-		publishedAt: null,
-		username: 'john_doe',
-		...overrides,
-	}) as User;
+const createUser = (overrides: Partial<User> = {}): User => ({
+	id: 1,
+	documentId: 'user-document-id',
+	email: 'john@example.com',
+	provider: 'local',
+	confirmed: true,
+	blocked: false,
+	createdAt: new Date(),
+	updatedAt: new Date(),
+	publishedAt: null,
+	username: 'john_doe',
+	...overrides,
+});
 
 describe('user refresh helpers', () => {
 	it('merges the current user with fallback fields', () => {
@@ -88,7 +87,7 @@ describe('user refresh helpers', () => {
 		const result = await resolveUserAfterRefresh({
 			currentUser: createUser(),
 			fallbackUser: null,
-			refresh: async () => ({ id: 1 }) as User,
+			refresh: async () => ({ id: 1 }),
 			context: 'profile update',
 		});
 

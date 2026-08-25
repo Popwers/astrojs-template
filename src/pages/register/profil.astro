@@ -6,14 +6,15 @@ import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
 import SubmitButton from '@components/site/global/input/SubmitButton';
 import LoginLayout from '@layouts/login.astro';
 
+import { isStrapiUser } from '@lib/strapi';
 import { updateUserCookie } from '@lib/userCookie';
-
-import type { User } from '@interfaces/user';
 
 const result = Astro.getActionResult(actions.user.profile);
 if (result && !result.error) {
-	const data = result.data as User;
-	updateUserCookie(Astro.cookies, data);
+	if (!isStrapiUser(result.data)) {
+		throw new Error('Profile update succeeded but the API returned an incomplete user payload.');
+	}
+	updateUserCookie(Astro.cookies, result.data);
 
 	return Astro.redirect('/dashboard');
 }

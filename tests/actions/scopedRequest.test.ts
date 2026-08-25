@@ -1,17 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 
 import scopedRequest from '@actions/utility/scopedRequest';
+import type { JsonValue } from '@interfaces/json';
+
+import { codeOf, messageOf } from '../utils/actionError';
+import { installFetchStub } from '../utils/fetchStub';
 
 let originalFetch: typeof globalThis.fetch;
 let originalError: typeof console.error;
 
 /** Install a fetch stub resolving to the given Response (or throwing if a thunk throws). */
 function stubFetch(response: Response | (() => never)) {
-	globalThis.fetch = (async () =>
-		typeof response === 'function' ? response() : response) as unknown as typeof globalThis.fetch;
+	installFetchStub(async () => (response instanceof Response ? response : response()));
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
+function jsonResponse(body: JsonValue, status = 200): Response {
 	return new Response(JSON.stringify(body), {
 		status,
 		headers: { 'content-type': 'application/json' },
@@ -36,7 +39,7 @@ describe('scopedRequest', () => {
 		const result = await scopedRequest({ endpoint: 'auth/local', body: { identifier: 'a' } });
 
 		// `result` is a Strapi union; compare structurally without narrowing it.
-		expect(result as unknown).toEqual({ jwt: 'token-1', user: { id: 1 } });
+		expect<unknown>(result).toEqual({ jwt: 'token-1', user: { id: 1 } });
 	});
 
 	it('throws FORBIDDEN when the API returns a ForbiddenError', async () => {
@@ -51,7 +54,7 @@ describe('scopedRequest', () => {
 			await scopedRequest({ endpoint: 'users/2', body: {}, method: 'PUT' });
 			throw new Error('expected scopedRequest to throw');
 		} catch (error) {
-			expect((error as { code?: string }).code).toBe('FORBIDDEN');
+			expect(codeOf(error)).toBe('FORBIDDEN');
 		}
 	});
 
@@ -67,7 +70,7 @@ describe('scopedRequest', () => {
 			await scopedRequest({ endpoint: 'auth/local', body: {} });
 			throw new Error('expected scopedRequest to throw');
 		} catch (error) {
-			expect((error as { code?: string }).code).toBe('BAD_REQUEST');
+			expect(codeOf(error)).toBe('BAD_REQUEST');
 		}
 	});
 
@@ -90,7 +93,7 @@ describe('scopedRequest', () => {
 			await scopedRequest({ endpoint: 'auth/local', body: {} });
 			throw new Error('expected scopedRequest to throw');
 		} catch (error) {
-			expect((error as Error).message).toBe('Adresse email ou mot de passe incorrect');
+			expect(messageOf(error)).toBe('Adresse email ou mot de passe incorrect');
 		}
 	});
 
@@ -113,7 +116,7 @@ describe('scopedRequest', () => {
 			await scopedRequest({ endpoint: 'auth/local', body: {} });
 			throw new Error('expected scopedRequest to throw');
 		} catch (error) {
-			expect((error as Error).message).toContain('email is required');
+			expect(messageOf(error)).toContain('email is required');
 		}
 	});
 
@@ -126,7 +129,7 @@ describe('scopedRequest', () => {
 			await scopedRequest({ endpoint: 'auth/local', body: {} });
 			throw new Error('expected scopedRequest to throw');
 		} catch (error) {
-			expect((error as Error).message).toBe(
+			expect(messageOf(error)).toBe(
 				'Nous ne parvenons pas à récupérer les données sur le serveur, veuillez réessayer dans quelques instants',
 			);
 		}

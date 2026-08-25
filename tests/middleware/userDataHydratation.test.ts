@@ -1,72 +1,13 @@
 import { describe, expect, it } from 'bun:test';
 
-import type { StrapiError } from '@interfaces/strapi';
+import type { FetchProps, StrapiError } from '@interfaces/strapi';
 
 import { hydrateUserData } from '../../src/middleware/userDataHydratation';
-
-type CookieValue = string | number | Record<string, unknown>;
-type TestUser = Record<string, unknown> | null;
-
-interface TestContext {
-	cookies: ReturnType<typeof createCookies>;
-	locals: {
-		user: TestUser;
-		userToken: string;
-	};
-	url: URL;
-	redirect: (path: string, status: number) => Response;
-}
-
-function createCookies(initialValues: Record<string, CookieValue>) {
-	const store = new Map<string, CookieValue>(Object.entries(initialValues));
-
-	return {
-		has(name: string) {
-			return store.has(name);
-		},
-		get(name: string) {
-			if (!store.has(name)) return undefined;
-
-			const value = store.get(name);
-			return {
-				value: typeof value === 'string' ? value : JSON.stringify(value),
-				json: () => value,
-			};
-		},
-		set(name: string, value: CookieValue) {
-			store.set(name, value);
-		},
-		delete(name: string) {
-			store.delete(name);
-		},
-		store,
-	};
-}
-
-function createContext(initialCookies: Record<string, CookieValue>): TestContext {
-	const cookies = createCookies(initialCookies);
-
-	return {
-		cookies,
-		locals: {
-			user: null,
-			userToken: '',
-		},
-		url: new URL('https://example.com/dashboard'),
-		redirect(path: string, status: number) {
-			return new Response(null, {
-				status,
-				headers: {
-					Location: path,
-				},
-			});
-		},
-	};
-}
+import { asApiContext, createMiddlewareContext } from '../utils/middlewareContext';
 
 describe('userDataHydratation middleware', () => {
 	it('redirects to login and clears the session when refresh returns 401', async () => {
-		const context = createContext({
+		const context = createMiddlewareContext('/dashboard', {
 			user_token: 'expired-token',
 			user_data: {
 				id: 12,
@@ -79,7 +20,7 @@ describe('userDataHydratation middleware', () => {
 
 		let nextCalled = false;
 		const response = await hydrateUserData(
-			context as never,
+			asApiContext(context),
 			async () => {
 				nextCalled = true;
 				return new Response('ok');
@@ -122,7 +63,7 @@ describe('userDataHydratation middleware', () => {
 			username: 'user_12',
 			avatar: undefined,
 		};
-		const context = createContext({
+		const context = createMiddlewareContext('/dashboard', {
 			user_token: 'still-valid-token',
 			user_data: cookieUser,
 			user_data_timestamp: '0',
@@ -130,7 +71,7 @@ describe('userDataHydratation middleware', () => {
 
 		let nextCalled = false;
 		const response = await hydrateUserData(
-			context as never,
+			asApiContext(context),
 			async () => {
 				nextCalled = true;
 				return new Response('ok', { status: 200 });
@@ -165,20 +106,20 @@ describe('userDataHydratation middleware', () => {
 			...cachedUser,
 			avatar: { documentId: 'avatar-doc', url: '/uploads/avatar.jpg' },
 		};
-		const context = createContext({
+		const context = createMiddlewareContext('/dashboard', {
 			user_token: 'still-valid-token',
 			user_data: cachedUser,
 			user_data_timestamp: '0',
 		});
 
-		let receivedParams: { query?: Record<string, string> } | undefined;
+		let receivedParams: FetchProps | undefined;
 
 		const response = await hydrateUserData(
-			context as never,
+			asApiContext(context),
 			async () => new Response('ok', { status: 200 }),
 			async (params) => {
 				receivedParams = params;
-				return apiResponse as never;
+				return apiResponse;
 			},
 		);
 
@@ -214,16 +155,16 @@ describe('userDataHydratation middleware', () => {
 			username: 'user_12',
 			avatar: undefined,
 		};
-		const context = createContext({
+		const context = createMiddlewareContext('/dashboard', {
 			user_token: 'still-valid-token',
 			user_data: cookieUser,
 			user_data_timestamp: '0',
 		});
 
 		const response = await hydrateUserData(
-			context as never,
+			asApiContext(context),
 			async () => new Response('ok', { status: 200 }),
-			async () => ({ id: 12 }) as never, // Incomplete — missing documentId, email, username
+			async () => ({ id: 12 }), // Incomplete — missing documentId, email, username
 		);
 
 		expect(response.status).toBe(200);

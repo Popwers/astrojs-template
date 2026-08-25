@@ -72,16 +72,19 @@
 	import { animate } from 'motion';
 
 	const init = () => {
-		const banner = document.getElementById('cookie-banner') as HTMLDivElement;
-		const modal = document.getElementById('cookie-modal') as HTMLDivElement;
-		const customizeBtn = document.getElementById('customize-cookies') as HTMLButtonElement;
-		const acceptAllBtn = document.getElementById('accept-all-cookies') as HTMLButtonElement;
-		const savePreferencesBtn = document.getElementById('save-preferences') as HTMLButtonElement;
-		const analyticsCheckbox = document.getElementById('analytics-cookies') as HTMLInputElement;
+		const banner = document.querySelector<HTMLDivElement>('#cookie-banner');
+		const modal = document.querySelector<HTMLDivElement>('#cookie-modal');
+		const customizeBtn = document.querySelector<HTMLButtonElement>('#customize-cookies');
+		const acceptAllBtn = document.querySelector<HTMLButtonElement>('#accept-all-cookies');
+		const savePreferencesBtn = document.querySelector<HTMLButtonElement>('#save-preferences');
+		const analyticsCheckbox = document.querySelector<HTMLInputElement>('#analytics-cookies');
+
+		// The banner markup is not on every page: bail out when this component is not rendered.
+		if (!banner || !modal || !analyticsCheckbox) return;
 
 		// On init add initClass to prevent multiple event listener
-		if (!banner?.classList.contains('init')) {
-			banner?.classList.add('init');
+		if (!banner.classList.contains('init')) {
+			banner.classList.add('init');
 
 			// If the user has already consented, hide the banner
 			const hasConsented = localStorage.getItem('cookie-consent');

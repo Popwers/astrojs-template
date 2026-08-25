@@ -7,12 +7,16 @@ import { isPersistableUser } from '@lib/userRefresh';
 import type { APIContext, MiddlewareNext } from 'astro';
 import { defineMiddleware } from 'astro/middleware';
 
-type LoadUser = (params: FetchProps) => Promise<User | StrapiError>;
+/**
+ * Loads the session user from the API. The payload is only trusted once
+ * `isPersistableUser` has vouched for it, hence the partial contract.
+ */
+type LoadUser = (params: FetchProps) => Promise<Partial<User> | StrapiError>;
 
 async function defaultLoadUser(params: FetchProps): Promise<User | StrapiError> {
 	const { default: fetchApi } = await import('@lib/strapi');
 
-	return (await fetchApi<User | StrapiError>(params)) as User | StrapiError;
+	return await fetchApi<User | StrapiError>(params);
 }
 
 /**
@@ -34,7 +38,7 @@ export async function hydrateUserData(
 			const shouldRefresh = !lastUpdate || Date.now() - Number(lastUpdate) > REFRESH_INTERVAL;
 
 			// Cookie only has minimal data — set it as base
-			if (cookieUser) context.locals.user = cookieUser as User;
+			if (cookieUser) context.locals.user = cookieUser;
 
 			if (shouldRefresh) {
 				const response = await refreshUserData(context, loadUser);

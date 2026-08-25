@@ -1,8 +1,11 @@
+import type { JsonValue } from '@interfaces/json';
 import type { FetchProps, StrapiData, StrapiError, StrapiUserData, SubmitProps } from '@interfaces/strapi';
 import type { User } from '@interfaces/user';
 import convertToFormData from '@lib/form';
+import { isJsonArray, isJsonObject } from '@lib/json';
 import { createFetchFallback, createSubmitFallback, parseApiResponseBody } from '@lib/strapiClient';
 import { createStrapiError, isStrapiError, normalizeStrapiError } from '@lib/strapiError';
+import { isPersistableUser } from '@lib/userRefresh';
 import { STRAPI_TOKEN, STRAPI_URL } from 'astro:env/server';
 
 /**
@@ -47,6 +50,8 @@ export default async function fetchApi<T>({
 		if (!response.ok) {
 			const error = normalizeStrapiError(parsedResponse.payload, response.status, fallbackMessage);
 			console.error(`API error: ${error.error.status} on ${endpoint}`, error.error.message);
+			// SAFETY: `returnError: true` is the caller opting into the failure branch, so it
+			// declares `T` as a union including `StrapiError` (see the JSDoc above).
 			return returnError ? (error as T) : createFetchFallback<T>({ wrappedByKey, wrappedByList });
 		}
 
@@ -60,24 +65,82 @@ export default async function fetchApi<T>({
 		}
 
 		const payload = parsedResponse.payload;
-		if (isStrapiError(payload)) return payload as T;
+		if (isStrapiError(payload)) {
+			// SAFETY: the API answered 2xx with a Strapi error envelope; callers that can
+			// observe it declare `T` as a union including `StrapiError` (see the JSDoc above).
+			return payload as T;
+		}
 
-		let data: unknown = payload;
+		let data: JsonValue | undefined = payload;
 
 		if (wrappedByKey) {
-			data = (data as Record<string, unknown> | null | undefined)?.[wrappedByKey] ?? [];
+			data = isJsonObject(data) ? (data[wrappedByKey] ?? []) : [];
 		}
 		if (wrappedByList) {
-			data = (data as unknown[] | null | undefined)?.[0] ?? {};
+			data = isJsonArray(data) ? (data[0] ?? {}) : {};
 		}
 
+		// SAFETY: `T` is the payload contract the caller declared for this endpoint; the
+		// decoded JSON is returned verbatim after unwrapping and is never inspected here.
 		return data as T;
 	} catch (error) {
 		console.error('API call failed:', error);
+		// SAFETY: `returnError: true` is the caller opting into the failure branch, so it
+		// declares `T` as a union including `StrapiError` (see the JSDoc above).
 		return returnError
 			? (createStrapiError(500, error instanceof Error ? error.message : 'An error occurred') as T)
 			: createFetchFallback<T>({ wrappedByKey, wrappedByList });
 	}
+}
+
+/**
+ * What `submitApi` can hold between decoding a response body and returning it:
+ * the decoded JSON, or one of the envelopes the Strapi endpoints answer with.
+ */
+type SubmitPayload = JsonValue | StrapiData | StrapiUserData | User | undefined;
+
+/**
+ * Detect a 2xx body that can be one of the success envelopes `submitApi` returns.
+ * The Strapi endpoints this helper targets answer 2xx with an object node — a user,
+ * a login envelope or a `data`/`error` envelope — and never with a bare primitive,
+ * so a non-object body is a payload no caller of `submitApi` can consume.
+ */
+function isSubmitSuccessPayload(value: SubmitPayload): value is StrapiData | StrapiUserData | User {
+	return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** What a successful submission resolves to, before the caller narrows it. */
+type SubmitResult = StrapiData | StrapiError | StrapiUserData | User;
+
+/**
+ * Narrow a submission payload to the auth envelope carrying a JWT and its user.
+ * Used by the pages that open a session from an action result.
+ */
+export function isStrapiUserData(value: SubmitResult | undefined): value is StrapiUserData {
+	if (!value || !('jwt' in value) || !('user' in value)) return false;
+
+	return typeof value.jwt === 'string' && value.jwt.length > 0 && isPersistableUser(value.user);
+}
+
+/**
+ * Narrow a submission payload to a user record complete enough to be persisted.
+ */
+export function isStrapiUser(value: SubmitResult | undefined): value is User {
+	if (!value || !('id' in value) || !('username' in value)) return false;
+
+	return isPersistableUser(value);
+}
+
+/**
+ * Build the body of a `multipart/form-data` submission, leaving an already built
+ * FormData untouched.
+ * @param submitBody - The declared submission body.
+ * @returns The FormData to send, or `undefined` when there is no body.
+ */
+function toMultipartBody(submitBody: SubmitProps['body']): FormData | undefined {
+	if (!submitBody) return undefined;
+
+	return submitBody instanceof FormData ? submitBody : convertToFormData(submitBody);
 }
 
 /**
@@ -100,10 +163,7 @@ export async function submitApi({
 		const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
 
 		// Handle multipart/form-data body
-		const requestBody =
-			contentType === 'multipart/form-data' && body && typeof body === 'object'
-				? convertToFormData(body as Record<string, unknown>)
-				: body;
+		const multipartBody = contentType === 'multipart/form-data' ? toMultipartBody(body) : undefined;
 
 		const url = new URL(`${STRAPI_URL}/api/${normalizedEndpoint}`);
 		const response = await fetch(url.toString(), {
@@ -117,8 +177,7 @@ export async function submitApi({
 				}),
 				...(token && { Authorization: `Bearer ${token}` }),
 			},
-			body:
-				contentType === 'application/json' ? JSON.stringify(requestBody) : (requestBody as FormData),
+			body: contentType === 'application/json' ? JSON.stringify(body) : multipartBody,
 			signal: AbortSignal.timeout(30000),
 		});
 
@@ -144,8 +203,9 @@ export async function submitApi({
 
 		const data = parsedResponse.payload;
 		if (isStrapiError(data)) return data;
+		if (isSubmitSuccessPayload(data)) return data;
 
-		return data as StrapiUserData | StrapiData | StrapiError;
+		return createSubmitFallback<StrapiUserData | StrapiData | StrapiError | User>();
 	} catch (error) {
 		console.error('API call failed:', error);
 		return createStrapiError(500, error instanceof Error ? error.message : 'An error occurred');

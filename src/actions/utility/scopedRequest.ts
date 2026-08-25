@@ -4,6 +4,12 @@ import { ActionError } from 'astro:actions';
 
 import TRANSLATIONS from './translation.json';
 
+/** Error messages the API can return, indexed by their English wording. */
+const translations: Record<string, string> = TRANSLATIONS;
+
+/** A validation detail is either the message itself or an object carrying it. */
+const isDetailText = (detail: string | { message: string }): detail is string => typeof detail === 'string';
+
 const scopedRequest = async ({
 	endpoint,
 	body,
@@ -26,7 +32,7 @@ const scopedRequest = async ({
 					response.error.details && Object.keys(response.error.details).length > 0
 						? `: ${Object.values(response.error.details)
 								.flat()
-								.map((detail) => (typeof detail === 'string' ? detail : detail.message))
+								.map((detail) => (isDetailText(detail) ? detail : detail.message))
 								.join(', ')}`
 						: ''
 				}`,
@@ -39,8 +45,7 @@ const scopedRequest = async ({
 			code: error instanceof ActionError ? error.code : 'INTERNAL_SERVER_ERROR',
 			message:
 				error instanceof Error
-					? (TRANSLATIONS[error.message as keyof typeof TRANSLATIONS] ??
-						`Une erreur est survenue : ${error.message}`)
+					? (translations[error.message] ?? `Une erreur est survenue : ${error.message}`)
 					: 'Une erreur est survenue, veuillez réessayer dans quelques instants.',
 		});
 	}

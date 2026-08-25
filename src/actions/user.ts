@@ -79,7 +79,7 @@ export const user = {
 				endpoint: 'users/avatar',
 				body: {
 					files: {
-						avatar: avatar as File,
+						avatar,
 					},
 				},
 				token,

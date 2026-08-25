@@ -1,4 +1,5 @@
 /// <reference lib="webworker" />
+import type { JsonValue } from '@interfaces/json';
 import type { ManifestEntry } from 'workbox-build';
 import { clientsClaim } from 'workbox-core';
 import { cleanupOutdatedCaches, precacheAndRoute } from 'workbox-precaching';
@@ -18,6 +19,17 @@ interface PushPayload {
 	tag?: string;
 }
 
+/**
+ * A push body is only usable as a payload when it decodes to an object node.
+ */
+const isPushPayload = (value: JsonValue | PushPayload | undefined): value is PushPayload =>
+	typeof value === 'object' && value !== null && !Array.isArray(value);
+
+/**
+ * Narrow a notification data field to text.
+ */
+const isText = (value: JsonValue | undefined): value is string => typeof value === 'string';
+
 const resolveUrl = (rawUrl: string): string => {
 	return new URL(rawUrl, self.location.origin).href;
 };
@@ -26,8 +38,9 @@ const parsePushPayload = (event: PushEvent): PushPayload | null => {
 	if (!event.data) return null;
 
 	try {
-		const payload = event.data.json() as PushPayload;
-		return payload;
+		const payload: JsonValue = event.data.json();
+
+		return isPushPayload(payload) ? payload : {};
 	} catch {
 		const text = event.data.text();
 		if (!text) return null;
@@ -69,7 +82,8 @@ self.addEventListener('push', (event: PushEvent) => {
 });
 
 self.addEventListener('notificationclick', (event: NotificationEvent) => {
-	const url = typeof event.notification.data?.url === 'string' ? event.notification.data.url : '/dashboard';
+	const rawUrl: JsonValue | undefined = event.notification.data?.url;
+	const url = isText(rawUrl) ? rawUrl : '/dashboard';
 	const targetUrl = resolveUrl(url);
 
 	event.notification.close();

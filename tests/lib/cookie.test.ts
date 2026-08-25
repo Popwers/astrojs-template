@@ -4,7 +4,9 @@ import { getBrowserCookie, removeBrowserCookie, setBrowserCookie } from '@lib/co
 
 describe('Cookie functions', () => {
 	beforeEach(() => {
-		global.document = { cookie: '' } as unknown as Document;
+		// SAFETY: `@lib/cookie` only ever reads and writes `document.cookie`; the stub provides
+		// exactly that member, so any other DOM access would throw instead of reading a fake.
+		global.document = { cookie: '' } as Document;
 	});
 
 	describe('setBrowserCookie', () => {

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'bun:test';
 
+import type { JsonArray, JsonObject } from '@interfaces/json';
 import { createFetchFallback, createSubmitFallback, parseApiResponseBody } from '@lib/strapiClient';
 
 describe('strapiClient helpers', () => {
@@ -42,12 +43,12 @@ describe('strapiClient helpers', () => {
 	});
 
 	it('builds the legacy fetch fallback shapes', () => {
-		expect(createFetchFallback<unknown[]>({ wrappedByKey: 'data' })).toEqual([]);
-		expect(createFetchFallback<Record<string, unknown>>({ wrappedByList: true })).toEqual({});
-		expect(createFetchFallback<Record<string, unknown>>({})).toEqual({});
+		expect(createFetchFallback<JsonArray>({ wrappedByKey: 'data' })).toEqual([]);
+		expect(createFetchFallback<JsonObject>({ wrappedByList: true })).toEqual({});
+		expect(createFetchFallback<JsonObject>({})).toEqual({});
 	});
 
 	it('builds an empty submit fallback', () => {
-		expect(createSubmitFallback<Record<string, unknown>>()).toEqual({});
+		expect(createSubmitFallback<JsonObject>()).toEqual({});
 	});
 });

@@ -16,7 +16,7 @@ const {
 	description = 'Default description',
 	dashboardTitle,
 	dashboardSubtitle,
-} = Astro.props as Props;
+} = Astro.props;
 const pathname: string = Astro.url.pathname.replace(/\/$/, '');
 const isDashboard: boolean = pathname === '/dashboard';
 ---

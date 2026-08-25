@@ -4,7 +4,7 @@ interface Props {
 	dotsColor?: string;
 }
 
-const { class: className, dotsColor = 'current', ...props } = Astro.props as Props;
+const { class: className, dotsColor = 'current', ...props } = Astro.props;
 ---
 
 <div {...props} class={`flex justify-center items-center space-x-2 h-[3.4rem] ${className}`}>

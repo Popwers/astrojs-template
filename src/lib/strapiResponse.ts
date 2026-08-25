@@ -1,33 +1,52 @@
-function asObject<T extends object>(value: unknown): T | null {
-	if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
+import type { JsonArray, JsonObject, JsonValue } from '@interfaces/json';
+import { isJsonArray, isJsonNumber, isJsonObject } from '@lib/json';
 
-	return value as T;
+/**
+ * Narrow a decoded payload to an object node, or `null` when it is not one.
+ */
+function asObject(value: JsonValue | undefined): JsonObject | null {
+	return isJsonObject(value) ? value : null;
 }
 
-function asArray<T>(value: unknown): T[] {
-	return Array.isArray(value) ? (value as T[]) : [];
+/**
+ * Narrow a decoded payload to an array node, or `[]` when it is not one.
+ */
+function asArray(value: JsonValue | undefined): JsonArray {
+	return isJsonArray(value) ? value : [];
 }
 
-function asPaginatedResults<T>(value: unknown): T[] {
-	return asArray<T>(asObject<{ results?: unknown }>(value)?.results);
+/**
+ * Read the `results` list of a Strapi pagination envelope.
+ */
+function asPaginatedResults(value: JsonValue | undefined): JsonArray {
+	return asArray(asObject(value)?.results);
 }
 
-function asPaginatedPageCount(value: unknown): number {
-	const pageCount = asObject<{ pageCount?: unknown }>(value)?.pageCount;
+/**
+ * Read the `pageCount` of a Strapi pagination envelope, or `0` when it is absent.
+ */
+function asPaginatedPageCount(value: JsonValue | undefined): number {
+	const pageCount = asObject(value)?.pageCount;
 
-	return typeof pageCount === 'number' && Number.isFinite(pageCount) ? pageCount : 0;
+	return isJsonNumber(pageCount) && Number.isFinite(pageCount) ? pageCount : 0;
 }
 
-function asCollectionData<T>(value: unknown): T[] {
-	return asArray<T>(asObject<{ data?: unknown }>(value)?.data);
+/**
+ * Read the `data` list of a Strapi collection response.
+ */
+function asCollectionData(value: JsonValue | undefined): JsonArray {
+	return asArray(asObject(value)?.data);
 }
 
-function asCollectionPageCount(value: unknown): number {
-	const meta = asObject<{ meta?: unknown }>(value)?.meta;
-	const pagination = asObject<{ pagination?: unknown }>(meta)?.pagination;
-	const pageCount = asObject<{ pageCount?: unknown }>(pagination)?.pageCount;
+/**
+ * Read `meta.pagination.pageCount` of a Strapi collection response, or `0` when absent.
+ */
+function asCollectionPageCount(value: JsonValue | undefined): number {
+	const meta = asObject(value)?.meta;
+	const pagination = asObject(meta)?.pagination;
+	const pageCount = asObject(pagination)?.pageCount;
 
-	return typeof pageCount === 'number' && Number.isFinite(pageCount) ? pageCount : 0;
+	return isJsonNumber(pageCount) && Number.isFinite(pageCount) ? pageCount : 0;
 }
 
 export {

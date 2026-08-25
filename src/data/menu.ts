@@ -57,4 +57,4 @@ export default {
 			name: 'Menu 1',
 		},
 	],
-} as Menu;
+} satisfies Menu;

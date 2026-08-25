@@ -26,7 +26,7 @@ if (process.env.NODE_ENV === 'production' && SENTRY_DSN) {
 			if (name.includes('health')) return 0;
 
 			// Continue trace decision, if there is any parentSampled information
-			if (typeof parentSampled === 'boolean') {
+			if (parentSampled !== undefined) {
 				return parentSampled;
 			}
 

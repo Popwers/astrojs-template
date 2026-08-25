@@ -10,7 +10,7 @@ interface Props {
 	menu?: boolean;
 }
 
-const { blueIcon, menu } = Astro.props as Props;
+const { blueIcon, menu } = Astro.props;
 // Read the avatar from the session locals (hydrated by middleware from the
 // cookie) instead of refetching users/me on every render.
 const { username = '', avatar } = Astro.locals?.user ?? {};

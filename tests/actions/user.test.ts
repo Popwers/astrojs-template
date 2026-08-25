@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 
 import { user } from '@actions/user';
-import type { ActionAPIContext } from 'astro:actions';
+import type { JsonValue } from '@interfaces/json';
 
-import { handlerOf } from '../utils/actionHandler';
+import { createActionContext, handlerOf } from '../utils/actionHandler';
+import { fetchUrl, installFetchStub, type FetchInit, type FetchInput } from '../utils/fetchStub';
 
 type FetchCall = { url: string; method: string; headers: Headers };
 
@@ -13,34 +14,27 @@ let calls: FetchCall[];
 
 // Mint a fresh Response per call: a body can only be read once, and some
 // handlers (email change) issue more than one request.
-function stubJson(body: unknown, status = 200) {
-	globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
+function stubJson(body: JsonValue, status = 200) {
+	installFetchStub(async (input, init) => {
 		recordCall(input, init);
 		return new Response(JSON.stringify(body), {
 			status,
 			headers: { 'content-type': 'application/json' },
 		});
-	}) as typeof globalThis.fetch;
+	});
 }
 
 // Record the request shape so tests can assert the method, target, and token
 // without coupling to the response body.
-function recordCall(input: RequestInfo | URL, init?: RequestInit) {
-	const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-	calls.push({ url, method: init?.method ?? 'GET', headers: new Headers(init?.headers) });
+function recordCall(input: FetchInput, init: FetchInit) {
+	calls.push({ url: fetchUrl(input), method: init?.method ?? 'GET', headers: new Headers(init?.headers) });
 }
 
-function authedContext(overrides: Record<string, unknown> = {}): ActionAPIContext {
-	return {
-		locals: {
-			user: { id: 9, documentId: 'doc-9', email: 'old@b.com', username: 'bob', ...overrides },
-			userToken: 'jwt-9',
-		},
-		cookies: {},
-	} as unknown as ActionAPIContext;
+function authedContext() {
+	return createActionContext({ id: 9, documentId: 'doc-9', email: 'old@b.com', username: 'bob' }, 'jwt-9');
 }
 
-const anonContext = { locals: { user: null, userToken: '' }, cookies: {} } as unknown as ActionAPIContext;
+const anonContext = createActionContext();
 
 beforeEach(() => {
 	calls = [];

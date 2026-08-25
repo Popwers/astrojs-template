@@ -5,7 +5,6 @@ import type { ActionError } from 'astro:actions';
 import { DEFAULT_COOKIE_OPTIONS_DELETE } from '@data/cookieOptions';
 
 interface ActionData {
-	[key: string]: unknown;
 	message?: string;
 	warningMessage?: string;
 	code?: string;
@@ -22,7 +21,7 @@ interface Props {
 	successMessage?: string;
 }
 
-const { result, box = false, successMessage } = Astro.props as Props;
+const { result, box = false, successMessage } = Astro.props;
 
 const inputErrors = result?.error && isInputError(result.error) ? result.error.fields : {};
 const isAInputError = Object.keys(inputErrors).length > 0;

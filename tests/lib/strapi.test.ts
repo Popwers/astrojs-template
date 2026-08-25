@@ -1,9 +1,19 @@
 import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
 
+import type { JsonValue } from '@interfaces/json';
 import type { StrapiError } from '@interfaces/strapi';
 import fetchApi, { submitApi } from '@lib/strapi';
 
-type FetchArgs = { url: string; init: RequestInit | undefined };
+import { fetchUrl, installFetchStub, type FetchInit } from '../utils/fetchStub';
+
+type FetchArgs = { url: string; init: FetchInit };
+
+/** Narrow a submission result to the Strapi error envelope. */
+function isSubmitError(value: Awaited<ReturnType<typeof submitApi>>): value is StrapiError {
+	if (!('error' in value) || !value.error) return false;
+
+	return typeof value.error.status === 'number' && typeof value.error.message === 'string';
+}
 
 const STRAPI_BASE = 'http://strapi.test/api';
 
@@ -18,14 +28,13 @@ let warnCount: number;
  * `response` may be a factory so each test controls status, body, and headers.
  */
 function stubFetch(response: Response | (() => Response | Promise<Response>) | (() => never)) {
-	globalThis.fetch = (async (input: RequestInfo | URL, init?: RequestInit) => {
-		const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
-		calls.push({ url, init });
-		return typeof response === 'function' ? await response() : response;
-	}) as typeof globalThis.fetch;
+	installFetchStub(async (input, init) => {
+		calls.push({ url: fetchUrl(input), init });
+		return response instanceof Response ? response : await response();
+	});
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
+function jsonResponse(body: JsonValue, status = 200): Response {
 	return new Response(JSON.stringify(body), {
 		status,
 		headers: { 'content-type': 'application/json' },
@@ -160,7 +169,7 @@ describe('submitApi', () => {
 		const result = await submitApi({ endpoint: 'auth/local', body: { identifier: 'a', password: 'b' } });
 
 		// `result` is a Strapi union; compare structurally without narrowing it.
-		expect(result as unknown).toEqual({ jwt: 'token-1', user: { id: 1 } });
+		expect<unknown>(result).toEqual({ jwt: 'token-1', user: { id: 1 } });
 	});
 
 	it('sets Content-Type application/json for JSON submissions', async () => {
@@ -170,7 +179,7 @@ describe('submitApi', () => {
 
 		const headers = new Headers(calls[0]?.init?.headers);
 		expect(headers.get('Content-Type')).toBe('application/json');
-		expect(typeof calls[0]?.init?.body).toBe('string');
+		expect(calls[0]?.init?.body).toBeString();
 	});
 
 	it('returns a normalized error on a 400 response', async () => {
@@ -181,7 +190,8 @@ describe('submitApi', () => {
 			),
 		);
 
-		const result = (await submitApi({ endpoint: 'auth/local', body: {} })) as StrapiError;
+		const result = await submitApi({ endpoint: 'auth/local', body: {} });
+		if (!isSubmitError(result)) throw new Error('expected submitApi to return a Strapi error');
 
 		expect(result.error.status).toBe(400);
 		expect(result.error.message).toBe('Bad input');
@@ -190,7 +200,8 @@ describe('submitApi', () => {
 	it('returns a 502 error when a successful response is not JSON', async () => {
 		stubFetch(textResponse('<html>gateway</html>'));
 
-		const result = (await submitApi({ endpoint: 'auth/local', body: {} })) as StrapiError;
+		const result = await submitApi({ endpoint: 'auth/local', body: {} });
+		if (!isSubmitError(result)) throw new Error('expected submitApi to return a Strapi error');
 
 		expect(result.error.status).toBe(502);
 	});
@@ -200,7 +211,8 @@ describe('submitApi', () => {
 			throw new Error('socket hang up');
 		});
 
-		const result = (await submitApi({ endpoint: 'auth/local', body: {} })) as StrapiError;
+		const result = await submitApi({ endpoint: 'auth/local', body: {} });
+		if (!isSubmitError(result)) throw new Error('expected submitApi to return a Strapi error');
 
 		expect(result.error.status).toBe(500);
 		expect(result.error.message).toBe('socket hang up');

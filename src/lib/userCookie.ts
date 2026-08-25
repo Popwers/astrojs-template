@@ -1,6 +1,7 @@
 import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
+import type { JsonValue } from '@interfaces/json';
 import type { User } from '@interfaces/user';
-import type { AstroCookies } from 'astro';
+import type { AstroCookieSetOptions } from 'astro';
 
 /**
  * Minimal user data stored in cookie (~200 bytes).
@@ -50,18 +51,40 @@ const expandCookieUser = (cookie: CookieUser): Partial<User> => ({
 });
 
 /**
+ * What `user_data` can hold once decoded: the cookie payload this module writes,
+ * or any other JSON a stale or tampered cookie carries.
+ */
+type CookiePayload = JsonValue | CookieUser | undefined;
+
+/**
  * Validates that cookie data has the minimum required fields for auth.
  */
-const isValidCookieUser = (data: unknown): data is CookieUser => {
-	if (!data || typeof data !== 'object') return false;
-	const user = data as Partial<CookieUser>;
+const isValidCookieUser = (data: CookiePayload): data is CookieUser => {
+	if (!data || typeof data !== 'object' || Array.isArray(data)) return false;
+
 	return (
-		typeof user.id === 'number' &&
-		typeof user.documentId === 'string' &&
-		typeof user.email === 'string' &&
-		typeof user.username === 'string'
+		typeof data.id === 'number' &&
+		typeof data.documentId === 'string' &&
+		typeof data.email === 'string' &&
+		typeof data.username === 'string'
 	);
 };
+
+/**
+ * The cookie write surface this module needs. Astro's `AstroCookies` satisfies it; so does
+ * an in-memory jar in tests.
+ */
+interface CookieWriter {
+	set(name: string, value: CookieUser | string, options: AstroCookieSetOptions): void;
+}
+
+/**
+ * The cookie read surface this module needs. Astro's `AstroCookies` satisfies it; so does
+ * an in-memory jar in tests.
+ */
+interface CookieReader {
+	get(name: string): { json: () => CookiePayload } | undefined;
+}
 
 /**
  * Updates the user_data cookie with minimal essential data.
@@ -70,7 +93,7 @@ const isValidCookieUser = (data: unknown): data is CookieUser => {
  * @param newUserData - Fresh user data (can be full User or partial).
  * @returns Partial User for Astro.locals (only cookie fields).
  */
-export const updateUserCookie = (cookies: AstroCookies, newUserData: Partial<User>): Partial<User> => {
+export const updateUserCookie = (cookies: CookieWriter, newUserData: Partial<User>): Partial<User> => {
 	const cookieUser = extractCookieUser(newUserData);
 
 	cookies.set('user_data', cookieUser, DEFAULT_COOKIE_OPTIONS);
@@ -82,7 +105,7 @@ export const updateUserCookie = (cookies: AstroCookies, newUserData: Partial<Use
 /**
  * Reads the minimal user from cookie and expands to User-like structure.
  */
-export const getUserFromCookie = (cookies: AstroCookies): Partial<User> | null => {
+export const getUserFromCookie = (cookies: CookieReader): Partial<User> | null => {
 	try {
 		const data = cookies.get('user_data')?.json();
 		if (!isValidCookieUser(data)) return null;
@@ -92,4 +115,4 @@ export const getUserFromCookie = (cookies: AstroCookies): Partial<User> | null =
 	}
 };
 
-export type { CookieUser };
+export type { CookieReader, CookieUser, CookieWriter };

@@ -1,4 +1,5 @@
 import { MAX_FILE_SIZE, SUPPORTED_FILE_TYPES } from '@data/userOptions';
+import type { JsonValue } from '@interfaces/json';
 import { z } from 'astro/zod';
 
 /**
@@ -13,10 +14,20 @@ const usernameSchema = z
 	})
 	.min(4, 'Le nom prénom ou la dénomination doit contenir au moins 4 caractères');
 
-const emptyToUndefined = (value: unknown) => {
+const rawFormText = z.string();
+
+/**
+ * Treat a blank form field as an absent one so `.optional()` sees `undefined`
+ * instead of an empty string. Non-text values are handed to the schema untouched.
+ */
+const emptyToUndefined = (value: JsonValue | File | undefined) => {
 	if (value === null || value === undefined) return undefined;
-	if (typeof value !== 'string') return value;
-	const trimmedValue = value.trim();
+
+	const text = rawFormText.safeParse(value);
+	if (!text.success) return value;
+
+	const trimmedValue = text.data.trim();
+
 	return trimmedValue.length === 0 ? undefined : trimmedValue;
 };
 

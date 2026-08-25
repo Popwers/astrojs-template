@@ -14,7 +14,8 @@ declare module '@fontsource-variable/raleway/files/*.woff2' {
 
 declare namespace App {
 	interface Locals {
-		user: User;
+		/** Session user rebuilt from the cookie or refreshed from the API; `null` when logged out. */
+		user: Partial<import('@interfaces/user').User> | null;
 		userToken: string;
 	}
 }
