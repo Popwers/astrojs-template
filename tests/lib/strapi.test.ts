@@ -178,8 +178,9 @@ describe('submitApi', () => {
 		await submitApi({ endpoint: 'auth/local', body: { identifier: 'a' } });
 
 		const headers = new Headers(calls[0]?.init?.headers);
+		const body = calls[0]?.init?.body;
 		expect(headers.get('Content-Type')).toBe('application/json');
-		expect(calls[0]?.init?.body).toBeString();
+		expect(body).toEqual(expect.any(String));
 	});
 
 	it('returns a normalized error on a 400 response', async () => {
