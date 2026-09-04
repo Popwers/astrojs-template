@@ -39,7 +39,8 @@ export const user = {
 				body: {
 					email,
 					username,
-					confirmed: email === user.email,
+					// `user` is requireAuth → locals hydrated from Strapi (HMAC cookie fallback).
+					confirmed: email.trim().toLowerCase() === user.email.trim().toLowerCase(),
 				},
 				token,
 				method: 'PUT',

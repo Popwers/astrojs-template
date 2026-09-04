@@ -2,6 +2,7 @@ import { describe, expect, it } from 'bun:test';
 
 import type { FetchProps, StrapiError } from '@interfaces/strapi';
 
+import { getUserFromCookie } from '../../src/lib/userCookie';
 import { hydrateUserData } from '../../src/middleware/userDataHydratation';
 import { asApiContext, createMiddlewareContext } from '../utils/middlewareContext';
 
@@ -95,7 +96,7 @@ describe('userDataHydratation middleware', () => {
 		expect(context.cookies.has('user_token')).toBe(true);
 	});
 
-	it('refreshes user data when the timestamp is stale', async () => {
+	it('always refreshes user data against the API', async () => {
 		const cachedUser = {
 			id: 12,
 			documentId: 'user-doc',
@@ -128,13 +129,13 @@ describe('userDataHydratation middleware', () => {
 		expect(receivedParams?.query?.['populate[avatar][fields]']).toBe('url');
 		// Full user data stored in locals
 		expect(context.locals.user).toEqual(apiResponse);
-		// Cookie stores only minimal auth data
-		expect(context.cookies.get('user_data')?.json()).toEqual({
+		// Cookie stores only minimal auth data (HMAC-signed)
+		expect(getUserFromCookie(context.cookies)).toEqual({
 			id: 12,
 			documentId: 'user-doc',
 			email: 'user@example.com',
 			username: 'user_12',
-			avatar_url: '/uploads/avatar.jpg',
+			avatar: { documentId: '', url: '/uploads/avatar.jpg' },
 		});
 	});
 
@@ -170,7 +171,7 @@ describe('userDataHydratation middleware', () => {
 		expect(response.status).toBe(200);
 		// Incomplete API payload rejected — locals keeps expanded cookie user
 		expect(context.locals.user).toEqual(expandedCookieUser);
-		// Cookie unchanged
-		expect(context.cookies.get('user_data')?.json()).toEqual(cookieUser);
+		// Cookie unchanged (still signed original payload)
+		expect(getUserFromCookie(context.cookies)).toEqual(expandedCookieUser);
 	});
 });

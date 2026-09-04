@@ -1,5 +1,6 @@
 import type { APIContext, MiddlewareHandler } from 'astro';
 
+import { signCookiePayload } from '../../src/lib/signedCookie';
 import { createTestCookies, type CookieValue, type TestCookieJar } from './cookieJar';
 
 /**
@@ -13,6 +14,21 @@ interface TestMiddlewareContext {
 	redirect: (path: string, status: number) => Response;
 }
 
+function isPlainObjectCookie(value: CookieValue | undefined): boolean {
+	return Boolean(value) && Object.prototype.toString.call(value) === '[object Object]';
+}
+
+/**
+ * Sign object-shaped `user_data` the same way production cookies are written.
+ */
+function prepareCookies(initialCookies: Record<string, CookieValue>) {
+	const prepared = { ...initialCookies };
+	if (isPlainObjectCookie(prepared.user_data)) {
+		prepared.user_data = signCookiePayload(JSON.stringify(prepared.user_data));
+	}
+	return prepared;
+}
+
 /**
  * Build a fake middleware context for `path`, pre-seeded with `initialCookies`.
  */
@@ -21,7 +37,7 @@ function createMiddlewareContext(
 	initialCookies: Record<string, CookieValue> = {},
 ): TestMiddlewareContext {
 	return {
-		cookies: createTestCookies(initialCookies),
+		cookies: createTestCookies(prepareCookies(initialCookies)),
 		locals: {
 			user: null,
 			userToken: '',

@@ -13,7 +13,7 @@ if (result && !result.error && result.data) {
 	Astro.cookies.set('wait-mail-password', result.data.email, {
 		...DEFAULT_COOKIE_OPTIONS,
 		expires: new Date(Date.now() + 1000 * 60 * 60 * 1),
-		maxAge: 1000 * 60 * 60 * 1,
+		maxAge: 60 * 60,
 	});
 	return Astro.redirect('/lost-password/wait-mail');
 }

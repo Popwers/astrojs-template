@@ -11,6 +11,8 @@ import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
 import { isStrapiUserData } from '@lib/strapi';
 import { updateUserCookie } from '@lib/userCookie';
 
+const RESET_CODE_COOKIE = 'password-reset-code';
+
 const result = Astro.getActionResult(actions.password.resetPassword);
 if (result && !result.error) {
 	if (!isStrapiUserData(result.data)) {
@@ -20,13 +22,24 @@ if (result && !result.error) {
 	const { jwt, user } = result.data;
 	Astro.cookies.set('user_token', jwt, DEFAULT_COOKIE_OPTIONS);
 	Astro.locals.user = updateUserCookie(Astro.cookies, user);
+	Astro.cookies.delete(RESET_CODE_COOKIE, { path: '/' });
 
 	return Astro.redirect('/dashboard');
 }
 
 const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 
-const code = Astro.url.searchParams.get('code');
+const codeFromQuery = Astro.url.searchParams.get('code');
+if (codeFromQuery) {
+	Astro.cookies.set(RESET_CODE_COOKIE, codeFromQuery, {
+		...DEFAULT_COOKIE_OPTIONS,
+		maxAge: 60 * 15,
+		expires: new Date(Date.now() + 1000 * 60 * 15),
+	});
+	return Astro.redirect('/lost-password/reset');
+}
+
+const code = Astro.cookies.get(RESET_CODE_COOKIE)?.value;
 if (!code) return Astro.redirect('/lost-password');
 ---
 
@@ -38,11 +51,28 @@ if (!code) return Astro.redirect('/lost-password');
 
 	<form class='mt-16' method='POST' action={actions.password.resetPassword}>
 		<input type='hidden' name='code' value={code} />
-		<PasswordChecker isNewPassword client:idle />
-		<ErrorInput errors={inputErrors.password} />
-		<ErrorInput errors={inputErrors.passwordConfirmation} />
+
+		<div class='form-group'>
+			<label for='password'>Nouveau mot de passe</label>
+			<input type='password' id='password' name='password' autocomplete='new-password' required />
+			<ErrorInput errors={inputErrors.password} />
+			<PasswordChecker client:idle />
+		</div>
+
+		<div class='form-group'>
+			<label for='passwordConfirmation'>Confirmer le mot de passe</label>
+			<input
+				type='password'
+				id='passwordConfirmation'
+				name='passwordConfirmation'
+				autocomplete='new-password'
+				required
+			/>
+			<ErrorInput errors={inputErrors.passwordConfirmation} />
+		</div>
 
 		<ReturnInfo result={result} />
-		<SubmitButton client:idle className='mt-12 w-full' label='Confirmer' />
+
+		<SubmitButton client:idle className='mt-12 w-full' label='Changer mon mot de passe' />
 	</form>
 </LoginLayout>

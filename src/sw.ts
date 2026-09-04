@@ -31,7 +31,18 @@ const isPushPayload = (value: JsonValue | PushPayload | undefined): value is Pus
 const isText = (value: JsonValue | undefined): value is string => typeof value === 'string';
 
 const resolveUrl = (rawUrl: string): string => {
-	return new URL(rawUrl, self.location.origin).href;
+	try {
+		const resolved = new URL(rawUrl, self.location.origin);
+		if (resolved.origin !== self.location.origin) {
+			return new URL('/dashboard', self.location.origin).href;
+		}
+		if (resolved.protocol !== 'http:' && resolved.protocol !== 'https:') {
+			return new URL('/dashboard', self.location.origin).href;
+		}
+		return resolved.href;
+	} catch {
+		return new URL('/dashboard', self.location.origin).href;
+	}
 };
 
 const parsePushPayload = (event: PushEvent): PushPayload | null => {

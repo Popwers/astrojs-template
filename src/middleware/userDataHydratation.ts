@@ -1,4 +1,3 @@
-import { REFRESH_INTERVAL } from '@data/userOptions';
 import type { FetchProps, StrapiError } from '@interfaces/strapi';
 import type { User } from '@interfaces/user';
 import { clearUserSession } from '@lib/session';
@@ -34,16 +33,14 @@ export async function hydrateUserData(
 			context.locals.userToken = context.cookies.get('user_token')?.value ?? '';
 
 			const cookieUser = getUserFromCookie(context.cookies);
-			const lastUpdate = context.cookies.get('user_data_timestamp')?.value ?? null;
-			const shouldRefresh = !lastUpdate || Date.now() - Number(lastUpdate) > REFRESH_INTERVAL;
 
 			// Cookie only has minimal data — set it as base
 			if (cookieUser) context.locals.user = cookieUser;
 
-			if (shouldRefresh) {
-				const response = await refreshUserData(context, loadUser);
-				if (response) return response;
-			}
+			// Always revalidate against Strapi so blocked/deleted accounts cannot
+			// linger on an unsigned timestamp window.
+			const response = await refreshUserData(context, loadUser);
+			if (response) return response;
 		}
 	} catch (error) {
 		console.error('Error in user data hydration:', error);

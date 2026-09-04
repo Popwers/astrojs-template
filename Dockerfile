@@ -23,13 +23,14 @@ FROM base AS build
 # Both optional: the build still succeeds without them (no upload, no release).
 ARG SENTRY_AUTH_TOKEN
 ARG SOURCE_COMMIT
-ENV SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN \
-    SENTRY_RELEASE=$SOURCE_COMMIT
+ENV SENTRY_RELEASE=$SOURCE_COMMIT
 COPY package.json bun.lock ./
 RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
     bun install --frozen-lockfile
 COPY . .
-RUN bun run build
+# Pass Sentry token only for this RUN so it is not baked as a persistent ENV layer.
+RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
+    SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN bun run build
 
 # --- runtime: ship only node_modules + dist + entry -------------------------
 FROM base AS runtime
@@ -46,4 +47,5 @@ EXPOSE 4321
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD bun -e "fetch('http://127.0.0.1:'+process.env.PORT+'/login').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"
 
+USER bun
 CMD ["bun", "./start.mjs"]
