@@ -1,8 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-/**
- * Require a cookie signing secret. There is no public fallback.
- */
 export function resolveCookieSigningSecret(secret: string | undefined): string {
 	if (secret && secret.trim() !== '') {
 		return secret;
@@ -15,9 +12,6 @@ function cookieSigningSecret(): string {
 	return resolveCookieSigningSecret(process.env.COOKIE_SIGNING_SECRET);
 }
 
-/**
- * Sign a cookie payload so clients cannot forge `user_data` without the secret.
- */
 export function signCookiePayload(serialised: string): string {
 	const signature = createHmac('sha256', cookieSigningSecret()).update(serialised).digest('base64url');
 	return `${serialised}.${signature}`;

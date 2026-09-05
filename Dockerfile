@@ -17,7 +17,6 @@ RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
 # omits via `--production`. Keeping these out of the `deps` tree is what keeps the
 # runtime image lean — `runtime` copies node_modules from `deps`, never from here.
 FROM base AS build
-# SOURCE_COMMIT is a public git SHA used as the Sentry release name.
 # SENTRY_AUTH_TOKEN is a BuildKit secret on the build RUN only. It is never an
 # ARG or ENV, so it cannot persist in image layers or `docker history`.
 ARG SOURCE_COMMIT
