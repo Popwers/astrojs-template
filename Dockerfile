@@ -17,20 +17,18 @@ RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
 # omits via `--production`. Keeping these out of the `deps` tree is what keeps the
 # runtime image lean — `runtime` copies node_modules from `deps`, never from here.
 FROM base AS build
-# Sentry build-time inputs (passed by the CI/CD platform as build args).
-# SENTRY_AUTH_TOKEN uploads source maps; SOURCE_COMMIT becomes the release name
-# so errors map to the deployed commit.
-# Both optional: the build still succeeds without them (no upload, no release).
-ARG SENTRY_AUTH_TOKEN
+# SOURCE_COMMIT is a public git SHA used as the Sentry release name.
+# SENTRY_AUTH_TOKEN is a BuildKit secret on the build RUN only. It is never an
+# ARG or ENV, so it cannot persist in image layers or `docker history`.
 ARG SOURCE_COMMIT
 ENV SENTRY_RELEASE=$SOURCE_COMMIT
 COPY package.json bun.lock ./
 RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
     bun install --frozen-lockfile
 COPY . .
-# Pass Sentry token only for this RUN so it is not baked as a persistent ENV layer.
 RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
-    SENTRY_AUTH_TOKEN=$SENTRY_AUTH_TOKEN bun run build
+    --mount=type=secret,id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN,required=false \
+    bun run build
 
 # --- runtime: ship only node_modules + dist + entry -------------------------
 FROM base AS runtime

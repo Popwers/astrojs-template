@@ -181,6 +181,9 @@ export default defineConfig({
 	// Vitest (`vp test`) needs the same path aliases as the app, plus a bun:test→vitest
 	// shim, so it can resolve and run the suite that is otherwise authored against Bun's runner.
 	test: {
+		env: {
+			COOKIE_SIGNING_SECRET: 'test-cookie-signing-secret',
+		},
 		alias: {
 			'@pages': fromRoot('./src/pages'),
 			'@styles': fromRoot('./src/styles'),

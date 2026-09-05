@@ -1,16 +1,18 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 
-function cookieSigningSecret(): string {
-	const secret = process.env.COOKIE_SIGNING_SECRET;
-	if (secret) {
+/**
+ * Require a cookie signing secret. There is no public fallback.
+ */
+export function resolveCookieSigningSecret(secret: string | undefined): string {
+	if (secret && secret.trim() !== '') {
 		return secret;
 	}
 
-	if (import.meta.env.DEV) {
-		return 'dev-cookie-signing-secret-change-me';
-	}
+	throw new Error('COOKIE_SIGNING_SECRET must be set.');
+}
 
-	throw new Error('COOKIE_SIGNING_SECRET must be set in production.');
+function cookieSigningSecret(): string {
+	return resolveCookieSigningSecret(process.env.COOKIE_SIGNING_SECRET);
 }
 
 /**

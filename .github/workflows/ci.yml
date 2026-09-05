@@ -24,6 +24,10 @@ jobs:
 
             - name: Astro typecheck
               run: bunx astro check
+              env:
+                  STRAPI_URL: http://localhost:1337
+                  STRAPI_TOKEN: ci-dummy-token
+                  COOKIE_SIGNING_SECRET: ci-cookie-signing-secret
 
             - name: Tests
               run: bun test
@@ -36,3 +40,4 @@ jobs:
               env:
                   STRAPI_URL: http://localhost:1337
                   STRAPI_TOKEN: ci-dummy-token
+                  COOKIE_SIGNING_SECRET: ci-cookie-signing-secret

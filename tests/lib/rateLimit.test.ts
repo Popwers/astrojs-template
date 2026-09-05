@@ -56,10 +56,25 @@ describe('assertRateLimit client identity', () => {
 	it('ignores spoofed X-Forwarded-For when TRUST_PROXY is unset', () => {
 		withTrustProxy(undefined, () => {
 			const socket = '203.0.113.10';
-			assertRateLimit(contextWith({ 'x-forwarded-for': '198.51.100.1' }, socket), 'xff-none', 2, 60_000);
-			assertRateLimit(contextWith({ 'x-forwarded-for': '198.51.100.2' }, socket), 'xff-none', 2, 60_000);
+			assertRateLimit(
+				contextWith({ 'x-forwarded-for': '198.51.100.1' }, socket),
+				'xff-none',
+				2,
+				60_000,
+			);
+			assertRateLimit(
+				contextWith({ 'x-forwarded-for': '198.51.100.2' }, socket),
+				'xff-none',
+				2,
+				60_000,
+			);
 			expect(() =>
-				assertRateLimit(contextWith({ 'x-forwarded-for': '198.51.100.3' }, socket), 'xff-none', 2, 60_000),
+				assertRateLimit(
+					contextWith({ 'x-forwarded-for': '198.51.100.3' }, socket),
+					'xff-none',
+					2,
+					60_000,
+				),
 			).toThrow(/Too many attempts/);
 		});
 	});
@@ -69,7 +84,12 @@ describe('assertRateLimit client identity', () => {
 			const socket = '203.0.113.11';
 			assertRateLimit(contextWith({ 'x-real-ip': '198.51.100.8' }, socket), 'xreal-none', 1, 60_000);
 			expect(() =>
-				assertRateLimit(contextWith({ 'x-real-ip': '198.51.100.9' }, socket), 'xreal-none', 1, 60_000),
+				assertRateLimit(
+					contextWith({ 'x-real-ip': '198.51.100.9' }, socket),
+					'xreal-none',
+					1,
+					60_000,
+				),
 			).toThrow(/Too many attempts/);
 		});
 	});
@@ -77,14 +97,20 @@ describe('assertRateLimit client identity', () => {
 	it('uses CF-Connecting-IP when TRUST_PROXY is cloudflare', () => {
 		withTrustProxy('cloudflare', () => {
 			assertRateLimit(
-				contextWith({ 'cf-connecting-ip': '198.51.100.20', 'x-forwarded-for': '203.0.113.1' }, '10.0.0.1'),
+				contextWith(
+					{ 'cf-connecting-ip': '198.51.100.20', 'x-forwarded-for': '203.0.113.1' },
+					'10.0.0.1',
+				),
 				'cf-trust',
 				1,
 				60_000,
 			);
 			expect(() =>
 				assertRateLimit(
-					contextWith({ 'cf-connecting-ip': '198.51.100.20', 'x-forwarded-for': '203.0.113.2' }, '10.0.0.2'),
+					contextWith(
+						{ 'cf-connecting-ip': '198.51.100.20', 'x-forwarded-for': '203.0.113.2' },
+						'10.0.0.2',
+					),
 					'cf-trust',
 					1,
 					60_000,
@@ -92,7 +118,10 @@ describe('assertRateLimit client identity', () => {
 			).toThrow(/Too many attempts/);
 			expect(() =>
 				assertRateLimit(
-					contextWith({ 'cf-connecting-ip': '198.51.100.21', 'x-forwarded-for': '203.0.113.1' }, '10.0.0.1'),
+					contextWith(
+						{ 'cf-connecting-ip': '198.51.100.21', 'x-forwarded-for': '203.0.113.1' },
+						'10.0.0.1',
+					),
 					'cf-trust',
 					1,
 					60_000,
@@ -134,7 +163,9 @@ describe('assertRateLimit client identity', () => {
 			expect(() => assertRateLimit(contextWith({}, '203.0.113.50'), 'socket-only', 1, 60_000)).toThrow(
 				/Too many attempts/,
 			);
-			expect(() => assertRateLimit(contextWith({}, '203.0.113.51'), 'socket-only', 1, 60_000)).not.toThrow();
+			expect(() =>
+				assertRateLimit(contextWith({}, '203.0.113.51'), 'socket-only', 1, 60_000),
+			).not.toThrow();
 		});
 	});
 });

@@ -118,7 +118,6 @@ export default defineConfig({
 			COOKIE_SIGNING_SECRET: envField.string({
 				context: 'server',
 				access: 'secret',
-				default: 'dev-cookie-signing-secret-change-me',
 			}),
 		},
 	},

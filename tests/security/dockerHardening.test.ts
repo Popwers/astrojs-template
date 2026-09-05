@@ -9,7 +9,8 @@ function ignorePatterns(text: string): string[] {
 
 function coversDotEnv(patterns: string[]): boolean {
 	return patterns.some(
-		(pattern) => pattern === '.env' || pattern === '.env*' || pattern === '*.env' || pattern === '**/.env',
+		(pattern) =>
+			pattern === '.env' || pattern === '.env*' || pattern === '*.env' || pattern === '**/.env',
 	);
 }
 
