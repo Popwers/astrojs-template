@@ -6,6 +6,7 @@ import { createTestCookies, type CookieValue, type TestCookieJar } from './cooki
 interface ActionTestContext {
 	locals: App.Locals;
 	cookies: TestCookieJar;
+	request: Request;
 }
 
 /**
@@ -55,6 +56,7 @@ function createActionContext(
 	return {
 		locals: { user, userToken },
 		cookies: createTestCookies(initialCookies),
+		request: new Request('http://localhost/test'),
 	};
 }
 

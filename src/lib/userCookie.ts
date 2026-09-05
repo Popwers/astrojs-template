@@ -1,6 +1,7 @@
 import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
 import type { JsonValue } from '@interfaces/json';
 import type { User } from '@interfaces/user';
+import { signCookiePayload, verifySignedCookiePayload } from '@lib/signedCookie';
 import type { AstroCookieSetOptions } from 'astro';
 
 /**
@@ -75,7 +76,7 @@ const isValidCookieUser = (data: CookiePayload): data is CookieUser => {
  * an in-memory jar in tests.
  */
 interface CookieWriter {
-	set(name: string, value: CookieUser | string, options: AstroCookieSetOptions): void;
+	set(name: string, value: string, options: AstroCookieSetOptions): void;
 }
 
 /**
@@ -83,7 +84,7 @@ interface CookieWriter {
  * an in-memory jar in tests.
  */
 interface CookieReader {
-	get(name: string): { json: () => CookiePayload } | undefined;
+	get(name: string): { value: string; json: () => CookiePayload } | undefined;
 }
 
 /**
@@ -95,8 +96,9 @@ interface CookieReader {
  */
 export const updateUserCookie = (cookies: CookieWriter, newUserData: Partial<User>): Partial<User> => {
 	const cookieUser = extractCookieUser(newUserData);
+	const signed = signCookiePayload(JSON.stringify(cookieUser));
 
-	cookies.set('user_data', cookieUser, DEFAULT_COOKIE_OPTIONS);
+	cookies.set('user_data', signed, DEFAULT_COOKIE_OPTIONS);
 	cookies.set('user_data_timestamp', Date.now().toString(), DEFAULT_COOKIE_OPTIONS);
 
 	return expandCookieUser(cookieUser);
@@ -107,7 +109,17 @@ export const updateUserCookie = (cookies: CookieWriter, newUserData: Partial<Use
  */
 export const getUserFromCookie = (cookies: CookieReader): Partial<User> | null => {
 	try {
-		const data = cookies.get('user_data')?.json();
+		const raw = cookies.get('user_data')?.value;
+		if (!raw) {
+			return null;
+		}
+
+		const verified = verifySignedCookiePayload(raw);
+		if (!verified) {
+			return null;
+		}
+
+		const data: CookiePayload = JSON.parse(verified);
 		if (!isValidCookieUser(data)) return null;
 		return expandCookieUser(data);
 	} catch {

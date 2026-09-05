@@ -30,13 +30,13 @@ describe('updateUserCookie', () => {
 		const cookies = createTestCookies();
 		updateUserCookie(cookies, fullUser);
 
-		const stored = cookies.store.get('user_data');
+		const stored = getUserFromCookie(cookies);
 		expect(stored).toEqual({
 			id: 7,
 			documentId: 'doc-7',
 			email: 'jane@example.com',
 			username: 'jane',
-			avatar_url: 'https://cdn.example.com/avatar.png',
+			avatar: { documentId: '', url: 'https://cdn.example.com/avatar.png' },
 		});
 		expect(stored).not.toHaveProperty('provider');
 		expect(stored).not.toHaveProperty('confirmed');
@@ -55,7 +55,7 @@ describe('updateUserCookie', () => {
 		const userWithoutAvatar: Partial<User> = { ...fullUser, avatar: undefined };
 		updateUserCookie(cookies, userWithoutAvatar);
 
-		expect(cookies.store.get('user_data')).toHaveProperty('avatar_url', null);
+		expect(getUserFromCookie(cookies)?.avatar).toBeUndefined();
 	});
 
 	it('throws on a user missing a required identity field rather than writing undefined', () => {
@@ -79,6 +79,13 @@ describe('getUserFromCookie', () => {
 
 	it('returns null for a cookie missing required fields', () => {
 		const cookies = createTestCookies({ user_data: { id: 1 } });
+		expect(getUserFromCookie(cookies)).toBeNull();
+	});
+
+	it('returns null for a tampered unsigned cookie', () => {
+		const cookies = createTestCookies({
+			user_data: JSON.stringify({ id: 1, documentId: 'd', email: 'a@b.com', username: 'ab' }),
+		});
 		expect(getUserFromCookie(cookies)).toBeNull();
 	});
 });

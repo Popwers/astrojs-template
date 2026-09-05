@@ -9,7 +9,10 @@ export const password = {
 	forgotPassword: defineAction({
 		accept: 'form',
 		input: forgotPassword,
-		handler: async (input) => {
+		handler: async (input, context) => {
+			const { assertRateLimit } = await import('@lib/rateLimit');
+			assertRateLimit(context, 'password-forgot', 5, 60 * 60 * 1000);
+
 			const { email } = input;
 			if (
 				await scopedRequest({

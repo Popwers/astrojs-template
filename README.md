@@ -16,7 +16,9 @@ bun run dev           # Dev server at localhost:4321
 |----------|----------|---------|-------------|
 | `STRAPI_URL` | Yes (prod) | `https://api.your-project.fr` | Base URL of the Strapi backend. The default lets `bun run build` succeed without a real backend; set it for any real run. |
 | `STRAPI_TOKEN` | Yes (prod) | `replace-me-with-a-strapi-api-token` | Strapi API token. The placeholder default keeps the build green out of the box; replace it before talking to a real backend. |
-| `SENTRY_AUTH_TOKEN` | No | — | Build-time token for Sentry source-map upload. Not needed at runtime. |
+| `COOKIE_SIGNING_SECRET` | Yes | — | HMAC secret for session cookies. The process throws if this is unset. |
+| `TRUST_PROXY` | No | — | `cloudflare` to rate-limit on `CF-Connecting-IP`; `1` / `forwarded` to use `X-Forwarded-For`. Unset ignores spoofable forwarded headers. |
+| `SENTRY_AUTH_TOKEN` | No | — | Build-time token for Sentry source-map upload. Pass it as a BuildKit secret, never as an image ARG or ENV. |
 | `SENTRY_RELEASE` | No | — | Deployed git SHA, so errors map to the commit that introduced them. |
 
 The `STRAPI_*` defaults exist only so a fresh clone builds and boots without configuration; they point at no real backend. Auth and data calls will fail until you set real values in `.env`.
@@ -27,7 +29,7 @@ When starting a real project from this template:
 
 - [ ] Rename the project: `name` in `package.json`, `release.repositoryUrl` in `package.json`.
 - [ ] Set the canonical site URL: `site` in `astro.config.mjs` (and the `image.domains` / `remotePatterns` host).
-- [ ] Fill `.env` from `.env.example`: `STRAPI_URL`, `STRAPI_TOKEN` (replace the placeholder defaults).
+- [ ] Fill `.env` from `.env.example`: `STRAPI_URL`, `STRAPI_TOKEN`, `COOKIE_SIGNING_SECRET`.
 - [ ] Wire Sentry: org/project in `astro.config.mjs`, DSN in `sentry.client.config.js` / `sentry.server.config.js`.
 - [ ] Install the git hooks once per clone: `vp config`.
 - [ ] Regenerate PWA assets from your own icon: `bun run generate-pwa-assets`.
@@ -95,7 +97,7 @@ Multi-stage Docker build (Alpine + Bun):
 - Exposes port `4321`, runtime via `bun ./start.mjs`
 
 ```bash
-docker build -t your-project .
+docker build --secret id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN -t your-project .
 docker run -p 4321:4321 --env-file .env your-project
 ```
 

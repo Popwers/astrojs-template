@@ -1,11 +1,12 @@
 import { RESTRICTED_WHEN_LOGGED_OUT } from '@data/routes';
+import { matchesAnyRoute } from '@lib/pathMatch';
 import { defineMiddleware } from 'astro/middleware';
 
 /**
  * Check if the user is logged in and redirect to the login page if not
  */
 export default defineMiddleware((context, next) => {
-	if (RESTRICTED_WHEN_LOGGED_OUT.includes(context.url.pathname)) {
+	if (matchesAnyRoute(context.url.pathname, RESTRICTED_WHEN_LOGGED_OUT)) {
 		const userToken = context.cookies.has('user_token');
 		const userData = context.cookies.has('user_data');
 

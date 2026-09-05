@@ -10,7 +10,10 @@ export const auth = {
 	login: defineAction({
 		accept: 'form',
 		input: login,
-		handler: async (input) => {
+		handler: async (input, context) => {
+			const { assertRateLimit } = await import('@lib/rateLimit');
+			assertRateLimit(context, 'auth-login', 10, 15 * 60 * 1000);
+
 			const { email, password } = input;
 			return await scopedRequest({
 				endpoint: 'auth/local',
@@ -25,7 +28,10 @@ export const auth = {
 	register: defineAction({
 		accept: 'form',
 		input: register,
-		handler: async (input) => {
+		handler: async (input, context) => {
+			const { assertRateLimit } = await import('@lib/rateLimit');
+			assertRateLimit(context, 'auth-register', 5, 60 * 60 * 1000);
+
 			const { email, password, master } = input;
 			if (
 				await scopedRequest({
@@ -47,7 +53,10 @@ export const auth = {
 	confirmMail: defineAction({
 		accept: 'form',
 		input: confirmMail,
-		handler: async (input) => {
+		handler: async (input, context) => {
+			const { assertRateLimit } = await import('@lib/rateLimit');
+			assertRateLimit(context, 'auth-confirm-mail', 5, 60 * 60 * 1000);
+
 			const { email } = input;
 			if (
 				await scopedRequest({

@@ -43,6 +43,7 @@ vite.config.ts
 .cursor
 
 # Environment files
+.env
 .env.*
 
 # OS files

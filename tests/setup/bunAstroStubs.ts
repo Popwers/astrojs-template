@@ -17,5 +17,9 @@ import { mock } from 'bun:test';
 import * as astroActions from '../stubs/astroActions';
 import * as astroEnvServer from '../stubs/astroEnvServer';
 
+if (!process.env.COOKIE_SIGNING_SECRET) {
+	process.env.COOKIE_SIGNING_SECRET = 'test-cookie-signing-secret';
+}
+
 void mock.module('astro:actions', () => astroActions);
 void mock.module('astro:env/server', () => astroEnvServer);

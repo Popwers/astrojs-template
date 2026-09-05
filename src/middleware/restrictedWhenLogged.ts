@@ -1,4 +1,5 @@
 import { RESTRICTED_WHEN_LOGGED_IN } from '@data/routes';
+import { matchesAnyRoute } from '@lib/pathMatch';
 import { defineMiddleware } from 'astro/middleware';
 
 /**
@@ -6,7 +7,7 @@ import { defineMiddleware } from 'astro/middleware';
  * Cause we don't want user to be redirected to the login page when they are already logged in
  */
 export default defineMiddleware((context, next) => {
-	if (RESTRICTED_WHEN_LOGGED_IN.includes(context.url.pathname)) {
+	if (matchesAnyRoute(context.url.pathname, RESTRICTED_WHEN_LOGGED_IN)) {
 		const userToken = context.cookies.has('user_token');
 		const userData = context.cookies.has('user_data');
 
