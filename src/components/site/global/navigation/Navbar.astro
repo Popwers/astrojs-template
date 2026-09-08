@@ -27,19 +27,21 @@ const menus: MenuItems[] = menuArray.header;
 			alt='logo'
 			densities={[1.5, 2]}
 			loading='eager'
+			fetchpriority='high'
+			decoding='async'
 		/>
 	</a>
 
 	<div
-		class='flex flex-col justify-center items-center gap-[5px] cursor-pointer hover:scale-105 active:scale-95 transition-all duration-300 group xl:hidden menu-button z-[99]'>
+		class='flex flex-col justify-center items-center gap-[5px] cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-200 group xl:hidden menu-button z-[99]'>
 		<span
-			class='w-8 h-[3px] bg-blue-dark rounded-full block group-hover:bg-blue group-active:bg-blue transition-all duration-300 menu-line-1 data-active:translate-y-[8px] data-active:-rotate-45'
+			class='w-8 h-[3px] bg-blue-dark rounded-full block group-hover:bg-blue group-active:bg-blue transition-[transform,opacity,background-color] duration-200 menu-line-1 data-active:translate-y-[8px] data-active:-rotate-45'
 		></span>
 		<span
-			class='w-8 h-[3px] bg-blue-dark rounded-full block group-hover:bg-blue group-active:bg-blue transition-all duration-300 menu-line-2 data-active:opacity-0'
+			class='w-8 h-[3px] bg-blue-dark rounded-full block group-hover:bg-blue group-active:bg-blue transition-[transform,opacity,background-color] duration-200 menu-line-2 data-active:opacity-0'
 		></span>
 		<span
-			class='w-8 h-[3px] bg-blue-dark rounded-full block group-hover:bg-blue group-active:bg-blue transition-all duration-300 menu-line-3 data-active:translate-y-[-8px] data-active:rotate-45'
+			class='w-8 h-[3px] bg-blue-dark rounded-full block group-hover:bg-blue group-active:bg-blue transition-[transform,opacity,background-color] duration-200 menu-line-3 data-active:translate-y-[-8px] data-active:rotate-45'
 		></span>
 	</div>
 

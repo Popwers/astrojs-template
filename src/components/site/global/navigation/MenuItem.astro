@@ -89,7 +89,7 @@ const { link, name, submenus, isFooter = false } = Astro.props;
 				opacity: 0;
 				transition:
 					transform var(--spring),
-					opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+					opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 			}
 
 			&.haveSubmenus {
@@ -107,7 +107,7 @@ const { link, name, submenus, isFooter = false } = Astro.props;
 					border-radius: 1px;
 					transition:
 						transform var(--spring),
-						border-color 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+						border-color 0.2s cubic-bezier(0.4, 0, 0.2, 1),
 						top var(--spring);
 				}
 			}
@@ -124,7 +124,7 @@ const { link, name, submenus, isFooter = false } = Astro.props;
 			pointer-events: none;
 			z-index: 999;
 			transition:
-				opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+				opacity 0.2s cubic-bezier(0.4, 0, 0.2, 1),
 				top var(--spring);
 
 			li {

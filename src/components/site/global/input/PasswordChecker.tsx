@@ -39,7 +39,8 @@ export default ({ isNewPassword = false }: PasswordCheckerProps) => {
 		},
 	}));
 
-	const progressBarClass = () => `${strength.className()} h-2.5 rounded-full transition-all duration-300`;
+	const progressBarClass = () =>
+		`${strength.className()} h-2.5 w-full origin-left rounded-full transition-transform duration-200`;
 	const sizeCheck = () =>
 		`transition-colors ${strength.size() ? 'text-green' : password.get() !== '' ? 'text-red' : ''}`;
 	const uppercaseCheck = () =>
@@ -85,7 +86,7 @@ export default ({ isNewPassword = false }: PasswordCheckerProps) => {
 					$aria-valuenow={strength.value()}
 					aria-valuemin={0}
 					aria-valuemax={100}
-					$style={() => ({ width: `${strength.value()}%` })}
+					$style={() => ({ transform: `scaleX(${strength.value() / 100})` })}
 				/>
 			</div>
 

@@ -28,11 +28,12 @@ const isDashboard: boolean = pathname === '/dashboard';
 				class='font-medium flex items-center gap-2 mb-4 md:mb-10 text-blue-saturated group w-fit'
 				href='/dashboard'>
 				<Image
-					class='relative -top-[1px] group-hover:-translate-x-1 transition-transform'
+					class='relative -top-[1px] group-hover:-translate-x-1 transition-transform duration-200'
 					src={arrow}
 					alt='Return to dashboard'
 					densities={[1.5, 2]}
-					loading='eager'
+					loading='lazy'
+					decoding='async'
 				/>
 				Return
 			</a>

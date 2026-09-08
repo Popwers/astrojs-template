@@ -2,8 +2,7 @@
 import "@styles/tailwind.css";
 import "@styles/global.scss";
 import "@styles/normalize.scss";
-import "@fontsource-variable/montserrat";
-import "@fontsource-variable/raleway";
+import "@styles/fonts.css";
 
 import { ClientRouter } from "astro:transitions";
 import { pwaInfo } from "virtual:pwa-info";
@@ -76,6 +75,8 @@ const enableViewTransitions = !Astro.url.pathname.startsWith("/dashboard");
 				link: [
 					{ rel: 'icon', href: '/favicon.svg' },
 					{ rel: 'apple-touch-icon', href: withPwaAssetVersion('/apple-touch-icon-180x180.png') },
+					{ rel: 'preconnect', href: 'https://api.your-project.fr' },
+					{ rel: 'dns-prefetch', href: 'https://api.your-project.fr' },
 					{ rel: 'sitemap', href: '/sitemap-index.xml' },
 					{
 						rel: 'manifest',
@@ -116,12 +117,12 @@ const enableViewTransitions = !Astro.url.pathname.startsWith("/dashboard");
 				</script>
 			)
 		}
-		{shouldRegisterPwa && <script src='/src/pwa.ts'></script>}
 		{pwaInfo && <Fragment set:html={pwaInfo.webManifest.linkTag} />}
 	</head>
 
 	<body>
 		<slot />
 		<CookieBanner />
+		{shouldRegisterPwa && <script src='/src/pwa.ts'></script>}
 	</body>
 </html>

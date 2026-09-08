@@ -50,6 +50,9 @@ export default ({
 					$src={imgToShow}
 					alt='Voir le mot de passe'
 					className='absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2 cursor-pointer'
+					width={20}
+					height={20}
+					decoding='async'
 				/>
 			</div>
 		</div>

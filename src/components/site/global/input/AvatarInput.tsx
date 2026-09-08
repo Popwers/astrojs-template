@@ -99,6 +99,9 @@ export default ({ children }: { children: React.ReactNode }) => {
 							src={optimisticUrl.get() ?? ''}
 							alt="Avatar de l'utilisateur"
 							className='h-36 w-36 object-cover'
+							width={144}
+							height={144}
+							decoding='async'
 						/>
 					)}
 				</Show>
