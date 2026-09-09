@@ -18,7 +18,7 @@
     "@fontsource-variable/montserrat": "^5.3.0",
     "@fontsource-variable/raleway": "^5.3.0",
     "@legendapp/state": "3.0.0-beta.47",
-    "@sentry/astro": "^10.73.0",
+    "@sentry/astro": "^10.74.0",
     "@strapi/blocks-react-renderer": "^1.0.2",
     "astro": "^7.3.2",
     "astro-seo": "^1.2.0",
