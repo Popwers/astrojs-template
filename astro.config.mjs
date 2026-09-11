@@ -16,7 +16,6 @@ import { ACTION_BODY_SIZE_LIMIT } from './src/data/userOptions.ts';
  * `vite:react-compiler` slice (Rust / oxc-transform-react) to avoid double JSX.
  */
 
-
 /** Extract oxc React Compiler plugin from `@vitejs/plugin-react`.
  * `@astrojs/react` registers plugin-react WITHOUT `compiler` (options only forward
  * include|exclude|babel). Inject only the `vite:react-compiler` slice so Vite sees
