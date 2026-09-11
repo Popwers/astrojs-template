@@ -8,6 +8,10 @@ interface ConsentState {
 	};
 }
 
+/** Versioned key so shape changes can ignore stale payloads (WCAG/storage hygiene). */
+const CONSENT_STORAGE_KEY = 'cookie-consent:v1';
+const CONSENT_STORAGE_KEY_LEGACY = 'cookie-consent';
+
 /**
  * Update the consent state
  * @param preferences - The preferences to update
@@ -19,12 +23,13 @@ export const updateConsent = (preferences: { analytics: boolean; functional: boo
 	});
 	try {
 		localStorage.setItem(
-			'cookie-consent',
+			CONSENT_STORAGE_KEY,
 			JSON.stringify({
 				hasConsented: true,
 				preferences,
 			}),
 		);
+		localStorage.removeItem(CONSENT_STORAGE_KEY_LEGACY);
 	} catch (error) {
 		console.error('Error saving consent to localStorage', error);
 	}
@@ -50,7 +55,8 @@ const consentStore = observable(initialConsent);
  * Load consent preferences from localStorage
  */
 if (!import.meta.env.SSR) {
-	const savedConsent = localStorage.getItem('cookie-consent');
+	const savedConsent =
+		localStorage.getItem(CONSENT_STORAGE_KEY) ?? localStorage.getItem(CONSENT_STORAGE_KEY_LEGACY);
 	if (savedConsent) {
 		const parsed = JSON.parse(savedConsent);
 		consentStore.set(parsed);

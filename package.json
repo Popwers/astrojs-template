@@ -9,7 +9,8 @@
     "astro": "astro",
     "test": "bun test",
     "upgrade": "bunx @astrojs/upgrade",
-    "generate-pwa-assets": "pwa-assets-generator --preset minimal-2023 public/icon.png"
+    "generate-pwa-assets": "pwa-assets-generator --preset minimal-2023 public/icon.png",
+    "doctor": "bunx react-doctor@latest . -y --no-score"
   },
   "dependencies": {
     "@astrojs/node": "^11.1.5",
@@ -45,8 +46,10 @@
     "@types/react-dom": "^19.3.0",
     "@vite-pwa/assets-generator": "^1.0.2",
     "@vite-pwa/astro": "^1.2.0",
+    "@vitejs/plugin-react": "6.1.1",
     "baseline-browser-mapping": "^2.11.22",
     "browserslist": "4.28.9",
+    "oxc-transform-react": "^0.149.0",
     "sass": "^1.104.0",
     "semantic-release": "^25.0.9",
     "tailwindcss": "^4.3.3",

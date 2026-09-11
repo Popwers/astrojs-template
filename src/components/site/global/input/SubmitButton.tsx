@@ -1,5 +1,5 @@
 import { reactive, useObservable } from '@legendapp/state/react';
-import { AnimatePresence, motion } from 'motion/react';
+import { AnimatePresence, motion, useReducedMotion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Props {
@@ -24,6 +24,7 @@ const $MotionButton = reactive(motion.button);
 export default ({ className, label, id, tabIndex, disabled }: Props) => {
 	const isLoading = useObservable(false);
 	const [isLongLoading, setIsLongLoading] = useState(false);
+	const reduceMotion = useReducedMotion();
 	const isBordered = className?.includes('bordered');
 	const buttonRef = useRef<HTMLButtonElement>(null);
 
@@ -65,15 +66,23 @@ export default ({ className, label, id, tabIndex, disabled }: Props) => {
 							: 'var(--color-white)',
 				pointerEvents: isLoading.get() || isLongLoading || disabled ? 'none' : 'auto',
 			})}
-			whileHover={{
-				backgroundColor: isBordered ? 'var(--color-blue)' : 'var(--color-blue-saturated)',
-				color: 'var(--color-white)',
-			}}
-			whileTap={{
-				backgroundColor: isBordered ? 'var(--color-blue)' : 'var(--color-blue-saturated)',
-				color: 'var(--color-white)',
-				scale: 0.95,
-			}}
+			whileHover={
+				reduceMotion
+					? undefined
+					: {
+							backgroundColor: isBordered ? 'var(--color-blue)' : 'var(--color-blue-saturated)',
+							color: 'var(--color-white)',
+						}
+			}
+			whileTap={
+				reduceMotion
+					? undefined
+					: {
+							backgroundColor: isBordered ? 'var(--color-blue)' : 'var(--color-blue-saturated)',
+							color: 'var(--color-white)',
+							scale: 0.95,
+						}
+			}
 			className={`${className} overflow-hidden transition-none`}
 			type='submit'
 			tabIndex={tabIndex}
@@ -82,9 +91,10 @@ export default ({ className, label, id, tabIndex, disabled }: Props) => {
 			$disabled={() => isLoading.get() || isLongLoading || disabled}>
 			<AnimatePresence mode='popLayout' initial={false}>
 				<motion.span
-					initial={{ opacity: 0, y: -100 }}
+					initial={reduceMotion ? false : { opacity: 0, y: -100 }}
 					animate={{ opacity: 1, y: 0 }}
-					exit={{ opacity: 0, y: 100 }}
+					exit={reduceMotion ? undefined : { opacity: 0, y: 100 }}
+					transition={reduceMotion ? { duration: 0 } : undefined}
 					className='h-4'
 					key={isLongLoading ? 'loading' : 'label'}>
 					{isLongLoading ? (
