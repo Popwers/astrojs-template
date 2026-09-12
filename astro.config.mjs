@@ -5,28 +5,9 @@ import playformCompress from '@playform/compress';
 import sentry from '@sentry/astro';
 import tailwindcss from '@tailwindcss/vite';
 import AstroPWA from '@vite-pwa/astro';
-import viteReact from '@vitejs/plugin-react';
 import { defineConfig, envField } from 'astro/config';
 
 import { ACTION_BODY_SIZE_LIMIT } from './src/data/userOptions.ts';
-
-/** Extract oxc React Compiler plugin from `@vitejs/plugin-react`.
- * `@astrojs/react` already registers plugin-react WITHOUT `compiler`, and its
- * public options only forward include|exclude|babel — so we inject only the
- * `vite:react-compiler` slice (Rust / oxc-transform-react) to avoid double JSX.
- */
-
-/** Extract oxc React Compiler plugin from `@vitejs/plugin-react`.
- * `@astrojs/react` registers plugin-react WITHOUT `compiler` (options only forward
- * include|exclude|babel). Inject only the `vite:react-compiler` slice so Vite sees
- * `compiler: true` / oxc-transform-react without double JSX transforms. No Babel.
- */
-function reactCompilerPlugins() {
-	return viteReact({
-		compiler: true,
-		exclude: [/\.astro$/, /\/node_modules\//],
-	}).filter((plugin) => plugin?.name === 'vite:react-compiler');
-}
 
 export default defineConfig({
 	server: {
@@ -153,7 +134,7 @@ export default defineConfig({
 				],
 	},
 	vite: {
-		plugins: [...reactCompilerPlugins(), tailwindcss()],
+		plugins: [tailwindcss()],
 		// Modern output target: skip legacy transpilation/polyfills for smaller, faster bundles.
 		build: {
 			target: 'esnext',
