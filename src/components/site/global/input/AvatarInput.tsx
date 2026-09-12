@@ -136,7 +136,6 @@ export default ({ children }: { children: React.ReactNode }) => {
 					id='avatar'
 					name='avatar'
 					accept={AVATAR_INPUT_ACCEPT}
-					aria-label="Changer l'image de profil"
 					className='absolute inset-0 -z-10 opacity-0'
 					onChange={handleChange}
 					ref={inputRef}
