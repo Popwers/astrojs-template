@@ -1,25 +1,18 @@
-import { observable } from '@legendapp/state';
+const CONSENT_STORAGE_KEY = 'cookie-consent';
 
-interface ConsentState {
-	hasConsented: boolean;
-	preferences: {
-		analytics: boolean;
-		functional: boolean;
-	};
+interface ConsentPreferences {
+	analytics: boolean;
+	functional: boolean;
 }
 
 /**
- * Update the consent state
- * @param preferences - The preferences to update
+ * Persist cookie-category choices and reload so the rest of the page can read them.
+ * @param preferences - Category flags to store
  */
-export const updateConsent = (preferences: { analytics: boolean; functional: boolean }) => {
-	consentStore.set({
-		hasConsented: true,
-		preferences,
-	});
+export const updateConsent = (preferences: ConsentPreferences) => {
 	try {
 		localStorage.setItem(
-			'cookie-consent',
+			CONSENT_STORAGE_KEY,
 			JSON.stringify({
 				hasConsented: true,
 				preferences,
@@ -29,32 +22,17 @@ export const updateConsent = (preferences: { analytics: boolean; functional: boo
 		console.error('Error saving consent to localStorage', error);
 	}
 
-	// Reload the page to apply the preferences
-	window.location.reload();
+	globalThis.location.reload();
 };
 
 /**
- * Observable store tracking the user's cookie consent and category preferences.
+ * Whether a consent record is already stored (valid JSON is not required).
+ * @returns true when the storage key is present
  */
-const initialConsent: ConsentState = {
-	hasConsented: false,
-	preferences: {
-		analytics: false,
-		functional: false,
-	},
-};
-
-const consentStore = observable(initialConsent);
-
-/**
- * Load consent preferences from localStorage
- */
-if (!import.meta.env.SSR) {
-	const savedConsent = localStorage.getItem('cookie-consent');
-	if (savedConsent) {
-		const parsed = JSON.parse(savedConsent);
-		consentStore.set(parsed);
+export const hasStoredConsent = (): boolean => {
+	try {
+		return localStorage.getItem(CONSENT_STORAGE_KEY) !== null;
+	} catch {
+		return false;
 	}
-}
-
-export default consentStore;
+};

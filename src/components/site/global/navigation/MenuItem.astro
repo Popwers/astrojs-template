@@ -12,7 +12,7 @@ const { link, name, submenus, isFooter = false } = Astro.props;
 ---
 
 <li class={isFooter ? 'isFooter' : ''}>
-	<a href={link} class={submenus ? 'haveSubmenus' : ''}>
+	<a href={link} class={submenus ? 'haveSubmenus' : ''} data-astro-prefetch='hover'>
 		<span>
 			{name}
 			<br />
