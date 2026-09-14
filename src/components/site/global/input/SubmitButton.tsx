@@ -12,6 +12,8 @@ interface Props {
 
 const $MotionButton = reactive(motion.button);
 
+const LOADING_DOT_CLASSES = ['delay-bounce-0', 'delay-bounce-1', 'delay-bounce-2'] as const;
+
 /**
  * Submit button with loading state and animation
  * @param props.className - Class name for the button
@@ -55,7 +57,7 @@ export default ({ className, label, id, tabIndex, disabled }: Props) => {
 					isLoading.get() || isLongLoading || disabled
 						? 'var(--color-blue-saturated)'
 						: isBordered
-							? '#00000000'
+							? 'transparent'
 							: 'var(--color-blue)',
 				color:
 					isLoading.get() || isLongLoading || disabled
@@ -89,11 +91,10 @@ export default ({ className, label, id, tabIndex, disabled }: Props) => {
 					key={isLongLoading ? 'loading' : 'label'}>
 					{isLongLoading ? (
 						<span className='flex items-center justify-center space-x-2'>
-							{[0, 0.175, 0.35].map((delay) => (
+							{LOADING_DOT_CLASSES.map((delayClass) => (
 								<span
-									key={`loading-dot-${delay}`}
-									className='inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-current transition-discrete duration-700'
-									style={{ animationDelay: `${delay}s` }}
+									key={`loading-dot-${delayClass}`}
+									className={`inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-current transition-discrete duration-700 ${delayClass}`}
 								/>
 							))}
 						</span>
