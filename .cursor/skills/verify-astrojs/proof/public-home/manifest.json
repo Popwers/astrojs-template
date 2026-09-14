@@ -1,0 +1,26 @@
+{
+  "feature": "public-home",
+  "baseUrl": "http://127.0.0.1:4331",
+  "capturedAt": "2026-09-13T23:59:47.719500+00:00",
+  "commands": [
+    "GET http://127.0.0.1:4331/ -> 200",
+    "GET http://127.0.0.1:4331/this-page-does-not-exist-verify -> 404",
+    "screenshot http://127.0.0.1:4331/ -> home.png"
+  ],
+  "checks": [
+    "home HTML contains Welcome to Astro, Accueil, Mentions l\u00e9gales, Politique de confidentialit\u00e9, cookie-banner",
+    "missing route HTML contains Page non trouv\u00e9e",
+    "doctor owned=true, /login has Se connecter, / has Welcome to Astro"
+  ],
+  "files": [
+    "doctor.txt",
+    "home.headers",
+    "home.html",
+    "home.meta.txt",
+    "home.png",
+    "not-found.headers",
+    "not-found.html",
+    "not-found.meta.txt",
+    "manifest.json"
+  ]
+}

@@ -1,0 +1,4 @@
+status=404
+request=GET http://127.0.0.1:4331/this-page-does-not-exist-verify
+final=http://127.0.0.1:4331/this-page-does-not-exist-verify
+markers=Accueil,Mentions légales,Politique de confidentialité,id="cookie-banner",id="accept-all-cookies",Page non trouvée,Retourner à l'accueil
