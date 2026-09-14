@@ -5,14 +5,15 @@ interface Props {
 }
 
 const { class: className, dotsColor = 'current', ...props } = Astro.props;
+
+const delayClasses = ['delay-bounce-0', 'delay-bounce-1', 'delay-bounce-2'] as const;
 ---
 
 <div {...props} class={`flex justify-center items-center space-x-2 h-[3.4rem] ${className}`}>
 	{
-		[0, 0.175, 0.35].map(delay => (
+		delayClasses.map(delayClass => (
 			<span
-				class={`inline-block w-1.5 h-1.5 bg-${dotsColor} rounded-full animate-bounce duration-700 transition-discrete`}
-				style={{ animationDelay: `${delay}s` }}
+				class={`inline-block w-1.5 h-1.5 bg-${dotsColor} rounded-full animate-bounce duration-700 transition-discrete ${delayClass}`}
 			/>
 		))
 	}

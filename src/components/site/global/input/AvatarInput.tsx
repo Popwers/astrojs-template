@@ -4,6 +4,8 @@ import { Memo, Reactive, Show, useObservable } from '@legendapp/state/react';
 import { type ActionError, actions } from 'astro:actions';
 import { useEffect, useRef } from 'react';
 
+const LOADING_DOT_CLASSES = ['delay-bounce-0', 'delay-bounce-1', 'delay-bounce-2'] as const;
+
 /**
  * AvatarInput component
  * Wrapper around an input to change the avatar, with optimistic UI preview.
@@ -106,11 +108,10 @@ export default ({ children }: { children: React.ReactNode }) => {
 					)}
 				</Show>
 				<Reactive.span $className={dotsClass}>
-					{[0, 0.175, 0.35].map((delay) => (
+					{LOADING_DOT_CLASSES.map((delayClass) => (
 						<span
-							key={`loading-dot-${delay}`}
-							className='inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-white transition-discrete duration-700'
-							style={{ animationDelay: `${delay}s` }}
+							key={`loading-dot-${delayClass}`}
+							className={`inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-white transition-discrete duration-700 ${delayClass}`}
 						/>
 					))}
 				</Reactive.span>

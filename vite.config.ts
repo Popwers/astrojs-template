@@ -119,7 +119,7 @@ export default defineConfig({
 			'tools/oxlint/anti-slop/**',
 		],
 		// Vendored anti-slop plugin (tools/oxlint/anti-slop) — rejects low-evidence TS patterns.
-		jsPlugins: [{ name: 'anti-slop', specifier: './tools/oxlint/anti-slop/index.ts' }],
+		jsPlugins: [{ name: 'anti-slop', specifier: './tools/oxlint/anti-slop/index.ts' }, '@shadcn/lint'],
 		options: {
 			typeAware: true,
 			typeCheck: true,
@@ -149,6 +149,12 @@ export default defineConfig({
 			'anti-slop/no-unsafe-dictionary-type': 'error',
 			'anti-slop/no-widen-then-assert': 'error',
 			'anti-slop/require-safety-comment-for-type-assertion': 'error',
+			'shadcn/no-restyle': ['error', { allow: ['layout'] }],
+			'shadcn/no-raw-colors': 'error',
+			'shadcn/no-arbitrary-values': 'error',
+			'shadcn/no-inline-styles': 'error',
+			'shadcn/no-unknown-classes': 'error',
+			'shadcn/require-static-classes': 'error',
 		},
 		overrides: [
 			{
@@ -168,6 +174,122 @@ export default defineConfig({
 					'no-explicit-any': 'off',
 					'no-unused-expressions': 'off',
 					'prefer-number-properties': 'off',
+				},
+			},
+			{
+				files: ['**/components/ui/**', '**/src/components/ui/**'],
+				rules: {
+					'shadcn/no-restyle': 'off',
+				},
+			},
+			{
+				// SCSS primitives (btn, form-group, h3, …) live outside the Tailwind theme graph.
+				files: ['src/**/*.{astro,tsx}'],
+				rules: {
+					'shadcn/no-unknown-classes': [
+						'error',
+						{
+							allow: [
+								'btn',
+								'button',
+								'form-group',
+								'h1',
+								'h2',
+								'h3',
+								'h4',
+								'h5',
+								'h6',
+								'secondary',
+								'tertiary',
+								'bordered',
+								'fit',
+								'starter',
+								'primary',
+								'disabled',
+								'cookie-layer',
+								'cookie-banner',
+								'cookie-modal',
+								'menu-button',
+								'menu-line-1',
+								'menu-line-2',
+								'menu-line-3',
+								'menu',
+								'haveSubmenus',
+								'isFooter',
+								'submenus',
+								'dash-rise',
+								'is-visible',
+								'title',
+							],
+						},
+					],
+				},
+			},
+			{
+				// Legend State `$className` callbacks, forwarded className, and `bg-${dotsColor}`.
+				files: [
+					'src/components/site/global/input/PasswordChecker.tsx',
+					'src/components/site/global/input/AvatarInput.tsx',
+					'src/components/site/global/input/PasswordInput.tsx',
+					'src/components/site/global/input/SubmitButton.tsx',
+					'src/components/site/global/input/ReturnInfo.astro',
+					'src/components/site/global/CardWrapper.astro',
+					'src/components/site/global/Loader.astro',
+				],
+				rules: {
+					'shadcn/require-static-classes': 'off',
+				},
+			},
+			{
+				// Progress scaleX transform and Motion.js color animation (not class-based).
+				files: [
+					'src/components/site/global/input/PasswordChecker.tsx',
+					'src/components/site/global/input/SubmitButton.tsx',
+				],
+				rules: {
+					'shadcn/no-inline-styles': 'off',
+				},
+			},
+			{
+				// One-off marketing/layout sizes that have no theme token yet.
+				files: [
+					'src/layouts/login.astro',
+					'src/components/site/global/navigation/Navbar.astro',
+					'src/components/site/global/CookieBanner.astro',
+					'src/components/site/global/Loader.astro',
+					'src/components/site/global/input/AvatarInput.tsx',
+				],
+				rules: {
+					'shadcn/no-arbitrary-values': 'off',
+				},
+			},
+			{
+				// Astro scoped `<style>` blocks.
+				files: [
+					'src/components/site/global/CookieBanner.astro',
+					'src/components/site/global/navigation/Navbar.astro',
+					'src/components/site/global/navigation/MenuItem.astro',
+					'src/layouts/login.astro',
+					'src/pages/index.astro',
+				],
+				rules: {
+					'shadcn/no-inline-styles': 'off',
+				},
+			},
+			{
+				// Danger-zone delete button restyles SubmitButton with red tokens.
+				files: ['src/pages/dashboard/account.astro'],
+				rules: {
+					'shadcn/no-restyle': 'off',
+				},
+			},
+			{
+				// Stock Astro welcome SVG + placeholder classes.
+				files: ['src/pages/index.astro'],
+				rules: {
+					'shadcn/no-unknown-classes': 'off',
+					'shadcn/no-raw-colors': 'off',
+					'shadcn/no-arbitrary-values': 'off',
 				},
 			},
 		],
