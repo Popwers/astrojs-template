@@ -1,0 +1,7 @@
+pid=2246058
+port=4331
+origin=http://127.0.0.1:4331
+owned=true
+login=200
+home=200
+markers=Se connecter,Welcome to Astro

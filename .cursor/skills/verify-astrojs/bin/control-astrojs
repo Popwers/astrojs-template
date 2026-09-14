@@ -1,0 +1,605 @@
+#!/usr/bin/env bash
+# Agent harness for astrojs-template. Invoke from the repo root.
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/../../../.." && pwd)"
+SKILL_DIR="$ROOT/.cursor/skills/verify-astrojs"
+TMP_DIR="${ASTROJS_VERIFY_TMP:-/tmp/verify-astrojs}"
+STATE_FILE="$TMP_DIR/state"
+ENV_FILE="$TMP_DIR/run.env"
+LOG_FILE="$TMP_DIR/astro.log"
+PID_FILE="$TMP_DIR/pid"
+PROOF_DIR="${ASTROJS_VERIFY_EVIDENCE_DIR:-$SKILL_DIR/proof}"
+DEFAULT_PORT="${ASTROJS_VERIFY_PORT:-4331}"
+
+export PATH="${HOME}/.local/bin:${HOME}/.grok/bin:${HOME}/.bun/bin:${HOME}/.local/node22/bin:${PATH}"
+
+usage() {
+	cat <<'EOF'
+control-astrojs <command>
+
+Commands:
+  launch [--port N] [--json]          Start isolated astro dev
+  doctor [--json]                     Read-only health check (exit 0 = driveable)
+  http GET PATH [--no-follow]         Request against the owned origin
+  screenshot --path FILE [--url /p]   Headless Chrome PNG
+  drive public-home                   Scripted public-home recipe + proof/
+  cleanup                             Stop what launch started (keep proof/)
+  self-check                          CLI smoke without starting the app
+  help                                Show this text
+
+Env:
+  ASTROJS_VERIFY_PORT           default 4331
+  ASTROJS_VERIFY_TMP            default /tmp/verify-astrojs
+  ASTROJS_VERIFY_EVIDENCE_DIR   default <skill>/proof
+EOF
+}
+
+die() {
+	echo "control-astrojs: $*" >&2
+	exit 1
+}
+
+pid_alive() {
+	kill -0 "$1" 2>/dev/null
+}
+
+list_descendants() {
+	local children child
+	children="$(pgrep -P "$1" 2>/dev/null || true)"
+	for child in $children; do
+		list_descendants "$child"
+		printf '%s ' "$child"
+	done
+}
+
+stop_pid_tree() {
+	local root="$1"
+	local descendants
+	descendants="$(list_descendants "$root")"
+	# Intentional word-split of the descendant pid list.
+	# shellcheck disable=SC2086
+	kill -TERM $descendants "$root" 2>/dev/null || true
+	local deadline=$((SECONDS + 10))
+	while [ "$SECONDS" -lt "$deadline" ] && pid_alive "$root"; do
+		sleep 0.2
+	done
+	if pid_alive "$root"; then
+		# shellcheck disable=SC2086
+		kill -KILL $descendants "$root" 2>/dev/null || true
+	fi
+}
+
+port_in_use() {
+	local port="$1"
+	python3 - "$port" <<'PY'
+import socket, sys
+port = int(sys.argv[1])
+s = socket.socket()
+s.settimeout(0.3)
+try:
+    s.connect(("127.0.0.1", port))
+except OSError:
+    sys.exit(1)
+else:
+    s.close()
+    sys.exit(0)
+PY
+}
+
+ensure_node() {
+	local vp_node="" candidate ver major
+	if command -v vp >/dev/null 2>&1; then
+		case "$(command -v vp)" in
+		*/node_modules/.bin/vp) ;;
+		*)
+			vp_node="$(vp env which node 2>/dev/null | awk 'NR==1 { print; exit }')" || true
+			;;
+		esac
+	fi
+	if [ -n "$vp_node" ] && [ -x "$vp_node" ]; then
+		export PATH="$(dirname "$vp_node"):${PATH}"
+	fi
+	for candidate in \
+		"${HOME}/.local/share/vite-plus/js_runtime/node/24.21.0/bin" \
+		"${HOME}/.local/share/vite-plus/js_runtime/node/22.23.2/bin" \
+		"${HOME}/.local/node22/bin" \
+		"${HOME}/.local/node/bin"; do
+		if [ -x "${candidate}/node" ]; then
+			export PATH="${candidate}:${PATH}"
+			break
+		fi
+	done
+	ver="$(node -v 2>/dev/null || true)"
+	major="$(printf '%s' "${ver#v}" | awk -F. '{ print $1 + 0 }')"
+	[ "${major:-0}" -ge 22 ] || die "need Node >=22.12 (got ${ver:-missing}); install via vp env"
+}
+
+ensure_deps() {
+	if [ ! -d "$ROOT/node_modules" ] || [ ! -x "$ROOT/node_modules/.bin/astro" ]; then
+		command -v bun >/dev/null 2>&1 || die "missing bun"
+		(cd "$ROOT" && bun install)
+	fi
+	[ -x "$ROOT/node_modules/.bin/astro" ] || die "astro binary missing after install"
+}
+
+load_state() {
+	[ -f "$STATE_FILE" ] || die "no state file at $STATE_FILE (run launch first)"
+	# shellcheck disable=SC1090
+	. "$STATE_FILE"
+	[ -n "${PORT:-}" ] || die "state is missing PORT"
+	[ -n "${PID:-}" ] || die "state is missing PID"
+}
+
+origin() {
+	printf 'http://127.0.0.1:%s' "${PORT:?}"
+}
+
+write_state() {
+	mkdir -p "$TMP_DIR"
+	cat >"$STATE_FILE" <<EOF
+PID=$1
+PORT=$2
+STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+REPO=$ROOT
+LOG=$LOG_FILE
+ORIGIN=http://127.0.0.1:$2
+OWNED=1
+EOF
+	printf '%s\n' "$1" >"$PID_FILE"
+}
+
+pick_port() {
+	local start="$1" port
+	port="$start"
+	while [ "$port" -le $((start + 20)) ]; do
+		if [ "$port" -eq 4321 ]; then
+			port=$((port + 1))
+			continue
+		fi
+		if ! port_in_use "$port"; then
+			printf '%s\n' "$port"
+			return 0
+		fi
+		port=$((port + 1))
+	done
+	die "no free port in ${start}-$((start + 20)) (skipping 4321)"
+}
+
+wait_ready() {
+	local port="$1" launch_pid="${2:-}"
+	local deadline=$((SECONDS + 90)) status
+	while [ "$SECONDS" -lt "$deadline" ]; do
+		if [ -n "$launch_pid" ] && ! pid_alive "$launch_pid"; then
+			die "astro process $launch_pid exited before ready (see $LOG_FILE)"
+		fi
+		status="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 2 "http://127.0.0.1:${port}/login" 2>/dev/null || true)"
+		case "$status" in
+		[1-4][0-9][0-9]) return 0 ;;
+		esac
+		sleep 0.5
+	done
+	die "app did not become ready on :$port (see $LOG_FILE)"
+}
+
+cmd_launch() {
+	local want_json=0 requested="" port secret
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		--json) want_json=1; shift ;;
+		--port)
+			[ $# -ge 2 ] || die "--port needs a value"
+			requested="$2"
+			shift 2
+			;;
+		*) die "unknown launch flag: $1" ;;
+		esac
+	done
+
+	if [ -f "$STATE_FILE" ]; then
+		# shellcheck disable=SC1090
+		. "$STATE_FILE"
+		if [ -n "${PID:-}" ] && pid_alive "$PID" && [ -n "${PORT:-}" ] && port_in_use "$PORT"; then
+			if [ -n "$requested" ] && [ "$requested" != "$PORT" ]; then
+				die "already launched pid=$PID port=$PORT; cleanup first or omit --port"
+			fi
+			if [ "$want_json" -eq 1 ]; then
+				python3 -c 'import json,os; print(json.dumps({"pid":os.environ["PID"],"port":int(os.environ["PORT"]),"origin":os.environ["ORIGIN"],"owned":True}))' \
+					2>/dev/null || true
+			fi
+			printf 'already launched pid=%s port=%s origin=%s\n' "$PID" "$PORT" "$(origin)"
+			cmd_doctor >/dev/null
+			return 0
+		fi
+		if [ -n "${PID:-}" ] && pid_alive "$PID"; then
+			die "another verify-astrojs instance is running (pid=$PID port=${PORT:-unknown}). cleanup first"
+		fi
+	fi
+
+	if [ -n "$requested" ]; then
+		port_in_use "$requested" && die "port $requested is already in use and is not this run"
+		port="$requested"
+	else
+		port="$(pick_port "$DEFAULT_PORT")"
+	fi
+
+	ensure_node
+	ensure_deps
+	command -v openssl >/dev/null 2>&1 || die "missing openssl"
+	secret="$(openssl rand -hex 32)"
+
+	mkdir -p "$TMP_DIR" "$PROOF_DIR"
+	: >"$LOG_FILE"
+	cat >"$ENV_FILE" <<EOF
+COOKIE_SIGNING_SECRET=$secret
+STRAPI_URL=http://127.0.0.1:1
+STRAPI_TOKEN=verify-placeholder-not-a-real-token
+HOST=127.0.0.1
+PORT=$port
+ASTROJS_VERIFY_ORIGIN=http://127.0.0.1:$port
+EOF
+
+	(
+		cd "$ROOT"
+		set -a
+		# shellcheck disable=SC1090
+		. "$ENV_FILE"
+		set +a
+		exec ./node_modules/.bin/astro dev --host 127.0.0.1 --port "$port"
+	) >"$LOG_FILE" 2>&1 </dev/null &
+	local pid=$!
+	write_state "$pid" "$port"
+	wait_ready "$port" "$pid"
+	if [ "$want_json" -eq 1 ]; then
+		python3 - "$pid" "$port" <<'PY'
+import json, sys
+pid, port = sys.argv[1], int(sys.argv[2])
+print(json.dumps({"pid": pid, "port": port, "origin": f"http://127.0.0.1:{port}", "owned": True}))
+PY
+	fi
+	printf 'launched pid=%s port=%s origin=%s\n' "$pid" "$port" "http://127.0.0.1:${port}"
+}
+
+cmd_doctor() {
+	local want_json=0
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		--json) want_json=1; shift ;;
+		*) die "unknown doctor flag: $1" ;;
+		esac
+	done
+	load_state
+	pid_alive "$PID" || die "recorded pid $PID is dead"
+	port_in_use "$PORT" || die "port $PORT is not listening"
+
+	local login_body home_body login_status home_status
+	login_body="$(mktemp)"
+	home_body="$(mktemp)"
+	login_status="$(curl -sS -o "$login_body" -w '%{http_code}' --max-time 10 "$(origin)/login" || true)"
+	home_status="$(curl -sS -o "$home_body" -w '%{http_code}' --max-time 10 "$(origin)/" || true)"
+	case "$login_status" in
+	[1-4][0-9][0-9]) ;;
+	*)
+		rm -f "$login_body" "$home_body"
+		die "GET /login returned $login_status"
+		;;
+	esac
+	grep -q 'Se connecter' "$login_body" || {
+		rm -f "$login_body" "$home_body"
+		die "GET /login missing Se connecter"
+	}
+	[ "$home_status" = "200" ] || {
+		rm -f "$login_body" "$home_body"
+		die "GET / returned $home_status"
+	}
+	grep -q 'Welcome to Astro' "$home_body" || {
+		rm -f "$login_body" "$home_body"
+		die "GET / missing Welcome to Astro"
+	}
+	rm -f "$login_body" "$home_body"
+
+	if [ "$want_json" -eq 1 ]; then
+		python3 - "$PID" "$PORT" "$login_status" "$home_status" <<'PY'
+import json, sys
+pid, port, login, home = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
+print(json.dumps({
+    "pid": pid,
+    "port": port,
+    "origin": f"http://127.0.0.1:{port}",
+    "owned": True,
+    "loginStatus": login,
+    "homeStatus": home,
+}))
+PY
+		return 0
+	fi
+	cat <<EOF
+pid=$PID
+port=$PORT
+origin=$(origin)
+owned=true
+login=$login_status
+home=$home_status
+markers=Se connecter,Welcome to Astro
+EOF
+}
+
+http_get() {
+	local method="$1" path="$2" follow="$3"
+	local out_body="${4:-}" out_headers="${5:-}"
+	load_state
+	case "$path" in
+	/*) ;;
+	*) die "path must start with /" ;;
+	esac
+	[ "$method" = "GET" ] || die "only GET is supported"
+
+	local target curl_args status location final
+	target="$(origin)$path"
+	curl_args=(-sS -D - -o /tmp/verify-astrojs-body.$$ --max-time 20)
+	if [ "$follow" = "0" ]; then
+		curl_args+=(--max-redirs 0)
+	else
+		curl_args+=(-L)
+	fi
+
+	local dump
+	dump="$(mktemp)"
+	set +e
+	curl "${curl_args[@]}" -w '\n__CURL__ %{http_code} %{url_effective}\n' "$target" >"$dump" 2>/tmp/verify-astrojs-curl-err.$$
+	local curl_rc=$?
+	set -e
+	if [ "$follow" = "0" ] && [ "$curl_rc" -eq 47 ]; then
+		curl_rc=0
+	fi
+	[ "$curl_rc" -eq 0 ] || die "curl failed for $target ($(cat /tmp/verify-astrojs-curl-err.$$))"
+
+	status="$(awk '/^__CURL__/ { print $2 }' "$dump" | tail -n 1)"
+	final="$(awk '/^__CURL__/ { print $3 }' "$dump" | tail -n 1)"
+	location="$(awk 'BEGIN{IGNORECASE=1} /^Location:/{ sub("\r",""); print $2; exit }' "$dump")"
+
+	if [ -n "$out_body" ]; then
+		mkdir -p "$(dirname "$out_body")"
+		cp /tmp/verify-astrojs-body.$$ "$out_body"
+	fi
+	if [ -n "$out_headers" ]; then
+		mkdir -p "$(dirname "$out_headers")"
+		awk '/^__CURL__/ { exit } { print }' "$dump" >"$out_headers"
+	fi
+
+	printf 'status=%s\n' "$status"
+	printf 'request=%s %s\n' "$method" "$target"
+	printf 'final=%s\n' "$final"
+	if [ -n "$location" ]; then
+		printf 'location=%s\n' "$location"
+	fi
+	printf 'markers='
+	local hits="" needle
+	for needle in \
+		'Welcome to Astro' \
+		'Se connecter' \
+		'Accueil' \
+		'Mentions légales' \
+		'Politique de confidentialité' \
+		'id="cookie-banner"' \
+		'id="accept-all-cookies"' \
+		'id="email"' \
+		'id="password"' \
+		'id="passwordConfirmation"' \
+		'Mot de passe oublié ?' \
+		'Inscrivez-vous' \
+		'Connectez-vous' \
+		'Page non trouvée' \
+		"Retourner à l'accueil" \
+		'Vous avez oublié votre mot de passe ?' \
+		'Réinitialiser mon mot de passe'; do
+		if grep -q -F "$needle" /tmp/verify-astrojs-body.$$; then
+			if [ -n "$hits" ]; then
+				hits="$hits,"
+			fi
+			hits="${hits}${needle}"
+		fi
+	done
+	# Heading uses U+2019; match it separately so ASCII apostrophe does not hide a miss.
+	if grep -q $'S\u2019inscrire' /tmp/verify-astrojs-body.$$ 2>/dev/null || grep -q 'S’inscrire' /tmp/verify-astrojs-body.$$; then
+		if [ -n "$hits" ]; then
+			hits="$hits,"
+		fi
+		hits="${hits}S’inscrire"
+	fi
+	printf '%s\n' "$hits"
+
+	rm -f "$dump" /tmp/verify-astrojs-body.$$ /tmp/verify-astrojs-curl-err.$$
+}
+
+cmd_http() {
+	local method="" path="" follow=1
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		GET|POST) method="$1"; shift ;;
+		--no-follow) follow=0; shift ;;
+		--follow) follow=1; shift ;;
+		*)
+			if [ -z "$path" ]; then
+				path="$1"
+				shift
+			else
+				die "unexpected http arg: $1"
+			fi
+			;;
+		esac
+	done
+	[ -n "$method" ] || die "http needs a method (GET)"
+	[ -n "$path" ] || die "http needs a path"
+	http_get "$method" "$path" "$follow"
+}
+
+cmd_screenshot() {
+	local path="" url_path="/"
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		--path) path="$2"; shift 2 ;;
+		--url) url_path="$2"; shift 2 ;;
+		*) die "unknown screenshot flag: $1" ;;
+		esac
+	done
+	[ -n "$path" ] || die "usage: control-astrojs screenshot --path FILE [--url /path]"
+	load_state
+	cmd_doctor >/dev/null
+	local chrome=""
+	for chrome in google-chrome google-chrome-stable chromium chromium-browser /usr/bin/google-chrome; do
+		if command -v "$chrome" >/dev/null 2>&1 || [ -x "$chrome" ]; then
+			break
+		fi
+		chrome=""
+	done
+	[ -n "$chrome" ] || die "no Chrome/Chromium on PATH"
+	mkdir -p "$(dirname "$path")"
+	local target
+	target="$(origin)$url_path"
+	local profile="$TMP_DIR/chrome-profile"
+	rm -rf "$profile"
+	mkdir -p "$profile"
+	rm -f "$path"
+	local chrome_log="$TMP_DIR/chrome.log"
+	timeout 45 "$chrome" --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage \
+		--hide-scrollbars --window-size=1280,800 --virtual-time-budget=8000 \
+		--user-data-dir="$profile" --screenshot="$path" "$target" >"$chrome_log" 2>&1 || true
+	if [ -s "$path" ]; then
+		echo "screenshot: $path ($target)"
+		return 0
+	fi
+	rm -f "$path"
+	local profile_old="$TMP_DIR/chrome-profile-old"
+	rm -rf "$profile_old"
+	mkdir -p "$profile_old"
+	timeout 45 "$chrome" --headless --disable-gpu --no-sandbox --disable-dev-shm-usage \
+		--hide-scrollbars --window-size=1280,800 \
+		--user-data-dir="$profile_old" --screenshot="$path" "$target" >>"$chrome_log" 2>&1 || true
+	if [ -s "$path" ]; then
+		echo "screenshot: $path ($target) (headless fallback)"
+		return 0
+	fi
+	echo "screenshot: chrome timed out or failed ($target)" >&2
+	return 1
+}
+
+require_markers() {
+	local haystack="$1"
+	shift
+	local needle
+	for needle in "$@"; do
+		printf '%s\n' "$haystack" | grep -q -F "$needle" || die "missing marker: $needle"
+	done
+}
+
+cmd_drive() {
+	local feature="${1:-}"
+	[ "$feature" = "public-home" ] || die "drive supports public-home (got ${feature:-empty})"
+	cmd_doctor >/dev/null
+	local out="$PROOF_DIR/public-home"
+	mkdir -p "$out"
+
+	local home_meta not_found_meta
+	home_meta="$out/home.meta.txt"
+	not_found_meta="$out/not-found.meta.txt"
+
+	http_get GET / 1 "$out/home.html" "$out/home.headers" | tee "$home_meta" >/dev/null
+	require_markers "$(cat "$home_meta")" \
+		'status=200' \
+		'Welcome to Astro' \
+		'Accueil' \
+		'Mentions légales' \
+		'Politique de confidentialité' \
+		'id="cookie-banner"' \
+		'id="accept-all-cookies"'
+
+	http_get GET /this-page-does-not-exist-verify 1 "$out/not-found.html" "$out/not-found.headers" | tee "$not_found_meta" >/dev/null
+	require_markers "$(cat "$not_found_meta")" 'status=404' 'Page non trouvée' "Retourner à l'accueil"
+
+	cmd_doctor | tee "$out/doctor.txt" >/dev/null
+	local shot_note="screenshot skipped"
+	if cmd_screenshot --path "$out/home.png" --url /; then
+		shot_note="screenshot http://127.0.0.1:${PORT}/ -> home.png"
+	else
+		echo "drive public-home: screenshot skipped (chrome failed or timed out)" >&2
+	fi
+
+	python3 - "$out" "$(origin)" "$shot_note" <<'PY'
+import json, sys, os, datetime
+out, origin, shot = sys.argv[1], sys.argv[2], sys.argv[3]
+files = sorted(name for name in os.listdir(out) if name != "manifest.json")
+if "manifest.json" not in files:
+    files.append("manifest.json")
+payload = {
+    "feature": "public-home",
+    "baseUrl": origin,
+    "capturedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    "commands": [
+        f"GET {origin}/ -> 200",
+        f"GET {origin}/this-page-does-not-exist-verify -> 404",
+        shot,
+    ],
+    "checks": [
+        "home HTML contains Welcome to Astro, Accueil, Mentions légales, Politique de confidentialité, cookie-banner",
+        "missing route HTML contains Page non trouvée",
+        "doctor owned=true, /login has Se connecter, / has Welcome to Astro",
+    ],
+    "files": files,
+}
+open(os.path.join(out, "manifest.json"), "w").write(json.dumps(payload, indent=2) + "\n")
+PY
+	printf 'drove public-home evidence=%s\n' "$out"
+}
+
+cmd_cleanup() {
+	if [ ! -f "$STATE_FILE" ]; then
+		printf 'nothing to clean (no state file)\n'
+		return 0
+	fi
+	# shellcheck disable=SC1090
+	. "$STATE_FILE"
+	if [ -n "${PID:-}" ] && pid_alive "$PID"; then
+		stop_pid_tree "$PID"
+	fi
+	rm -f "$STATE_FILE" "$PID_FILE" "$ENV_FILE"
+	rm -rf "$TMP_DIR/chrome-profile" "$TMP_DIR/chrome-profile-old"
+	printf 'cleaned pid=%s port=%s evidence=%s\n' "${PID:-none}" "${PORT:-none}" "$PROOF_DIR"
+	[ -d "$PROOF_DIR" ] || die "cleanup deleted evidence at $PROOF_DIR"
+}
+
+cmd_self_check() {
+	usage >/dev/null
+	if [ -f "$STATE_FILE" ]; then
+		printf 'self-check: state exists (doctor may be valid)\n'
+		return 0
+	fi
+	set +e
+	cmd_doctor >/tmp/verify-astrojs-self-doctor.$$ 2>/tmp/verify-astrojs-self-doctor-err.$$
+	local rc=$?
+	set -e
+	[ "$rc" -ne 0 ] || die "doctor succeeded without a state file"
+	grep -q 'no state file' /tmp/verify-astrojs-self-doctor-err.$$ || die "doctor-without-instance had unexpected error"
+	rm -f /tmp/verify-astrojs-self-doctor.$$ /tmp/verify-astrojs-self-doctor-err.$$
+	printf 'self-check: ok (help + doctor-without-instance)\n'
+}
+
+main() {
+	local cmd="${1:-help}"
+	if [ $# -gt 0 ]; then
+		shift
+	fi
+	case "$cmd" in
+	launch) cmd_launch "$@" ;;
+	doctor) cmd_doctor "$@" ;;
+	http) cmd_http "$@" ;;
+	screenshot) cmd_screenshot "$@" || die "screenshot failed" ;;
+	drive) cmd_drive "$@" ;;
+	cleanup) cmd_cleanup "$@" ;;
+	self-check) cmd_self_check "$@" ;;
+	help|-h|--help) usage ;;
+	*) die "unknown command: $cmd" ;;
+	esac
+}
+
+main "$@"

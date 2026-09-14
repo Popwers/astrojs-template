@@ -1,0 +1,4 @@
+status=200
+request=GET http://127.0.0.1:4331/
+final=http://127.0.0.1:4331/
+markers=Welcome to Astro,Accueil,Mentions légales,Politique de confidentialité,id="cookie-banner",id="accept-all-cookies"
