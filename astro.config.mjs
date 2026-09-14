@@ -48,7 +48,7 @@ export default defineConfig({
 			filename: 'sw.ts',
 			workbox: {
 				navigateFallback: '/',
-				globPatterns: ['**/*.{css,js,html,svg,png,ico,txt}'],
+				globPatterns: ['**/*.{css,js,html,svg,png,ico,txt,woff2}'],
 				navigateFallbackAllowlist: [/^\/$/],
 				runtimeCaching: [
 					{
