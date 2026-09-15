@@ -119,7 +119,7 @@ export default defineConfig({
 			'tools/oxlint/anti-slop/**',
 		],
 		// Vendored anti-slop plugin (tools/oxlint/anti-slop) — rejects low-evidence TS patterns.
-		jsPlugins: [{ name: 'anti-slop', specifier: './tools/oxlint/anti-slop/index.ts' }],
+		jsPlugins: [{ name: 'anti-slop', specifier: './tools/oxlint/anti-slop/index.ts' }, '@shadcn/lint'],
 		options: {
 			typeAware: true,
 			typeCheck: true,
@@ -149,6 +149,12 @@ export default defineConfig({
 			'anti-slop/no-unsafe-dictionary-type': 'error',
 			'anti-slop/no-widen-then-assert': 'error',
 			'anti-slop/require-safety-comment-for-type-assertion': 'error',
+			'shadcn/no-restyle': ['error', { allow: ['layout'] }],
+			'shadcn/no-raw-colors': 'error',
+			'shadcn/no-arbitrary-values': 'error',
+			'shadcn/no-inline-styles': 'error',
+			'shadcn/no-unknown-classes': 'error',
+			'shadcn/require-static-classes': 'error',
 		},
 		overrides: [
 			{
@@ -168,6 +174,57 @@ export default defineConfig({
 					'no-explicit-any': 'off',
 					'no-unused-expressions': 'off',
 					'prefer-number-properties': 'off',
+					// Flags `<style>` elements. Astro scoped CSS is not an inline style.
+					'shadcn/no-inline-styles': 'off',
+				},
+			},
+			{
+				files: ['**/components/ui/**', '**/src/components/ui/**'],
+				rules: {
+					'shadcn/no-restyle': 'off',
+				},
+			},
+			{
+				// SCSS primitives (btn, form-group, h3, …) live outside the Tailwind theme graph.
+				files: ['src/**/*.{astro,tsx}'],
+				rules: {
+					'shadcn/no-unknown-classes': [
+						'error',
+						{
+							allow: [
+								'btn',
+								'button',
+								'form-group',
+								'h1',
+								'h2',
+								'h3',
+								'h4',
+								'h5',
+								'h6',
+								'secondary',
+								'tertiary',
+								'bordered',
+								'fit',
+								'starter',
+								'primary',
+								'disabled',
+								'cookie-layer',
+								'cookie-banner',
+								'cookie-modal',
+								'menu-button',
+								'menu-line-1',
+								'menu-line-2',
+								'menu-line-3',
+								'menu',
+								'haveSubmenus',
+								'isFooter',
+								'submenus',
+								'dash-rise',
+								'is-visible',
+								'title',
+							],
+						},
+					],
 				},
 			},
 		],

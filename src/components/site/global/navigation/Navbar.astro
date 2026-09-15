@@ -33,15 +33,15 @@ const menus: MenuItems[] = menuArray.header;
 	</a>
 
 	<div
-		class='flex flex-col justify-center items-center gap-[5px] cursor-pointer hover:scale-105 active:scale-95 transition-transform duration-200 group xl:hidden menu-button z-[99]'>
+		class='menu-button group z-menu xl:hidden flex cursor-pointer flex-col items-center justify-center gap-hamburger transition-transform duration-200 hover:scale-105 active:scale-95'>
 		<span
-			class='w-8 h-[3px] bg-blue-dark rounded-full block group-hover:bg-blue group-active:bg-blue transition-[transform,opacity,background-color] duration-200 menu-line-1 data-active:translate-y-[8px] data-active:-rotate-45'
+			class='menu-line-1 bg-blue-dark group-hover:bg-blue group-active:bg-blue data-active:translate-y-2 block h-hamburger w-8 rounded-full transition-[transform,opacity,background-color] duration-200 data-active:-rotate-45'
 		></span>
 		<span
-			class='w-8 h-[3px] bg-blue-dark rounded-full block group-hover:bg-blue group-active:bg-blue transition-[transform,opacity,background-color] duration-200 menu-line-2 data-active:opacity-0'
+			class='menu-line-2 bg-blue-dark group-hover:bg-blue group-active:bg-blue block h-hamburger w-8 rounded-full transition-[transform,opacity,background-color] duration-200 data-active:opacity-0'
 		></span>
 		<span
-			class='w-8 h-[3px] bg-blue-dark rounded-full block group-hover:bg-blue group-active:bg-blue transition-[transform,opacity,background-color] duration-200 menu-line-3 data-active:translate-y-[-8px] data-active:rotate-45'
+			class='menu-line-3 bg-blue-dark group-hover:bg-blue group-active:bg-blue data-active:-translate-y-2 block h-hamburger w-8 rounded-full transition-[transform,opacity,background-color] duration-200 data-active:rotate-45'
 		></span>
 	</div>
 
@@ -57,7 +57,7 @@ const menus: MenuItems[] = menuArray.header;
 		</ul>
 
 		<AvatarIsland server:defer>
-			<Loader class='w-[186px] h-[56px]' slot='fallback' />
+			<Loader class='h-14 w-avatar-loader' slot='fallback' />
 		</AvatarIsland>
 	</div>
 </nav>
