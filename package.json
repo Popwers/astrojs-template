@@ -45,8 +45,8 @@
     "@types/react-dom": "^19.3.0",
     "@vite-pwa/assets-generator": "^1.0.4",
     "@vite-pwa/astro": "^1.2.0",
-    "baseline-browser-mapping": "^2.11.23",
-    "browserslist": "4.28.9",
+    "baseline-browser-mapping": "^2.11.24",
+    "browserslist": "4.29.0",
     "sass": "^1.104.1",
     "semantic-release": "^25.0.9",
     "tailwindcss": "^4.3.3",
@@ -55,7 +55,7 @@
     "vite-plus": "^0.3.2"
   },
   "overrides": {
-    "baseline-browser-mapping": "^2.11.23",
+    "baseline-browser-mapping": "^2.11.24",
     "yaml": "^2.8.3",
     "esbuild": "^0.28.1",
     "astro": "^7.3.2",
