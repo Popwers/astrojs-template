@@ -1,19 +1,26 @@
 ---
+import { cn } from '@lib/utils';
+
 interface Props {
 	class?: string;
-	dotsColor?: string;
+	dotsColor?: 'current' | 'white';
 }
 
 const { class: className, dotsColor = 'current', ...props } = Astro.props;
 
 const delayClasses = ['delay-bounce-0', 'delay-bounce-1', 'delay-bounce-2'] as const;
+const dotColorClass = dotsColor === 'white' ? 'bg-white' : 'bg-current';
 ---
 
-<div {...props} class={`flex justify-center items-center space-x-2 h-[3.4rem] ${className}`}>
+<div {...props} class={cn('flex h-loader items-center justify-center space-x-2', className)}>
 	{
-		delayClasses.map(delayClass => (
+		delayClasses.map((delayClass) => (
 			<span
-				class={`inline-block w-1.5 h-1.5 bg-${dotsColor} rounded-full animate-bounce duration-700 transition-discrete ${delayClass}`}
+				class={cn(
+					'inline-block h-1.5 w-1.5 animate-bounce rounded-full duration-700 transition-discrete',
+					dotColorClass,
+					delayClass,
+				)}
 			/>
 		))
 	}

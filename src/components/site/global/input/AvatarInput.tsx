@@ -1,6 +1,7 @@
 import { prepareAvatar } from '@data/imageCompression';
 import { AVATAR_INPUT_ACCEPT } from '@data/userOptions';
 import { Memo, Reactive, Show, useObservable } from '@legendapp/state/react';
+import { cn } from '@lib/utils';
 import { type ActionError, actions } from 'astro:actions';
 import { useEffect, useRef } from 'react';
 
@@ -33,10 +34,13 @@ export default ({ children }: { children: React.ReactNode }) => {
 	const isBusy = () => isPreparing.get() || isLoading.get();
 
 	const labelClass = () =>
-		`btn fit tertiary relative ${isBusy() ? 'opacity-50 !pointer-events-none' : 'opacity-100'}`;
+		cn('btn relative fit tertiary', isBusy() ? 'pointer-events-none opacity-50' : 'opacity-100');
 
 	const dotsClass = () =>
-		`absolute inset-0 z-10 after:z-[-1] after:absolute after:inset-0 after:bg-black flex justify-center items-center space-x-2 transition-opacity after:transition-opacity ${isBusy() ? 'opacity-100 after:opacity-30' : 'opacity-0 after:opacity-0'}`;
+		cn(
+			'absolute inset-0 z-10 flex items-center justify-center space-x-2 transition-opacity after:absolute after:inset-0 after:-z-10 after:bg-black after:transition-opacity',
+			isBusy() ? 'opacity-100 after:opacity-30' : 'opacity-0 after:opacity-0',
+		);
 
 	/**
 	 * Handle the change event of the input.
@@ -111,7 +115,10 @@ export default ({ children }: { children: React.ReactNode }) => {
 					{LOADING_DOT_CLASSES.map((delayClass) => (
 						<span
 							key={`loading-dot-${delayClass}`}
-							className={`inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-white transition-discrete duration-700 ${delayClass}`}
+							className={cn(
+								'inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-white transition-discrete duration-700',
+								delayClass,
+							)}
 						/>
 					))}
 				</Reactive.span>

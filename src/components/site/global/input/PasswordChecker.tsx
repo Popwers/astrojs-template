@@ -1,4 +1,5 @@
 import { Reactive, useObservable, useSelector } from '@legendapp/state/react';
+import { cn } from '@lib/utils';
 
 import PasswordInput from './PasswordInput.tsx';
 
@@ -37,23 +38,40 @@ export default ({ isNewPassword = false }: PasswordCheckerProps) => {
 			if (strength.value() <= 80) return 'bg-blue';
 			return 'bg-green';
 		},
+		widthClass: () => {
+			const value = strength.value();
+			if (value <= 0) return 'w-0';
+			if (value <= 20) return 'w-1/5';
+			if (value <= 40) return 'w-2/5';
+			if (value <= 60) return 'w-3/5';
+			if (value <= 80) return 'w-4/5';
+			return 'w-full';
+		},
 	}));
 
 	const progressBarClass = () =>
-		`${strength.className()} h-2.5 w-full origin-left rounded-full transition-transform duration-200`;
+		cn(
+			'h-2.5 rounded-full transition-all duration-200',
+			strength.className(),
+			strength.widthClass(),
+		);
 	const sizeCheck = () =>
-		`transition-colors ${strength.size() ? 'text-green' : password.get() !== '' ? 'text-red' : ''}`;
+		cn('transition-colors', strength.size() ? 'text-green' : password.get() !== '' && 'text-red');
 	const uppercaseCheck = () =>
-		`transition-colors ${strength.uppercase() ? 'text-green' : password.get() !== '' ? 'text-red' : ''}`;
+		cn('transition-colors', strength.uppercase() ? 'text-green' : password.get() !== '' && 'text-red');
 	const lowercaseCheck = () =>
-		`transition-colors ${strength.lowercase() ? 'text-green' : password.get() !== '' ? 'text-red' : ''}`;
+		cn('transition-colors', strength.lowercase() ? 'text-green' : password.get() !== '' && 'text-red');
 	const numberCheck = () =>
-		`transition-colors ${strength.number() ? 'text-green' : password.get() !== '' ? 'text-red' : ''}`;
+		cn('transition-colors', strength.number() ? 'text-green' : password.get() !== '' && 'text-red');
 	const specialCheck = () =>
-		`transition-colors ${strength.special() ? 'text-green' : password.get() !== '' ? 'text-red' : ''}`;
+		cn('transition-colors', strength.special() ? 'text-green' : password.get() !== '' && 'text-red');
 
-	const checkPasswordConfirmation = () =>
-		`${password.get() !== '' && passwordConfirmation.get() !== '' ? (password.get() !== passwordConfirmation.get() ? 'border-red focus:border-red' : 'border-green focus:border-green') : ''}`;
+	const checkPasswordConfirmation = () => {
+		if (password.get() === '' || passwordConfirmation.get() === '') return '';
+		return password.get() !== passwordConfirmation.get()
+			? 'border-red focus:border-red'
+			: 'border-green focus:border-green';
+	};
 
 	return (
 		<>
@@ -86,7 +104,6 @@ export default ({ isNewPassword = false }: PasswordCheckerProps) => {
 					$aria-valuenow={strength.value()}
 					aria-valuemin={0}
 					aria-valuemax={100}
-					$style={() => ({ transform: `scaleX(${strength.value() / 100})` })}
 				/>
 			</div>
 

@@ -51,6 +51,16 @@
 	--radius-md: 20px;
 	--radius-lg: 40px;
 	--radius-card: 1.9rem;
+	--radius-login: 60px;
+
+	/* One-off layout sizes used by the template chrome */
+	--height-loader: 3.4rem;
+	--height-hamburger: 3px;
+	--spacing-hamburger: 5px;
+	--z-index-menu: 99;
+	--width-avatar-loader: 186px;
+	--min-width-login: 750px;
+	--min-height-login: 750px;
 
 	/* Shadows */
 	--shadow-custom:

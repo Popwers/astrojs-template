@@ -174,6 +174,8 @@ export default defineConfig({
 					'no-explicit-any': 'off',
 					'no-unused-expressions': 'off',
 					'prefer-number-properties': 'off',
+					// Flags `<style>` elements. Astro scoped CSS is not an inline style.
+					'shadcn/no-inline-styles': 'off',
 				},
 			},
 			{
@@ -223,73 +225,6 @@ export default defineConfig({
 							],
 						},
 					],
-				},
-			},
-			{
-				// Legend State `$className` callbacks, forwarded className, and `bg-${dotsColor}`.
-				files: [
-					'src/components/site/global/input/PasswordChecker.tsx',
-					'src/components/site/global/input/AvatarInput.tsx',
-					'src/components/site/global/input/PasswordInput.tsx',
-					'src/components/site/global/input/SubmitButton.tsx',
-					'src/components/site/global/input/ReturnInfo.astro',
-					'src/components/site/global/CardWrapper.astro',
-					'src/components/site/global/Loader.astro',
-				],
-				rules: {
-					'shadcn/require-static-classes': 'off',
-				},
-			},
-			{
-				// Progress scaleX transform and Motion.js color animation (not class-based).
-				files: [
-					'src/components/site/global/input/PasswordChecker.tsx',
-					'src/components/site/global/input/SubmitButton.tsx',
-				],
-				rules: {
-					'shadcn/no-inline-styles': 'off',
-				},
-			},
-			{
-				// One-off marketing/layout sizes that have no theme token yet.
-				files: [
-					'src/layouts/login.astro',
-					'src/components/site/global/navigation/Navbar.astro',
-					'src/components/site/global/CookieBanner.astro',
-					'src/components/site/global/Loader.astro',
-					'src/components/site/global/input/AvatarInput.tsx',
-				],
-				rules: {
-					'shadcn/no-arbitrary-values': 'off',
-				},
-			},
-			{
-				// Astro scoped `<style>` blocks.
-				files: [
-					'src/components/site/global/CookieBanner.astro',
-					'src/components/site/global/navigation/Navbar.astro',
-					'src/components/site/global/navigation/MenuItem.astro',
-					'src/layouts/login.astro',
-					'src/pages/index.astro',
-				],
-				rules: {
-					'shadcn/no-inline-styles': 'off',
-				},
-			},
-			{
-				// Danger-zone delete button restyles SubmitButton with red tokens.
-				files: ['src/pages/dashboard/account.astro'],
-				rules: {
-					'shadcn/no-restyle': 'off',
-				},
-			},
-			{
-				// Stock Astro welcome SVG + placeholder classes.
-				files: ['src/pages/index.astro'],
-				rules: {
-					'shadcn/no-unknown-classes': 'off',
-					'shadcn/no-raw-colors': 'off',
-					'shadcn/no-arbitrary-values': 'off',
 				},
 			},
 		],
