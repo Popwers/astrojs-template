@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vite-plus';
@@ -14,6 +15,24 @@ const fromRoot = (relativePath: string) => fileURLToPath(new URL(relativePath, i
  * lint:   type-aware oxlint with a small curated rule set + Astro overrides.
  * staged: run `vp check --fix` on staged files (install via `vp config`).
  */
+
+const hasShadcnLint = existsSync('node_modules/@shadcn/lint');
+
+function shadcnLintRules() {
+	if (!hasShadcnLint) {
+		return {};
+	}
+
+	return {
+		'shadcn/no-restyle': ['error', { allow: ['layout'] }],
+		'shadcn/no-raw-colors': 'error',
+		'shadcn/no-arbitrary-values': 'error',
+		'shadcn/no-inline-styles': 'error',
+		'shadcn/no-unknown-classes': 'error',
+		'shadcn/require-static-classes': 'error',
+	};
+}
+
 export default defineConfig({
 	fmt: {
 		useTabs: true,
@@ -90,6 +109,7 @@ export default defineConfig({
 			'.continue/**',
 			'.cursor/**',
 			'.gemini/**',
+			'.grok/**',
 			'.opencode/**',
 			'.pi/**',
 			'.roo/**',
@@ -112,14 +132,15 @@ export default defineConfig({
 			'.continue/**',
 			'.cursor/**',
 			'.gemini/**',
+			'.grok/**',
 			'.opencode/**',
 			'.pi/**',
 			'.roo/**',
 			'.windsurf/**',
 			'tools/oxlint/anti-slop/**',
 		],
-		// Vendored anti-slop plugin (tools/oxlint/anti-slop) — rejects low-evidence TS patterns.
-		jsPlugins: [{ name: 'anti-slop', specifier: './tools/oxlint/anti-slop/index.ts' }, '@shadcn/lint'],
+		// Vendored anti-slop (https://github.com/dmmulroy/anti-slop). @shadcn/lint loads only when installed.
+		jsPlugins: [{ name: 'anti-slop', specifier: './tools/oxlint/anti-slop/index.ts' }, ...(hasShadcnLint ? ['@shadcn/lint'] : [])],
 		options: {
 			typeAware: true,
 			typeCheck: true,
@@ -149,12 +170,7 @@ export default defineConfig({
 			'anti-slop/no-unsafe-dictionary-type': 'error',
 			'anti-slop/no-widen-then-assert': 'error',
 			'anti-slop/require-safety-comment-for-type-assertion': 'error',
-			'shadcn/no-restyle': ['error', { allow: ['layout'] }],
-			'shadcn/no-raw-colors': 'error',
-			'shadcn/no-arbitrary-values': 'error',
-			'shadcn/no-inline-styles': 'error',
-			'shadcn/no-unknown-classes': 'error',
-			'shadcn/require-static-classes': 'error',
+			...shadcnLintRules(),
 		},
 		overrides: [
 			{
