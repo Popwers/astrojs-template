@@ -1,7 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-
 import scopedRequest from '@actions/utility/scopedRequest';
 import type { JsonValue } from '@interfaces/json';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { codeOf, messageOf } from '../utils/actionError';
 import { installFetchStub } from '../utils/fetchStub';

@@ -1,7 +1,6 @@
-import { describe, expect, it } from 'bun:test';
-
 import type { JsonArray, JsonObject } from '@interfaces/json';
 import { createFetchFallback, createSubmitFallback, parseApiResponseBody } from '@lib/strapiClient';
+import { describe, expect, it } from 'vitest';
 
 describe('strapiClient helpers', () => {
 	it('parses valid JSON even when the content-type is not JSON', async () => {

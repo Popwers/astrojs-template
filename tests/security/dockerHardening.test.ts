@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'bun:test';
+import { readFile } from 'node:fs/promises';
+
+import { describe, expect, it } from 'vitest';
 
 function ignorePatterns(text: string): string[] {
 	return text
@@ -20,14 +22,14 @@ function coversEnvVariants(patterns: string[]): boolean {
 
 describe('Docker secret and env hardening', () => {
 	it('ignores .env and its variants in the build context', async () => {
-		const patterns = ignorePatterns(await Bun.file('.dockerignore').text());
+		const patterns = ignorePatterns(await readFile('.dockerignore', 'utf8'));
 		expect(coversDotEnv(patterns)).toBe(true);
 		expect(coversEnvVariants(patterns)).toBe(true);
 		expect(patterns.includes('.env.*') && !coversDotEnv(patterns)).toBe(false);
 	});
 
 	it('does not persist SENTRY_AUTH_TOKEN as an ARG or ENV layer', async () => {
-		const dockerfile = await Bun.file('Dockerfile').text();
+		const dockerfile = await readFile('Dockerfile', 'utf8');
 		expect(dockerfile).not.toMatch(/^\s*ARG\s+SENTRY_AUTH_TOKEN\b/m);
 		expect(dockerfile).not.toMatch(/^\s*ENV\s+SENTRY_AUTH_TOKEN\b/m);
 		expect(dockerfile).not.toMatch(/SENTRY_AUTH_TOKEN=\$SENTRY_AUTH_TOKEN/);

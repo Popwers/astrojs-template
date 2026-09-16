@@ -1,5 +1,3 @@
-import { describe, expect, it } from 'bun:test';
-
 import {
 	asArray,
 	asCollectionData,
@@ -8,6 +6,7 @@ import {
 	asPaginatedPageCount,
 	asPaginatedResults,
 } from '@lib/strapiResponse';
+import { describe, expect, it } from 'vitest';
 
 describe('strapiResponse helpers', () => {
 	it('returns safe array fallbacks for invalid values', () => {

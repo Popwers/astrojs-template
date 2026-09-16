@@ -254,8 +254,10 @@ export default defineConfig({
 		'*.{js,jsx,ts,tsx,vue,svelte,astro,json,css,scss,html,md}': 'vp check --fix',
 	},
 
-	// Vitest (`vp test`) needs the same path aliases as the app, plus a bun:test→vitest
-	// shim, so it can resolve and run the suite that is otherwise authored against Bun's runner.
+	// Vitest (`vp test`) shares the Vite alias graph. Astro virtual modules
+	// (`astro:actions`, `astro:env/server`) have no runtime outside a build,
+	// so tests resolve them to `tests/stubs/`. `astro:schema` needs no stub:
+	// schema files import `z` from `astro/zod`, a real subpath.
 	test: {
 		env: {
 			COOKIE_SIGNING_SECRET: 'test-cookie-signing-secret',
@@ -271,9 +273,6 @@ export default defineConfig({
 			'@interfaces': fromRoot('./src/interfaces'),
 			'@stores': fromRoot('./src/stores'),
 			'@actions': fromRoot('./src/actions'),
-			'bun:test': 'vitest',
-			// Astro virtual modules have no runtime outside a build — resolve to test stubs.
-			// (`astro:schema` needs no stub: schema files import `z` from `astro/zod`, a real subpath.)
 			'astro:env/server': fromRoot('./tests/stubs/astroEnvServer.ts'),
 			'astro:actions': fromRoot('./tests/stubs/astroActions.ts'),
 		},

@@ -1,7 +1,6 @@
-import { describe, expect, it } from 'bun:test';
-
 import type { User } from '@interfaces/user';
 import { isPersistableUser, mergeUsers, resolveUserAfterRefresh } from '@lib/userRefresh';
+import { describe, expect, it } from 'vitest';
 
 const createUser = (overrides: Partial<User> = {}): User => ({
 	id: 1,
@@ -52,8 +51,6 @@ describe('user refresh helpers', () => {
 	});
 
 	it('falls back to merged data when the refresh throws', async () => {
-		// Manual spy: keeps the test runnable under both `bun test` and Vitest
-		// (`mock()` only exists in bun:test, `vi.fn()` only in Vitest).
 		const errorCalls: unknown[][] = [];
 		const previousConsoleError = console.error;
 		console.error = (...args: unknown[]) => {

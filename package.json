@@ -7,7 +7,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "bun test",
+    "test": "vp test",
     "upgrade": "bunx @astrojs/upgrade",
     "generate-pwa-assets": "pwa-assets-generator --preset minimal-2023 public/icon.png"
   },

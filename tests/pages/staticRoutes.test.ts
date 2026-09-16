@@ -1,7 +1,8 @@
-import { describe, expect, it } from 'bun:test';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+import { describe, expect, it } from 'vitest';
 
 import { prerender as manifestPrerender } from '../../src/pages/manifest.webmanifest';
 import { prerender as robotsPrerender } from '../../src/pages/robots.txt';
