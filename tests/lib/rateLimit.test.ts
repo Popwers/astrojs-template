@@ -1,6 +1,5 @@
-import { afterEach, describe, expect, it } from 'bun:test';
-
 import { assertRateLimit } from '@lib/rateLimit';
+import { afterEach, describe, expect, it } from 'vitest';
 
 interface RateLimitContext {
 	request: {

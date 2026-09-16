@@ -1,6 +1,6 @@
 # Astro starter kit
 
-Astro 7 SSR template with React 19 islands, Strapi auth plumbing, PWA support, and Sentry. Vite+ (`vp`) is the toolchain. Bun is the package manager and the test runner.
+Astro 7 SSR template with React 19 islands, Strapi auth plumbing, PWA support, and Sentry. Vite+ (`vp`) is the toolchain. Bun is the package manager. Tests run through Vitest (`vp test`).
 
 ## Setup
 
@@ -55,7 +55,7 @@ When you start a real project from this template:
 │   ├── styles/             # Tailwind + globals
 │   ├── pwa.ts              # Service worker registration
 │   └── sw.ts               # Service worker (workbox, injectManifest)
-├── tests/                  # bun:test suite
+├── tests/                  # Vitest suite (`vp test`)
 ├── Makefile                # install, dev, check, test, build
 ├── astro.config.mjs
 ├── vite.config.ts          # Vite+ (`vp`) config. Lint, fmt, typecheck.
@@ -75,13 +75,13 @@ Type `make` (or `make help`) to list targets.
 | `make install` | Install dependencies (`vp i`) and Git hooks (`vp config`) |
 | `make dev` | Dev server at `localhost:4321` (`astro dev --host`) |
 | `make check` | Oxlint + Oxfmt + tsgo (`vp check`) |
-| `make test` | Run all tests (`vp run test` → `bun test`) |
+| `make test` | Run all tests (`vp test`) |
 | `make build` | Production build to `./dist/` (`astro build`) |
 | `make preview` | Preview the production build (`astro preview`) |
 | `vp run generate-pwa-assets` | Generate PWA icons/splash from `public/icon.png` |
 | `vp check --fix` | Same as `make check`, with auto-fix |
 
-The test script is `bun test`. Tests import from `bun:test`. `vp test` (Vitest) is not the project gate.
+The test script is `vp test`. Tests import from `vitest`. The Makefile target is `vp test`, not `vp run test`.
 
 ## Toolchain
 

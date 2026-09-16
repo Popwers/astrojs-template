@@ -21,8 +21,8 @@ hooks: ## Install Git hooks (vp config)
 check: ## Lint, format, and typecheck (Oxlint + Oxfmt + tsgo)
 	@vp check
 
-test: ## Run the bun:test suite (vp run test)
-	@vp run test
+test: ## Run the Vitest suite (vp test)
+	@vp test
 
 dev: ## Start the Astro dev server (astro dev --host)
 	@vp run dev

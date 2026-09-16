@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'bun:test';
-
 import type { User } from '@interfaces/user';
+import { describe, expect, it } from 'vitest';
 
 import { getUserFromCookie, updateUserCookie } from '../../src/lib/userCookie';
 import { createTestCookies } from '../utils/cookieJar';

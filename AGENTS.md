@@ -1,6 +1,6 @@
 # Astro.js template
 
-Astro 7 SSR template with React 19 islands, Tailwind 4, Legend State, and Strapi auth plumbing. Vite+ (`vp` / `vpx`) is the JS façade. Bun is the package manager (`bun.lock`) and the test runner. Node is whatever `vp env` provides.
+Astro 7 SSR template with React 19 islands, Tailwind 4, Legend State, and Strapi auth plumbing. Vite+ (`vp` / `vpx`) is the JS façade. Bun is the package manager (`bun.lock`). Tests run through Vitest (`vp test`). Node is whatever `vp env` provides.
 
 ## Stack
 
@@ -26,12 +26,12 @@ Type `make` for the list. `vp` calls bun here because `packageManager` is bun.
 | Install + hooks | `make install` | `vp i` then `vp config` |
 | Dev server (`localhost:4321`) | `make dev` | `vp run dev` → `astro dev --host` |
 | Lint + fmt + types | `make check` | `vp check` |
-| Tests | `make test` | `vp run test` → `bun test` |
+| Tests | `make test` | `vp test` |
 | Production build | `make build` | `vp run build` → `astro build` |
 | Preview the build | `make preview` | `vp run preview` → `astro preview` |
 | One-shot local binary | `vpx <bin>` | Vite+ one-shot (for example `vpx shadcn@latest migrate cn`) |
 
-The suite is bun:test. Files import from `bun:test`. `bunfig.toml` preloads `tests/setup/bunAstroStubs.ts`. `vp test` is the built-in Vitest runner and is not the project gate. Three tests still call `Bun.file`, so `vp test` fails. Keep `"test": "bun test"` in `package.json`.
+The suite is Vitest. Files import from `vitest`. `package.json` `"test"` is `vp test`. The Makefile target is `vp test`, not `vp run test`. `vite.config.ts` `test.alias` maps `astro:actions` and `astro:env/server` to `tests/stubs/`. `test.env` sets `COOKIE_SIGNING_SECRET`.
 
 After UI edits, run `make check` and fix every `shadcn/*` error.
 
@@ -62,7 +62,7 @@ Path aliases in `tsconfig.json`. Use them instead of relative imports (`@lib/*`,
 | `src/stores/` | Legend State stores |
 | `src/data/` | Menus, route guards, cookie options |
 | `src/styles/` | Tailwind 4 + SCSS |
-| `tests/` | bun:test suite, mirrors `src/` |
+| `tests/` | Vitest suite, mirrors `src/` |
 | `vite.config.ts` | Vite+ lint, fmt, staged hooks, Vitest aliases |
 | `Makefile` | Developer entry |
 

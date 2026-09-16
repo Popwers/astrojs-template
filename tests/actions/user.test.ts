@@ -1,7 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-
 import { user } from '@actions/user';
 import type { JsonValue } from '@interfaces/json';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { createActionContext, handlerOf } from '../utils/actionHandler';
 import { fetchUrl, installFetchStub, type FetchInit, type FetchInput } from '../utils/fetchStub';

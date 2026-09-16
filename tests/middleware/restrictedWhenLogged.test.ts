@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'bun:test';
+import { describe, expect, it } from 'vitest';
 
 import middleware from '../../src/middleware/restrictedWhenLogged';
 import { createMiddlewareContext, runMiddleware } from '../utils/middlewareContext';
