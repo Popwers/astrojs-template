@@ -50,11 +50,7 @@ export default ({ isNewPassword = false }: PasswordCheckerProps) => {
 	}));
 
 	const progressBarClass = () =>
-		cn(
-			'h-2.5 rounded-full transition-all duration-200',
-			strength.className(),
-			strength.widthClass(),
-		);
+		cn('h-2.5 rounded-full transition-all duration-200', strength.className(), strength.widthClass());
 	const sizeCheck = () =>
 		cn('transition-colors', strength.size() ? 'text-green' : password.get() !== '' && 'text-red');
 	const uppercaseCheck = () =>

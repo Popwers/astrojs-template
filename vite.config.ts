@@ -140,7 +140,10 @@ export default defineConfig({
 			'tools/oxlint/anti-slop/**',
 		],
 		// Vendored anti-slop (https://github.com/dmmulroy/anti-slop). @shadcn/lint loads only when installed.
-		jsPlugins: [{ name: 'anti-slop', specifier: './tools/oxlint/anti-slop/index.ts' }, ...(hasShadcnLint ? ['@shadcn/lint'] : [])],
+		jsPlugins: [
+			{ name: 'anti-slop', specifier: './tools/oxlint/anti-slop/index.ts' },
+			...(hasShadcnLint ? ['@shadcn/lint'] : []),
+		],
 		options: {
 			typeAware: true,
 			typeCheck: true,
