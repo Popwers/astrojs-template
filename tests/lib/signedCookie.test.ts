@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'bun:test';
+import { readFile } from 'node:fs/promises';
 
 import { resolveCookieSigningSecret, signCookiePayload, verifySignedCookiePayload } from '@lib/signedCookie';
+import { describe, expect, it } from 'vitest';
 
 const PUBLIC_DEFAULT = 'dev-cookie-signing-secret-change-me';
 
@@ -35,7 +36,7 @@ describe('no public cookie signing default', () => {
 	it('does not ship a well-known fallback secret in source', async () => {
 		const files = ['src/lib/signedCookie.ts', 'astro.config.mjs'];
 		for (const file of files) {
-			const text = await Bun.file(file).text();
+			const text = await readFile(file, 'utf8');
 			expect(text.includes(PUBLIC_DEFAULT)).toBe(false);
 		}
 	});

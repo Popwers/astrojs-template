@@ -1,40 +1,42 @@
-# Astro Starter Kit
+# Astro starter kit
 
-Astro 6 SSR template with React 19 islands, Strapi auth plumbing, PWA support and Sentry monitoring. Runs on Bun.
+Astro 7 SSR template with React 19 islands, Strapi auth plumbing, PWA support, and Sentry. Vite+ (`vp`) is the toolchain. Bun is the package manager. Tests run through Vitest (`vp test`).
 
 ## Setup
 
 ```bash
-bun install           # Install dependencies
-cp .env.example .env  # Create your local env file, then fill in the values
-bun run dev           # Dev server at localhost:4321
+cp .env.example .env   # then fill in the values
+make install           # vp i + vp config
+make dev               # Astro dev server at localhost:4321
 ```
+
+`make install` installs dependencies and Git hooks. `make dev` runs `astro dev --host`. Do not use `vp dev`.
 
 ### Environment variables
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `STRAPI_URL` | Yes (prod) | `https://api.your-project.fr` | Base URL of the Strapi backend. The default lets `bun run build` succeed without a real backend; set it for any real run. |
-| `STRAPI_TOKEN` | Yes (prod) | `replace-me-with-a-strapi-api-token` | Strapi API token. The placeholder default keeps the build green out of the box; replace it before talking to a real backend. |
-| `COOKIE_SIGNING_SECRET` | Yes | — | HMAC secret for session cookies. The process throws if this is unset. |
-| `TRUST_PROXY` | No | — | `cloudflare` to rate-limit on `CF-Connecting-IP`; `1` / `forwarded` to use `X-Forwarded-For`. Unset ignores spoofable forwarded headers. |
-| `SENTRY_AUTH_TOKEN` | No | — | Build-time token for Sentry source-map upload. Pass it as a BuildKit secret, never as an image ARG or ENV. |
-| `SENTRY_RELEASE` | No | — | Deployed git SHA, so errors map to the commit that introduced them. |
+| `STRAPI_URL` | Yes (prod) | `https://api.your-project.fr` | Base URL of the Strapi backend. The default lets `make build` succeed without a real backend. Set it for any real run. |
+| `STRAPI_TOKEN` | Yes (prod) | `replace-me-with-a-strapi-api-token` | Strapi API token. The placeholder keeps the build green out of the box. Replace it before talking to a real backend. |
+| `COOKIE_SIGNING_SECRET` | Yes | none | HMAC secret for session cookies. The process throws if this is unset. |
+| `TRUST_PROXY` | No | none | `cloudflare` to rate-limit on `CF-Connecting-IP`. `1` or `forwarded` to use `X-Forwarded-For`. Unset ignores spoofable forwarded headers. |
+| `SENTRY_AUTH_TOKEN` | No | none | Build-time token for Sentry source-map upload. Pass it as a BuildKit secret, never as an image ARG or ENV. |
+| `SENTRY_RELEASE` | No | none | Deployed git SHA, so errors map to the commit that introduced them. |
 
-The `STRAPI_*` defaults exist only so a fresh clone builds and boots without configuration; they point at no real backend. Auth and data calls will fail until you set real values in `.env`.
+The `STRAPI_*` defaults exist only so a fresh clone builds and boots without configuration. They point at no real backend. Auth and data calls fail until you set real values in `.env`.
 
 ## New project checklist
 
-When starting a real project from this template:
+When you start a real project from this template:
 
 - [ ] Rename the project: `name` in `package.json`, `release.repositoryUrl` in `package.json`.
 - [ ] Set the canonical site URL: `site` in `astro.config.mjs` (and the `image.domains` / `remotePatterns` host).
 - [ ] Fill `.env` from `.env.example`: `STRAPI_URL`, `STRAPI_TOKEN`, `COOKIE_SIGNING_SECRET`.
 - [ ] Wire Sentry: org/project in `astro.config.mjs`, DSN in `sentry.client.config.js` / `sentry.server.config.js`.
-- [ ] Install the git hooks once per clone: `vp config`.
-- [ ] Regenerate PWA assets from your own icon: `bun run generate-pwa-assets`.
+- [ ] Run `make install` once per clone so Git hooks land in `.vite-hooks/`.
+- [ ] Regenerate PWA assets from your own icon: `vp run generate-pwa-assets`.
 
-## Project Structure
+## Project structure
 
 ```text
 /
@@ -46,53 +48,61 @@ When starting a real project from this template:
 │   ├── data/               # Static data (menus, routes, cookie/user options)
 │   ├── interfaces/         # Shared TypeScript types
 │   ├── layouts/            # Astro layouts
-│   ├── lib/                # Helpers (strapi client, cookies, session, PWA)
+│   ├── lib/                # Helpers (strapi client, cookies, session, PWA, cn)
 │   ├── middleware/         # Astro middleware chain
 │   ├── pages/              # Routes (file-based)
 │   ├── stores/             # Legend State stores
 │   ├── styles/             # Tailwind + globals
 │   ├── pwa.ts              # Service worker registration
 │   └── sw.ts               # Service worker (workbox, injectManifest)
+├── tests/                  # Vitest suite (`vp test`)
+├── Makefile                # install, dev, check, test, build
 ├── astro.config.mjs
-├── vite.config.ts          # Vite+ (`vp`) config — lint / fmt / typecheck rules
+├── vite.config.ts          # Vite+ (`vp`) config. Lint, fmt, typecheck.
 ├── pwa-assets.config.ts    # PWA asset generation preset
 ├── tsconfig.json
 └── Dockerfile              # Production multi-stage build (bun)
 ```
 
-Astro looks for `.astro` or `.md` files in the `src/pages/` directory. Each page is exposed as a route based on its file name.
+Astro looks for `.astro` or `.md` files in `src/pages/`. Each page is a route based on its file name.
 
 ## Commands
 
+Type `make` (or `make help`) to list targets.
+
 | Command | Action |
 |---------|--------|
-| `bun install` | Install dependencies |
-| `bun run dev` | Dev server at `localhost:4321` |
-| `bun run build` | Production build to `./dist/` |
-| `bun run preview` | Preview production build locally |
-| `bun test` | Run all tests |
-| `bun run generate-pwa-assets` | Generate PWA icons/splash from `public/icon.png` |
-| `vp check` | Oxlint + Oxfmt + tsgo (lint + fmt + typecheck) |
-| `vp check --fix` | Same, with auto-fix |
+| `make install` | Install dependencies (`vp i`) and Git hooks (`vp config`) |
+| `make dev` | Dev server at `localhost:4321` (`astro dev --host`) |
+| `make check` | Oxlint + Oxfmt + tsgo (`vp check`) |
+| `make test` | Run all tests (`vp test`) |
+| `make build` | Production build to `./dist/` (`astro build`) |
+| `make preview` | Preview the production build (`astro preview`) |
+| `vp run generate-pwa-assets` | Generate PWA icons/splash from `public/icon.png` |
+| `vp check --fix` | Same as `make check`, with auto-fix |
+
+The test script is `vp test`. Tests import from `vitest`. The Makefile target is `vp test`, not `vp run test`.
 
 ## Toolchain
 
-- **Runtime**: Bun (NOT npm/yarn)
-- **State**: Legend State (NOT React Context)
-- **API**: Strapi (`STRAPI_URL` / `STRAPI_TOKEN` env vars)
-- **Quality**: Vite+ (`vp`) — Oxlint + Oxfmt + tsgo
-- **Git hooks**: `.vite-hooks/` (`vp config` to install)
-- **Commits**: Conventional Commits
+- **Façade**: Vite+ (`vp` / `vpx`). Type `vp` in this repo. Do not type `npm i` / `npx` / `bun add`.
+- **Package manager**: bun (`bun.lock`)
+- **Quality**: Oxlint + Oxfmt + tsgo via `vp check`. Vendored [anti-slop](https://github.com/dmmulroy/anti-slop). Tailwind also uses `@shadcn/lint` and npm `cn`.
+- **Git hooks**: `.vite-hooks/` (`make install` or `vp config`)
+- **State**: Legend State
+- **API**: Strapi (`STRAPI_URL` / `STRAPI_TOKEN`)
+- **Commits**: Conventional Commits (`cz` / `ga`)
 
 ## Monitoring
 
-Error monitoring via Sentry (`@sentry/astro`, prod-only). Set the DSN in `sentry.client.config.js` / `sentry.server.config.js` and the org/project in `astro.config.mjs`. Source maps + release tagging require `SENTRY_AUTH_TOKEN` and `SENTRY_RELEASE` (git SHA) at build time.
+Error monitoring via Sentry (`@sentry/astro`, prod-only). Set the DSN in `sentry.client.config.js` / `sentry.server.config.js` and the org/project in `astro.config.mjs`. Source maps and release tagging need `SENTRY_AUTH_TOKEN` and `SENTRY_RELEASE` (git SHA) at build time.
 
 ## Deployment
 
 Multi-stage Docker build (Alpine + Bun):
+
 - `base` → `deps` (prod-only via `bun install --no-dev`) → `build` → `runtime`
-- BuildKit cache mount on `~/.bun/install/cache` (warm rebuilds skip re-downloading deps)
+- BuildKit cache mount on `~/.bun/install/cache`
 - `HEALTHCHECK` baked in: `fetch('/login')` returns < 500
 - Exposes port `4321`, runtime via `bun ./start.mjs`
 

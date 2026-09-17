@@ -30,7 +30,7 @@ jobs:
                   COOKIE_SIGNING_SECRET: ci-cookie-signing-secret
 
             - name: Tests
-              run: bun test
+              run: bunx vp test
 
             - name: Test portability guard
               run: bash scripts/check-test-portability.sh

@@ -30,6 +30,12 @@
 	--color-blue-dark: #15205f;
 	--color-red: #dc2626;
 	--color-green: #41b97d;
+	--color-orange-100: #ffedd5;
+	--color-orange-400: #fb923c;
+	--color-orange-500: #f97316;
+	--color-orange-800: #9a3412;
+	--color-yellow-500: #eab308;
+	--color-gray-600: #4b5563;
 
 	/* Gradients */
 	--gradient-dark-blue: linear-gradient(-90deg, var(--color-blue) 0%, var(--color-blue-dark) 170%);
@@ -44,6 +50,17 @@
 	--radius-sm: 10px;
 	--radius-md: 20px;
 	--radius-lg: 40px;
+	--radius-card: 1.9rem;
+	--radius-login: 60px;
+
+	/* One-off layout sizes used by the template chrome */
+	--height-loader: 3.4rem;
+	--height-hamburger: 3px;
+	--spacing-hamburger: 5px;
+	--z-index-menu: 99;
+	--width-avatar-loader: 186px;
+	--min-width-login: 750px;
+	--min-height-login: 750px;
 
 	/* Shadows */
 	--shadow-custom:
@@ -102,4 +119,16 @@
 	@media (min-width: 1400px) {
 		max-width: 1400px;
 	}
+}
+
+@utility delay-bounce-0 {
+	animation-delay: 0s;
+}
+
+@utility delay-bounce-1 {
+	animation-delay: 0.175s;
+}
+
+@utility delay-bounce-2 {
+	animation-delay: 0.35s;
 }

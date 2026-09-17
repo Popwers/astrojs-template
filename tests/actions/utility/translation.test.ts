@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'bun:test';
-
 import TRANSLATIONS from '@actions/utility/translation.json';
+import { describe, expect, it } from 'vitest';
 
 describe('action error translations', () => {
 	it('covers both timeout messages emitted by Node and Bun DOMException variants', () => {

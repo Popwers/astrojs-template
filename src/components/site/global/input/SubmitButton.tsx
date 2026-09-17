@@ -1,4 +1,5 @@
 import { reactive, useObservable } from '@legendapp/state/react';
+import { cn } from '@lib/utils';
 import { AnimatePresence, motion } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
@@ -8,9 +9,12 @@ interface Props {
 	id?: string;
 	tabIndex?: number;
 	disabled?: boolean;
+	danger?: boolean;
 }
 
 const $MotionButton = reactive(motion.button);
+
+const LOADING_DOT_CLASSES = ['delay-bounce-0', 'delay-bounce-1', 'delay-bounce-2'] as const;
 
 /**
  * Submit button with loading state and animation
@@ -19,12 +23,16 @@ const $MotionButton = reactive(motion.button);
  * @param props.id - Id for the button
  * @param props.tabIndex - Tab index for the button
  * @param props.disabled - Disabled state for the button
+ * @param props.danger - Use the red danger tokens instead of blue
  * @returns The submit button component
  */
-export default ({ className, label, id, tabIndex, disabled }: Props) => {
+export default ({ className, label, id, tabIndex, disabled, danger = false }: Props) => {
 	const isLoading = useObservable(false);
 	const [isLongLoading, setIsLongLoading] = useState(false);
 	const isBordered = className?.includes('bordered');
+	const idleBackground = danger ? 'var(--color-red)' : 'var(--color-blue)';
+	const hoverBackground = danger ? 'var(--color-red)' : 'var(--color-blue-saturated)';
+	const borderedColor = danger ? 'var(--color-red)' : 'var(--color-blue)';
 	const buttonRef = useRef<HTMLButtonElement>(null);
 
 	const handleSubmit = useCallback(() => {
@@ -53,28 +61,28 @@ export default ({ className, label, id, tabIndex, disabled }: Props) => {
 				opacity: disabled ? 0.5 : 1,
 				backgroundColor:
 					isLoading.get() || isLongLoading || disabled
-						? 'var(--color-blue-saturated)'
+						? hoverBackground
 						: isBordered
-							? '#00000000'
-							: 'var(--color-blue)',
+							? 'transparent'
+							: idleBackground,
 				color:
 					isLoading.get() || isLongLoading || disabled
 						? 'var(--color-white)'
 						: isBordered
-							? 'var(--color-blue)'
+							? borderedColor
 							: 'var(--color-white)',
 				pointerEvents: isLoading.get() || isLongLoading || disabled ? 'none' : 'auto',
 			})}
 			whileHover={{
-				backgroundColor: isBordered ? 'var(--color-blue)' : 'var(--color-blue-saturated)',
+				backgroundColor: isBordered ? idleBackground : hoverBackground,
 				color: 'var(--color-white)',
 			}}
 			whileTap={{
-				backgroundColor: isBordered ? 'var(--color-blue)' : 'var(--color-blue-saturated)',
+				backgroundColor: isBordered ? idleBackground : hoverBackground,
 				color: 'var(--color-white)',
 				scale: 0.95,
 			}}
-			className={`${className} overflow-hidden transition-none`}
+			className={cn(className, danger && 'border-red', 'overflow-hidden transition-none')}
 			type='submit'
 			tabIndex={tabIndex}
 			ref={buttonRef}
@@ -89,11 +97,13 @@ export default ({ className, label, id, tabIndex, disabled }: Props) => {
 					key={isLongLoading ? 'loading' : 'label'}>
 					{isLongLoading ? (
 						<span className='flex items-center justify-center space-x-2'>
-							{[0, 0.175, 0.35].map((delay) => (
+							{LOADING_DOT_CLASSES.map((delayClass) => (
 								<span
-									key={`loading-dot-${delay}`}
-									className='inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-current transition-discrete duration-700'
-									style={{ animationDelay: `${delay}s` }}
+									key={`loading-dot-${delayClass}`}
+									className={cn(
+										'inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-current transition-discrete duration-700',
+										delayClass,
+									)}
 								/>
 							))}
 						</span>

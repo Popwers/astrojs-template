@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vite-plus';
@@ -14,6 +15,24 @@ const fromRoot = (relativePath: string) => fileURLToPath(new URL(relativePath, i
  * lint:   type-aware oxlint with a small curated rule set + Astro overrides.
  * staged: run `vp check --fix` on staged files (install via `vp config`).
  */
+
+const hasShadcnLint = existsSync('node_modules/@shadcn/lint');
+
+function shadcnLintRules() {
+	if (!hasShadcnLint) {
+		return {};
+	}
+
+	return {
+		'shadcn/no-restyle': ['error', { allow: ['layout'] }],
+		'shadcn/no-raw-colors': 'error',
+		'shadcn/no-arbitrary-values': 'error',
+		'shadcn/no-inline-styles': 'error',
+		'shadcn/no-unknown-classes': 'error',
+		'shadcn/require-static-classes': 'error',
+	};
+}
+
 export default defineConfig({
 	fmt: {
 		useTabs: true,
@@ -90,6 +109,7 @@ export default defineConfig({
 			'.continue/**',
 			'.cursor/**',
 			'.gemini/**',
+			'.grok/**',
 			'.opencode/**',
 			'.pi/**',
 			'.roo/**',
@@ -112,14 +132,18 @@ export default defineConfig({
 			'.continue/**',
 			'.cursor/**',
 			'.gemini/**',
+			'.grok/**',
 			'.opencode/**',
 			'.pi/**',
 			'.roo/**',
 			'.windsurf/**',
 			'tools/oxlint/anti-slop/**',
 		],
-		// Vendored anti-slop plugin (tools/oxlint/anti-slop) — rejects low-evidence TS patterns.
-		jsPlugins: [{ name: 'anti-slop', specifier: './tools/oxlint/anti-slop/index.ts' }],
+		// Vendored anti-slop (https://github.com/dmmulroy/anti-slop). @shadcn/lint loads only when installed.
+		jsPlugins: [
+			{ name: 'anti-slop', specifier: './tools/oxlint/anti-slop/index.ts' },
+			...(hasShadcnLint ? ['@shadcn/lint'] : []),
+		],
 		options: {
 			typeAware: true,
 			typeCheck: true,
@@ -149,6 +173,7 @@ export default defineConfig({
 			'anti-slop/no-unsafe-dictionary-type': 'error',
 			'anti-slop/no-widen-then-assert': 'error',
 			'anti-slop/require-safety-comment-for-type-assertion': 'error',
+			...shadcnLintRules(),
 		},
 		overrides: [
 			{
@@ -168,6 +193,57 @@ export default defineConfig({
 					'no-explicit-any': 'off',
 					'no-unused-expressions': 'off',
 					'prefer-number-properties': 'off',
+					// Flags `<style>` elements. Astro scoped CSS is not an inline style.
+					'shadcn/no-inline-styles': 'off',
+				},
+			},
+			{
+				files: ['**/components/ui/**', '**/src/components/ui/**'],
+				rules: {
+					'shadcn/no-restyle': 'off',
+				},
+			},
+			{
+				// SCSS primitives (btn, form-group, h3, …) live outside the Tailwind theme graph.
+				files: ['src/**/*.{astro,tsx}'],
+				rules: {
+					'shadcn/no-unknown-classes': [
+						'error',
+						{
+							allow: [
+								'btn',
+								'button',
+								'form-group',
+								'h1',
+								'h2',
+								'h3',
+								'h4',
+								'h5',
+								'h6',
+								'secondary',
+								'tertiary',
+								'bordered',
+								'fit',
+								'starter',
+								'primary',
+								'disabled',
+								'cookie-layer',
+								'cookie-banner',
+								'cookie-modal',
+								'menu-button',
+								'menu-line-1',
+								'menu-line-2',
+								'menu-line-3',
+								'menu',
+								'haveSubmenus',
+								'isFooter',
+								'submenus',
+								'dash-rise',
+								'is-visible',
+								'title',
+							],
+						},
+					],
 				},
 			},
 		],
@@ -178,8 +254,10 @@ export default defineConfig({
 		'*.{js,jsx,ts,tsx,vue,svelte,astro,json,css,scss,html,md}': 'vp check --fix',
 	},
 
-	// Vitest (`vp test`) needs the same path aliases as the app, plus a bun:test→vitest
-	// shim, so it can resolve and run the suite that is otherwise authored against Bun's runner.
+	// Vitest (`vp test`) shares the Vite alias graph. Astro virtual modules
+	// (`astro:actions`, `astro:env/server`) have no runtime outside a build,
+	// so tests resolve them to `tests/stubs/`. `astro:schema` needs no stub:
+	// schema files import `z` from `astro/zod`, a real subpath.
 	test: {
 		env: {
 			COOKIE_SIGNING_SECRET: 'test-cookie-signing-secret',
@@ -195,9 +273,6 @@ export default defineConfig({
 			'@interfaces': fromRoot('./src/interfaces'),
 			'@stores': fromRoot('./src/stores'),
 			'@actions': fromRoot('./src/actions'),
-			'bun:test': 'vitest',
-			// Astro virtual modules have no runtime outside a build — resolve to test stubs.
-			// (`astro:schema` needs no stub: schema files import `z` from `astro/zod`, a real subpath.)
 			'astro:env/server': fromRoot('./tests/stubs/astroEnvServer.ts'),
 			'astro:actions': fromRoot('./tests/stubs/astroActions.ts'),
 		},

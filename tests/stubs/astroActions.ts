@@ -1,7 +1,7 @@
 /**
  * Test stub for the `astro:actions` virtual module.
- * Wired via vite.config.ts `test.alias` (Vitest) and tsconfig `paths` (bun) so that
- * importing the real action files / guards in tests resolves without an Astro build.
+ * Wired via vite.config.ts `test.alias` so importing the real action files
+ * and guards in tests resolves without an Astro build.
  *
  * It intentionally mirrors only the surface the source code touches:
  * `defineAction`, `ActionError`, `isInputError` and the `ActionAPIContext` type.

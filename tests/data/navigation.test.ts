@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'bun:test';
-
 import { NEED_REGISTER_ROUTES, RESTRICTED_WHEN_LOGGED_IN, RESTRICTED_WHEN_LOGGED_OUT } from '@data/routes';
+import { describe, expect, it } from 'vitest';
 
 describe('Navigation route guards', () => {
 	it('restricts dashboard access for unauthenticated users', () => {

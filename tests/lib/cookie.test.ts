@@ -1,6 +1,5 @@
-import { beforeEach, describe, expect, test } from 'bun:test';
-
 import { getBrowserCookie, removeBrowserCookie, setBrowserCookie } from '@lib/cookie';
+import { beforeEach, describe, expect, test } from 'vitest';
 
 describe('Cookie functions', () => {
 	beforeEach(() => {
@@ -27,8 +26,7 @@ describe('Cookie functions', () => {
 
 		describe('Expiration handling', () => {
 			test('should set expiration correctly for positive days', () => {
-				// Tolerance-based assertion: `setSystemTime` only exists in bun:test,
-				// so we check the expiry delta instead of freezing the clock.
+				// Check the expiry delta instead of freezing the clock.
 				setBrowserCookie('testCookie', 'testValue', 1);
 				const match = global.document.cookie.match(/expires=([^;]+)/);
 				const oneDayInMs = 24 * 60 * 60 * 1000;

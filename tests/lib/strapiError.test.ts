@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'bun:test';
-
 import { createStrapiError, isStrapiError, normalizeStrapiError } from '@lib/strapiError';
+import { describe, expect, it } from 'vitest';
 
 describe('strapiError helpers', () => {
 	it('preserves native Strapi errors', () => {

@@ -1,6 +1,5 @@
-import { describe, expect, it } from 'bun:test';
-
 import type { FetchProps, StrapiError } from '@interfaces/strapi';
+import { describe, expect, it } from 'vitest';
 
 import { getUserFromCookie } from '../../src/lib/userCookie';
 import { hydrateUserData } from '../../src/middleware/userDataHydratation';

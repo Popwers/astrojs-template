@@ -1,8 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it } from 'bun:test';
-
 import type { JsonValue } from '@interfaces/json';
 import type { StrapiError } from '@interfaces/strapi';
 import fetchApi, { submitApi } from '@lib/strapi';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
 import { fetchUrl, installFetchStub, type FetchInit } from '../utils/fetchStub';
 
