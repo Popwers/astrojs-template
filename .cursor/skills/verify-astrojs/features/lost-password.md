@@ -23,7 +23,7 @@ Preconditions:
 - `control-astrojs doctor` reports the owned URL.
 - No `wait-mail-password` or `password-reset-code` cookies.
 
-- **Open form.** Run `control-astrojs http GET /lost-password`. Status is `200`. The body contains `Vous avez oublié votre mot de passe ?`, `id="email"`, and `Réinitialiser mon mot de passe`.
+- **Open form.** Run `control-astrojs http GET /lost-password`. Status is `200`. The body contains `Vous avez oublié votre mot de passe ?`, `id="email"`, `Réinitialiser mon mot de passe`, and `Retour à l'accueil`.
 - **Wait-mail gate.** Run `control-astrojs http GET /lost-password/wait-mail --no-follow`. Status is `302` and `Location` is `/lost-password`.
 - **Reset gate.** Run `control-astrojs http GET /lost-password/reset --no-follow`. Status is `302` and `Location` is `/lost-password`.
 - **Submit.** Do not POST `actions.password.forgotPassword` on this stack. Report `lost-submit` as `verified-unreachable` (prerequisite: disposable Strapi that accepts the forgot-password endpoint). A successful submit would set cookie `wait-mail-password` and redirect to `/lost-password/wait-mail`.

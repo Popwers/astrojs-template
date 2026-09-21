@@ -27,7 +27,7 @@ Preconditions:
 
 - **Open home.** Run `control-astrojs http GET /`. Status is `200`. The body contains `Welcome to Astro`.
 - **See chrome.** The same HTML contains `Accueil`, `Mentions légales`, and `Politique de confidentialité`.
-- **See cookie markup.** The same HTML contains `id="cookie-banner"` and `id="accept-all-cookies"`. The banner stays `opacity-0` until client JS; HTTP proof is the markup, not visibility.
+- **See cookie markup.** The same HTML contains `id="cookie-banner"` and `id="accept-all-cookies"`. The banner uses `.cookie-layer { opacity: 0 }` until client JS adds `is-visible`; HTTP proof is the markup, not visibility.
 - **Missing route.** Run `control-astrojs http GET /this-page-does-not-exist-verify`. Status is `404`. The body contains `Page non trouvée` and `Retourner à l'accueil`.
 - **Painted frame.** Run `control-astrojs screenshot --path .cursor/skills/verify-astrojs/proof/public-home/home.png --url /`. The PNG shows `Welcome to Astro`.
 - **Scripted recipe.** Run `control-astrojs drive public-home`. It writes `proof/public-home/` (`home.html`, `home.headers`, `not-found.html`, `doctor.txt`, `manifest.json`, and `home.png` when Chrome exists).
@@ -38,5 +38,5 @@ Preconditions:
 - `localhost:4321` is the human dev port. Doctor must name 4331 (or the port this launch recorded).
 - `AvatarIsland` is `server:defer`. First-paint `GET /` often omits `Se connecter` / `S'inscrire`. Do not fail home because those strings are missing; prove them on `/login` and `/register`.
 - The home title uses `Acceuil` (source typo). Assert that spelling, or ignore the title and assert the `h1`.
-- Cookie-banner copy is in the HTML on every `BaseLayout` page. It is not visible until hydration. Do not require a painted banner for this feature.
+- Cookie-banner copy is in the HTML on every `BaseLayout` page. Hide is `.cookie-layer { opacity: 0 }`, not a Tailwind `opacity-0` class on the banner. Do not require a painted banner for this feature.
 - `/menu1` and `/menu2` are nav labels only. They 404. That is not a home regression.

@@ -25,7 +25,7 @@ Preconditions:
 - `control-astrojs doctor` reports the owned URL.
 - No `user_token` / `user_data` cookies.
 
-- **Open login.** Run `control-astrojs http GET /login`. Status is `200`. The body contains `Se connecter`, `id="email"`, `id="password"`, `Mot de passe oublié ?`, and `Inscrivez-vous`.
+- **Open login.** Run `control-astrojs http GET /login`. Status is `200`. The body contains `Se connecter`, `id="email"`, `id="password"`, `Mot de passe oublié ?`, `Inscrivez-vous`, and `Retour à l'accueil`.
 - **Guard dashboard.** Run `control-astrojs http GET /dashboard --no-follow`. Status is `302` and `Location` is `/login`.
 - **Guard account.** Run `control-astrojs http GET /dashboard/account --no-follow`. Status is `302` and `Location` is `/login`.
 - **Guard profile setup.** Run `control-astrojs http GET /register/profil --no-follow`. Status is `302` and `Location` is `/login`.
