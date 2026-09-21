@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vite-plus';
+import type { DummyRule, DummyRuleMap } from 'vite-plus/lint';
 
 // Resolve a path relative to this config file to an absolute path for Vitest aliases.
 const fromRoot = (relativePath: string) => fileURLToPath(new URL(relativePath, import.meta.url));
@@ -18,20 +19,19 @@ const fromRoot = (relativePath: string) => fileURLToPath(new URL(relativePath, i
 
 const hasShadcnLint = existsSync('node_modules/@shadcn/lint');
 
-function shadcnLintRules() {
-	if (!hasShadcnLint) {
-		return {};
-	}
-
-	return {
-		'shadcn/no-restyle': ['error', { allow: ['layout'] }],
-		'shadcn/no-raw-colors': 'error',
-		'shadcn/no-arbitrary-values': 'error',
-		'shadcn/no-inline-styles': 'error',
-		'shadcn/no-unknown-classes': 'error',
-		'shadcn/require-static-classes': 'error',
-	};
+/**
+ * Wrap a rule map so `defineConfig` accepts JS plugin rule names.
+ *
+ * @param rules - Built-in oxlint rules plus anti-slop / shadcn entries
+ * @returns The closed `DummyRuleMap` catalog `lint.rules` expects
+ */
+function lintRules(rules: Record<string, DummyRule>): DummyRuleMap {
+	// SAFETY: DummyRuleMap lists built-in oxlint rules only. JS plugin ids
+	// (anti-slop/*, shadcn/*) are valid at runtime; each value is a DummyRule.
+	return rules as DummyRuleMap;
 }
+
+const shadcnOn: DummyRule = hasShadcnLint ? 'error' : 'off';
 
 export default defineConfig({
 	fmt: {
@@ -113,6 +113,7 @@ export default defineConfig({
 			'.opencode/**',
 			'.pi/**',
 			'.roo/**',
+			'.serena/**',
 			'.windsurf/**',
 			'tools/oxlint/anti-slop/**',
 		],
@@ -136,6 +137,7 @@ export default defineConfig({
 			'.opencode/**',
 			'.pi/**',
 			'.roo/**',
+			'.serena/**',
 			'.windsurf/**',
 			'tools/oxlint/anti-slop/**',
 		],
@@ -149,7 +151,7 @@ export default defineConfig({
 			typeCheck: true,
 		},
 		// Curated overrides on top of oxlint `recommended`; keep the set tight.
-		rules: {
+		rules: lintRules({
 			'no-param-reassign': 'error',
 			'prefer-as-const': 'error',
 			'no-else-return': 'error',
@@ -173,8 +175,13 @@ export default defineConfig({
 			'anti-slop/no-unsafe-dictionary-type': 'error',
 			'anti-slop/no-widen-then-assert': 'error',
 			'anti-slop/require-safety-comment-for-type-assertion': 'error',
-			...shadcnLintRules(),
-		},
+			'shadcn/no-restyle': hasShadcnLint ? ['error', { allow: ['layout'] }] : 'off',
+			'shadcn/no-raw-colors': shadcnOn,
+			'shadcn/no-arbitrary-values': shadcnOn,
+			'shadcn/no-inline-styles': shadcnOn,
+			'shadcn/no-unknown-classes': shadcnOn,
+			'shadcn/require-static-classes': shadcnOn,
+		}),
 		overrides: [
 			{
 				// Astro's generated types require a `/// <reference path>` directive.
