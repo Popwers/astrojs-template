@@ -356,7 +356,8 @@ http_get() {
 
 	status="$(awk '/^__CURL__/ { print $2 }' "$dump" | tail -n 1)"
 	final="$(awk '/^__CURL__/ { print $3 }' "$dump" | tail -n 1)"
-	location="$(awk 'BEGIN{IGNORECASE=1} /^Location:/{ sub("\r",""); print $2; exit }' "$dump")"
+	# Node/undici emits lowercase "location:"; mawk has no IGNORECASE.
+	location="$(awk 'tolower($1)=="location:"{ sub("\r",""); print $2; exit }' "$dump")"
 
 	if [ -n "$out_body" ]; then
 		mkdir -p "$(dirname "$out_body")"
@@ -391,6 +392,7 @@ http_get() {
 		'Connectez-vous' \
 		'Page non trouvée' \
 		"Retourner à l'accueil" \
+		"Retour à l'accueil" \
 		'Vous avez oublié votre mot de passe ?' \
 		'Réinitialiser mon mot de passe'; do
 		if grep -q -F "$needle" /tmp/verify-astrojs-body.$$; then
@@ -575,7 +577,9 @@ cmd_self_check() {
 		return 0
 	fi
 	set +e
-	cmd_doctor >/tmp/verify-astrojs-self-doctor.$$ 2>/tmp/verify-astrojs-self-doctor-err.$$
+	# die() calls exit; run doctor in a subshell so a missing state file is a
+	# non-zero status here instead of aborting self-check.
+	( cmd_doctor ) >/tmp/verify-astrojs-self-doctor.$$ 2>/tmp/verify-astrojs-self-doctor-err.$$
 	local rc=$?
 	set -e
 	[ "$rc" -ne 0 ] || die "doctor succeeded without a state file"
