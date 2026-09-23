@@ -29,10 +29,10 @@ The `STRAPI_*` defaults exist only so a fresh clone builds and boots without con
 
 When you start a real project from this template:
 
-- [ ] Rename the project: `name` in `package.json`, `release.repositoryUrl` in `package.json`.
+- [ ] Rename the project: `name` in `package.json`.
 - [ ] Set the canonical site URL: `site` in `astro.config.mjs` (and the `image.domains` / `remotePatterns` host).
 - [ ] Fill `.env` from `.env.example`: `STRAPI_URL`, `STRAPI_TOKEN`, `COOKIE_SIGNING_SECRET`.
-- [ ] Wire Sentry: org/project in `astro.config.mjs`, DSN in `sentry.client.config.js` / `sentry.server.config.js`.
+- [ ] Wire Sentry: org/project in `astro.config.mjs`, `PUBLIC_SENTRY_DSN` as a build arg.
 - [ ] Run `make install` once per clone so Git hooks land in `.vite-hooks/`.
 - [ ] Regenerate PWA assets from your own icon: `vp run generate-pwa-assets`.
 
@@ -95,7 +95,7 @@ The test script is `vp test`. Tests import from `vitest`. The Makefile target is
 
 ## Monitoring
 
-Error monitoring via Sentry (`@sentry/astro`, prod-only). Set the DSN in `sentry.client.config.js` / `sentry.server.config.js` and the org/project in `astro.config.mjs`. Source maps and release tagging need `SENTRY_AUTH_TOKEN` and `SENTRY_RELEASE` (git SHA) at build time.
+Error monitoring via Sentry (`@sentry/astro`, prod-only). The DSN comes from `PUBLIC_SENTRY_DSN` at build time (empty keeps Sentry off); set the org/project in `astro.config.mjs`. Source maps and release tagging need `SENTRY_AUTH_TOKEN` and `SENTRY_RELEASE` (git SHA) at build time.
 
 ## Deployment
 

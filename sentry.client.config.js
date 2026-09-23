@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/astro';
 
-// Set your project DSN here to enable Sentry in production.
-const SENTRY_DSN = '';
+// Build-time DSN (PUBLIC_SENTRY_DSN, inlined in client and server bundles). Empty keeps Sentry off.
+const SENTRY_DSN = import.meta.env.PUBLIC_SENTRY_DSN;
 
 if (process.env.NODE_ENV === 'production' && SENTRY_DSN) {
 	Sentry.init({

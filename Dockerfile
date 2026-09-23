@@ -20,7 +20,9 @@ FROM base AS build
 # SENTRY_AUTH_TOKEN is a BuildKit secret on the build RUN only. It is never an
 # ARG or ENV, so it cannot persist in image layers or `docker history`.
 ARG SOURCE_COMMIT
-ENV SENTRY_RELEASE=$SOURCE_COMMIT
+ARG PUBLIC_SENTRY_DSN
+ENV SENTRY_RELEASE=$SOURCE_COMMIT \
+    PUBLIC_SENTRY_DSN=$PUBLIC_SENTRY_DSN
 COPY package.json bun.lock ./
 RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
     bun install --frozen-lockfile

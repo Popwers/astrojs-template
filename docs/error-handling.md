@@ -98,8 +98,8 @@ The two silent paths — `fetchApi`'s `returnError: false` fallback and
 outage is therefore visible in server logs but not in monitoring.
 
 Sentry is wired for the server runtime (`@sentry/astro` in `astro.config.mjs`
-+ `sentry.server.config.js`), but only initializes when `SENTRY_DSN` is set in
-production. Promoting these logged failures to `Sentry.captureException` is a
++ `sentry.server.config.js`), but only initializes when `PUBLIC_SENTRY_DSN` is set
+at build time and the server runs in production. Promoting these logged failures to `Sentry.captureException` is a
 reasonable future hardening step; it was intentionally **not** done here to
 avoid importing the Sentry SDK into a hot middleware path that runs under both
 test runners. If the team later decides silent fallbacks should raise

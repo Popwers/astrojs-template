@@ -1,7 +1,7 @@
 import * as Sentry from '@sentry/astro';
 
-// Set your project DSN here to enable Sentry in production.
-const SENTRY_DSN = '';
+// Build-time DSN (PUBLIC_SENTRY_DSN, inlined in client and server bundles). Empty keeps Sentry off.
+const SENTRY_DSN = import.meta.env.PUBLIC_SENTRY_DSN;
 
 // No `@sentry/profiling-node`: it is a native NAPI addon that calls `uv_default_loop`
 // at init, which the Bun runtime (popwers/mini-bun) does not support (oven-sh/bun#18546)

@@ -9,6 +9,9 @@ import { defineConfig, envField } from 'astro/config';
 
 import { ACTION_BODY_SIZE_LIMIT } from './src/data/userOptions.ts';
 
+/** Deployed commit SHA (Dockerfile maps SOURCE_COMMIT to SENTRY_RELEASE). */
+const sentryRelease = process.env.SENTRY_RELEASE || undefined;
+
 export default defineConfig({
 	server: {
 		host: true,
@@ -32,10 +35,16 @@ export default defineConfig({
 		// styles in production. Vite already minifies CSS, so csso only added ~1% anyway.
 		playformCompress({ HTML: false, CSS: false }),
 		sentry({
-			sourceMapsUploadOptions: {
-				org: 'your-org',
-				project: 'your-project',
-				authToken: process.env.SENTRY_AUTH_TOKEN,
+			org: 'your-org',
+			project: 'your-project',
+			authToken: process.env.SENTRY_AUTH_TOKEN,
+			unstable_sentryVitePluginOptions: {
+				release: {
+					name: sentryRelease,
+					deploy: sentryRelease ? { env: 'production' } : false,
+				},
+				// Release or deploy upload failures must not break the Docker build.
+				errorHandler: (error) => console.warn(`[sentry] ${error.message}`),
 			},
 		}),
 		AstroPWA({
