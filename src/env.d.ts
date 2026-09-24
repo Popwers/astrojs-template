@@ -1,4 +1,5 @@
 /// <reference path="../.astro/types.d.ts" />
+/// <reference types="@legendapp/state/config/enableReactComponents" />
 
 // Fontsource variable font packages ship only CSS — no TypeScript declarations.
 declare module '@fontsource-variable/montserrat';
