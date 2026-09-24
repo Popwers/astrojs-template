@@ -41,7 +41,7 @@ const description: string = 'Modifier mes informations personnelles';
 		<Avatar blueIcon />
 	</AvatarInput>
 
-	<form method='POST' action={actions.user.update}>
+	<form method='POST' action={actions.user.update} data-astro-reload>
 		<div class='flex flex-col lg:flex-row lg:gap-6 mt-12'>
 			<div class='form-group w-full'>
 				<label for='username'>Nom</label>
@@ -86,7 +86,7 @@ const description: string = 'Modifier mes informations personnelles';
 
 		{deleteError && <p class='text-red mt-4 text-sm'>{deleteError}</p>}
 
-		<form method='POST' action={actions.user.deleteAccount} class='mt-6'>
+		<form method='POST' action={actions.user.deleteAccount} class='mt-6' data-astro-reload>
 			<div class='form-group flex items-start gap-3'>
 				<input type='checkbox' id='confirmation' name='confirmation' value='true' required />
 				<label for='confirmation' class='text-sm'>
