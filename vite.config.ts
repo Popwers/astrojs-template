@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 
 import { defineConfig } from 'vite-plus';
 import type { DummyRule, DummyRuleMap } from 'vite-plus/lint';
+import { configDefaults } from 'vite-plus/test/config';
 
 // Resolve a path relative to this config file to an absolute path for Vitest aliases.
 const fromRoot = (relativePath: string) => fileURLToPath(new URL(relativePath, import.meta.url));
@@ -266,6 +267,8 @@ export default defineConfig({
 	// so tests resolve them to `tests/stubs/`. `astro:schema` needs no stub:
 	// schema files import `z` from `astro/zod`, a real subpath.
 	test: {
+		// Playwright owns tests/e2e (`vp run test:e2e`).
+		exclude: [...configDefaults.exclude, 'tests/e2e/**'],
 		env: {
 			COOKIE_SIGNING_SECRET: 'test-cookie-signing-secret',
 		},

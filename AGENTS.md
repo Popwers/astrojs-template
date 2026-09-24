@@ -24,9 +24,12 @@ Type `make` for the list. `vp` calls bun because `packageManager` is bun.
 | Dev server (`localhost:4321`) | `make dev` | `vp run dev` → `astro dev --host` |
 | Lint + fmt + types | `make check` | `vp check` |
 | Tests | `make test` | `vp test` |
+| E2E golden paths | `vp run test:e2e` | `playwright test` against the stub Strapi in `tests/e2e` |
 | Production build | `make build` | `vp run build` → `astro build` |
 | Preview the build | `make preview` | `vp run preview` → `astro preview` |
 | One-shot binary | `vpx <bin>` | Vite+ one-shot |
+
+E2E needs Chromium once (`vpx playwright install chromium`). Playwright builds the app and runs it on port 44321 next to `tests/e2e/strapi-stub.ts` on port 41337. Add a stub route when a golden path calls a new Strapi endpoint. Vitest excludes `tests/e2e`.
 
 Default branch is `master`. Conventional commits via `cz` / `ga`. `vp config` writes hooks into `.vite-hooks/`. The staged check is `vp check --fix`.
 
