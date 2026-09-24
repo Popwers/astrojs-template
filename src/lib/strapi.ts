@@ -52,16 +52,16 @@ export default async function fetchApi<T>({
 			console.error(`API error: ${error.error.status} on ${endpoint}`, error.error.message);
 			// SAFETY: `returnError: true` is the caller opting into the failure branch, so it
 			// declares `T` as a union including `StrapiError` (see the JSDoc above).
-			return returnError ? (error as T) : createFetchFallback<T>({ wrappedByKey, wrappedByList });
+			return returnError ? (error as T) : createFetchFallback<T>({ wrappedByKey });
 		}
 
 		if (parsedResponse.parseError) {
 			console.warn(`Successful API response on ${endpoint} returned a non-JSON body.`);
-			return createFetchFallback<T>({ wrappedByKey, wrappedByList });
+			return createFetchFallback<T>({ wrappedByKey });
 		}
 
 		if (!parsedResponse.hasBody) {
-			return createFetchFallback<T>({ wrappedByKey, wrappedByList });
+			return createFetchFallback<T>({ wrappedByKey });
 		}
 
 		const payload = parsedResponse.payload;
@@ -89,7 +89,7 @@ export default async function fetchApi<T>({
 		// declares `T` as a union including `StrapiError` (see the JSDoc above).
 		return returnError
 			? (createStrapiError(500, error instanceof Error ? error.message : 'An error occurred') as T)
-			: createFetchFallback<T>({ wrappedByKey, wrappedByList });
+			: createFetchFallback<T>({ wrappedByKey });
 	}
 }
 
