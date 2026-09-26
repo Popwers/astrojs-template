@@ -9,7 +9,6 @@ interface ParsedApiResponse {
 
 interface FetchFallbackProps {
 	wrappedByKey?: string;
-	wrappedByList?: boolean;
 }
 
 const parseApiResponseBody = async (response: Response): Promise<ParsedApiResponse> => {
