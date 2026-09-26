@@ -24,7 +24,7 @@ Type `make` for the list. `vp` calls bun because `packageManager` is bun.
 | Dev server (`localhost:4321`) | `make dev` | `vp run dev` → `astro dev --host` |
 | Lint + fmt + types | `make check` | `vp check` |
 | Tests | `make test` | `vp test` |
-| E2E golden paths | `vp run test:e2e` | `playwright test` against the stub Strapi in `tests/e2e` |
+| E2E golden paths | `vp run e2e` | `playwright test` against the stub Strapi in `tests/e2e` |
 | Production build | `make build` | `vp run build` → `astro build` |
 | Preview the build | `make preview` | `vp run preview` → `astro preview` |
 | One-shot binary | `vpx <bin>` | Vite+ one-shot |

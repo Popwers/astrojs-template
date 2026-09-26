@@ -8,7 +8,7 @@
     "preview": "astro preview",
     "astro": "astro",
     "test": "vp test",
-    "test:e2e": "playwright test",
+    "e2e": "playwright test",
     "upgrade": "bunx @astrojs/upgrade",
     "generate-pwa-assets": "pwa-assets-generator --preset minimal-2023 public/icon.png"
   },

@@ -267,7 +267,7 @@ export default defineConfig({
 	// so tests resolve them to `tests/stubs/`. `astro:schema` needs no stub:
 	// schema files import `z` from `astro/zod`, a real subpath.
 	test: {
-		// Playwright owns tests/e2e (`vp run test:e2e`).
+		// Playwright owns tests/e2e (`vp run e2e`).
 		exclude: [...configDefaults.exclude, 'tests/e2e/**'],
 		env: {
 			COOKIE_SIGNING_SECRET: 'test-cookie-signing-secret',
