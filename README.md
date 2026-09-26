@@ -76,12 +76,15 @@ Type `make` (or `make help`) to list targets.
 | `make dev` | Dev server at `localhost:4321` (`astro dev --host`) |
 | `make check` | Oxlint + Oxfmt + tsgo (`vp check`) |
 | `make test` | Run all tests (`vp test`) |
+| `vp run e2e` | Playwright golden paths against a stub Strapi (`tests/e2e`) |
 | `make build` | Production build to `./dist/` (`astro build`) |
 | `make preview` | Preview the production build (`astro preview`) |
 | `vp run generate-pwa-assets` | Generate PWA icons/splash from `public/icon.png` |
 | `vp check --fix` | Same as `make check`, with auto-fix |
 
 The test script is `vp test`. Tests import from `vitest`. The Makefile target is `vp test`, not `vp run test`.
+
+The E2E suite in `tests/e2e` runs through Playwright, not Vitest. Install Chromium once with `vpx playwright install chromium`, then run `vp run e2e`. Playwright builds the app, starts it on port 44321, and starts the Bun stub Strapi on port 41337. No real Strapi is needed. Failures keep a trace in `test-results/`. Open the report with `vpx playwright show-report`.
 
 ## Toolchain
 

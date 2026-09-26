@@ -35,6 +35,8 @@ const shouldCleanupDevServiceWorkers = import.meta.env.DEV;
 // SPA view transitions (ClientRouter) are disabled on the dashboard because
 // server:defer islands don't survive client-side navigation. Dashboard pages
 // always do a full load. Only login/register pages use Astro transition:* directives.
+// Exception: a form POST from a router page (login) swaps the dashboard in and the
+// router stays attached, so dashboard forms carry `data-astro-reload` to submit natively.
 const enableViewTransitions = !Astro.url.pathname.startsWith("/dashboard");
 ---
 
