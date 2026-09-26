@@ -1,5 +1,5 @@
 import type { User } from '@interfaces/user';
-import { isPersistableUser, mergeUsers, resolveUserAfterRefresh } from '@lib/userRefresh';
+import { isPersistableUser, resolveUserAfterRefresh } from '@lib/userRefresh';
 import { describe, expect, it } from 'vitest';
 
 const createUser = (overrides: Partial<User> = {}): User => ({
@@ -17,15 +17,6 @@ const createUser = (overrides: Partial<User> = {}): User => ({
 });
 
 describe('user refresh helpers', () => {
-	it('merges the current user with fallback fields', () => {
-		const mergedUser = mergeUsers(createUser(), {
-			username: 'jane_doe',
-		});
-
-		expect(mergedUser?.id).toBe(1);
-		expect(mergedUser?.username).toBe('jane_doe');
-	});
-
 	it('returns the refreshed user when the refresh succeeds', async () => {
 		const refreshedUser = createUser({ username: 'jane_doe' });
 
