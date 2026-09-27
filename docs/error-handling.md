@@ -37,8 +37,8 @@ to render content. Its `returnError` flag decides what happens on failure:
 
 - `returnError: false` (the default) → on any failure (non-OK status, non-JSON
   body, thrown fetch) it logs to the console and returns a **safe empty
-  fallback** built by `createFetchFallback` (an empty array or object shaped by
-  `wrappedByKey` / `wrappedByList`). The page renders with empty content rather
+  fallback** built by `createFetchFallback` (an empty array when `wrappedByKey` is set,
+  an empty object otherwise). The page renders with empty content rather
   than crashing.
 - `returnError: true` → on failure it returns the **structured Strapi error**
   (`{ error: { status, name, message, details } }`) instead of the fallback.
