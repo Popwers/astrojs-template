@@ -42,7 +42,7 @@
     "@playwright/test": "^1.63.0",
     "@semantic-release/changelog": "^7.0.0",
     "@semantic-release/git": "^11.0.1",
-    "@shadcn/lint": "^0.1.0",
+    "@shadcn/lint": "^0.2.0",
     "@tailwindcss/vite": "^4.3.3",
     "@types/bun": "^1.4.2",
     "@types/react": "^19.3.0",
