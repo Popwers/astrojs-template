@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/Popwers/astrojs-template/compare/v1.0.0...v1.0.1) (2026-09-27)
+
+
+### Bug Fixes
+
+* correct Acceuil typo to Accueil on the home page ([#20](https://github.com/Popwers/astrojs-template/issues/20)) ([043cee3](https://github.com/Popwers/astrojs-template/commit/043cee30f51ce9fe00fe3619bab2657f34b661b0))
+
 # 1.0.0 (2026-09-23)
 
 
