@@ -1,5 +1,7 @@
 import * as Sentry from '@sentry/astro';
 
+import { dataCollection } from './sentry.data-collection.js';
+
 // Build-time DSN (PUBLIC_SENTRY_DSN, inlined in client and server bundles). Empty keeps Sentry off.
 const SENTRY_DSN = import.meta.env.PUBLIC_SENTRY_DSN;
 
@@ -10,6 +12,7 @@ if (process.env.NODE_ENV === 'production' && SENTRY_DSN) {
 	Sentry.init({
 		environment: process.env.NODE_ENV,
 		dsn: SENTRY_DSN,
+		dataCollection,
 
 		tracesSampler: ({ name, parentSampled }) => {
 			// Do not sample health checks ever
