@@ -29,4 +29,6 @@ console.error = (...args) => {
 	origConsoleError(...args);
 };
 
-await import('./dist/server/entry.mjs');
+// The server entry only exists after `astro build`; a non-literal specifier keeps typecheck independent of it.
+const serverEntry = './dist/server/entry.mjs';
+await import(serverEntry);

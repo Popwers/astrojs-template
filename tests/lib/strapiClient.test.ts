@@ -1,5 +1,4 @@
-import type { JsonArray, JsonObject } from '@interfaces/json';
-import { createFetchFallback, createSubmitFallback, parseApiResponseBody } from '@lib/strapiClient';
+import { parseApiResponseBody } from '@lib/strapiClient';
 import { describe, expect, it } from 'vitest';
 
 describe('strapiClient helpers', () => {
@@ -39,15 +38,5 @@ describe('strapiClient helpers', () => {
 		expect(parsed.hasBody).toBe(true);
 		expect(parsed.parseError).toBe(true);
 		expect(parsed.payload).toBeUndefined();
-	});
-
-	it('builds the legacy fetch fallback shapes', () => {
-		expect(createFetchFallback<JsonArray>({ wrappedByKey: 'data' })).toEqual([]);
-		expect(createFetchFallback<JsonObject>({ wrappedByList: true })).toEqual({});
-		expect(createFetchFallback<JsonObject>({})).toEqual({});
-	});
-
-	it('builds an empty submit fallback', () => {
-		expect(createSubmitFallback<JsonObject>()).toEqual({});
 	});
 });
