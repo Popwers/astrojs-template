@@ -24,3 +24,7 @@ pnpm-debug.log*
 # Million Lint
 .million
 .grepai/
+
+# playwright
+playwright-report/
+test-results/

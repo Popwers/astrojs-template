@@ -37,7 +37,7 @@ const { username, email } = Astro.locals.user ?? {};
 				<span class='relative -top-2 text-base text-blue-saturated'>{email}</span>
 			</p>
 
-			<form method='POST' action={actions.auth.logout}>
+			<form method='POST' action={actions.auth.logout} data-astro-reload>
 				<button
 					id='logout-button'
 					type='submit'
