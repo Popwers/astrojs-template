@@ -76,7 +76,7 @@ Stable handles from this repo:
 | Surface | Handle |
 | --- | --- |
 | Home hero | text `Welcome to Astro` (`src/pages/index.astro`) |
-| Home document title | `Your project \| Acceuil` (typo is in source: `Acceuil`) |
+| Home document title | `Your project \| Accueil` |
 | Nav home | link text `Accueil`, href `/` |
 | Nav placeholders | `Menu 1` → `/menu1`, `Menu 2 + Sous menu` → `/menu2` (those routes 404) |
 | Anon session links | `Se connecter` → `/login`, `S'inscrire` → `/register` (`AvatarIsland`, `server:defer`) |

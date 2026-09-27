@@ -37,6 +37,6 @@ Preconditions:
 - A 200 with an error shell is not proof. Assert `Welcome to Astro`, not only the status.
 - `localhost:4321` is the human dev port. Doctor must name 4331 (or the port this launch recorded).
 - `AvatarIsland` is `server:defer`. First-paint `GET /` often omits `Se connecter` / `S'inscrire`. Do not fail home because those strings are missing; prove them on `/login` and `/register`.
-- The home title uses `Acceuil` (source typo). Assert that spelling, or ignore the title and assert the `h1`.
+- The home title is `Accueil`. Assert that spelling, or ignore the title and assert the `h1`.
 - Cookie-banner copy is in the HTML on every `BaseLayout` page. Hide is `.cookie-layer { opacity: 0 }`, not a Tailwind `opacity-0` class on the banner. Do not require a painted banner for this feature.
 - `/menu1` and `/menu2` are nav labels only. They 404. That is not a home regression.
