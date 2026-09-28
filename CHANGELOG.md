@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/Popwers/astrojs-template/compare/v1.0.1...v1.0.2) (2026-09-28)
+
+
+### Performance Improvements
+
+* **submit-button:** load only domAnimation via LazyMotion ([#22](https://github.com/Popwers/astrojs-template/issues/22)) ([7d06930](https://github.com/Popwers/astrojs-template/commit/7d06930a43dc03ea77fe67986e1ea204b8749353))
+
 ## [1.0.1](https://github.com/Popwers/astrojs-template/compare/v1.0.0...v1.0.1) (2026-09-27)
 
 
