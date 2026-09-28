@@ -38,14 +38,12 @@ export default defineConfig({
 			org: 'your-org',
 			project: 'your-project',
 			authToken: process.env.SENTRY_AUTH_TOKEN,
-			unstable_sentryVitePluginOptions: {
-				release: {
-					name: sentryRelease,
-					deploy: sentryRelease ? { env: 'production' } : false,
-				},
-				// Release or deploy upload failures must not break the Docker build.
-				errorHandler: (error) => console.warn(`[sentry] ${error.message}`),
+			release: {
+				name: sentryRelease,
+				deploy: sentryRelease ? { env: 'production' } : false,
 			},
+			// Release or deploy upload failures must not break the Docker build.
+			errorHandler: (error) => console.warn(`[sentry] ${error.message}`),
 		}),
 		AstroPWA({
 			manifest: false,
