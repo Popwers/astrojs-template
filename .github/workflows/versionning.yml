@@ -9,11 +9,21 @@ on:
     push:
         branches:
             - master
+        # Pushes that only touch docs, tests or tooling cannot ship code; the next releasable push picks their commits up.
+        paths-ignore:
+            - '**/*.md'
+            - 'docs/**'
+            - 'LICENSE'
+            - 'tests/**'
+            - 'tools/**'
+            - '.cursor/**'
+            - '.vscode/**'
     workflow_dispatch:
 
 jobs:
     main:
         runs-on: ubuntu-latest
+        timeout-minutes: 10
         steps:
             - name: Checkout
               uses: actions/checkout@v4
