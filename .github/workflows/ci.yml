@@ -3,6 +3,12 @@ name: CI
 # Pull requests only: main re-ran the suites the PR had just passed. Client repos generated from this template do the same.
 on:
     pull_request:
+        # Docs-only PRs skip CI: nothing they touch is built or tested. Re-include any markdown the build reads.
+        paths:
+            - '**'
+            - '!**/*.md'
+            - '!docs/**'
+            - '!LICENSE'
 
 # A new push to a PR supersedes the run in flight.
 concurrency:
