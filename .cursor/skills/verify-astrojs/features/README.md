@@ -59,5 +59,6 @@ These user-facing paths exist. They are not a pass for any feature above. Do not
 - Cookie-banner accept / customize clicks (markup is covered on public home; visibility needs hydration)
 - PWA install / service worker (`/manifest.webmanifest`, `src/sw.ts`)
 - `/robots.txt` and `/sitemap-index.xml`
+- `/500` (`src/pages/500.astro`) returns HTTP 500 with heading `Erreur 500`. It is the custom error page, not a health check and not a pass for any feature above.
 
 `/terms` is linked from register copy and has no page. Hitting it is a 404, not a mapped legal page.
