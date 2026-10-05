@@ -27,7 +27,7 @@
     "browser-image-compression": "^2.0.2",
     "cn": "^0.4.0",
     "heic2any": "^0.0.4",
-    "motion": "^13.4.4",
+    "motion": "^14.0.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "schema-dts": "^2.1.0",
