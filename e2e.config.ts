@@ -55,7 +55,7 @@ export default {
 	// SuperGrok subscription: sign in once with `bunx e2e login spacexai`; `bunx e2e models spacexai` lists the ids.
 	agents: {
 		default: {
-			model: grok('grok-4'),
+			model: grok('grok-4.7'),
 			system: 'You are a thorough QA agent. Verify every outcome on screen.',
 			context:
 				'A French Astro site with a Strapi account area. "Se connecter" is log in, "Mon compte" the dashboard, "Mon profil" the profile page, "Enregistrer" saves.',
