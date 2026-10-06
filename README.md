@@ -55,7 +55,8 @@ When you start a real project from this template:
 │   ├── styles/             # Tailwind + globals
 │   ├── pwa.ts              # Service worker registration
 │   └── sw.ts               # Service worker (workbox, injectManifest)
-├── tests/                  # Vitest suite (`vp test`)
+├── tests/                  # Vitest suite (`vp test`), e2e golden paths in tests/e2e
+├── e2e.config.ts           # e2e runner config (`vp run test:e2e`)
 ├── Makefile                # install, dev, check, test, build
 ├── astro.config.mjs
 ├── vite.config.ts          # Vite+ (`vp`) config. Lint, fmt, typecheck.
@@ -76,7 +77,7 @@ Type `make` (or `make help`) to list targets.
 | `make dev` | Dev server at `localhost:4321` (`astro dev --host`) |
 | `make check` | Oxlint + Oxfmt + tsgo (`vp check`) |
 | `make test` | Run all tests (`vp test`) |
-| `vp run e2e` | Playwright golden paths against a stub Strapi (`tests/e2e`) |
+| `vp run test:e2e` | e2e golden paths against a stub Strapi (`tests/e2e`) |
 | `make build` | Production build to `./dist/` (`astro build`) |
 | `make preview` | Preview the production build (`astro preview`) |
 | `vp run generate-pwa-assets` | Generate PWA icons/splash from `public/icon.png` |
@@ -84,7 +85,7 @@ Type `make` (or `make help`) to list targets.
 
 The test script is `vp test`. Tests import from `vitest`. The Makefile target is `vp test`, not `vp run test`.
 
-The E2E suite in `tests/e2e` runs through Playwright, not Vitest. Install Chromium once with `vpx playwright install chromium`, then run `vp run e2e`. Playwright builds the app, starts it on port 44321, and starts the Bun stub Strapi on port 41337. No real Strapi is needed. Failures keep a trace in `test-results/`. Open the report with `vpx playwright show-report`.
+The E2E suite in `tests/e2e` runs through the [e2e](https://e2e.tester.army) runner, not Vitest. Run `vp run test:e2e`. The runner starts `tests/e2e/serve.sh`, which starts the Bun stub Strapi on port 41337, builds the app and serves it on port 44321. No real Strapi is needed. Chromium downloads on the first run. `vp run test:e2e:ci` skips the `agent`-tagged test, whose `agent.act` steps need a model login (`bunx e2e login spacexai`). Results land in `.e2e/report.json`, failure traces and screenshots in `.e2e/artifacts/`, the app log in `.e2e/logs/app.log`.
 
 ## Toolchain
 

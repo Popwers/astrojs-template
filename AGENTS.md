@@ -24,12 +24,12 @@ Type `make` for the list. `vp` calls bun because `packageManager` is bun.
 | Dev server (`localhost:4321`) | `make dev` | `vp run dev` → `astro dev --host` |
 | Lint + fmt + types | `make check` | `vp check` |
 | Tests | `make test` | `vp test` |
-| E2E golden paths | `vp run e2e` | `playwright test` against the stub Strapi in `tests/e2e` |
+| E2E golden paths | `vp run test:e2e` | `e2e run` against the stub Strapi in `tests/e2e` |
 | Production build | `make build` | `vp run build` → `astro build` |
 | Preview the build | `make preview` | `vp run preview` → `astro preview` |
 | One-shot binary | `vpx <bin>` | Vite+ one-shot |
 
-E2E needs Chromium once (`vpx playwright install chromium`). Playwright builds the app and runs it on port 44321 next to `tests/e2e/strapi-stub.ts` on port 41337. Add a stub route when a golden path calls a new Strapi endpoint. Vitest excludes `tests/e2e`.
+The e2e runner (`e2e.config.ts`) starts `tests/e2e/serve.sh`, which runs `tests/e2e/strapi-stub.ts` on port 41337, builds the app and serves it on port 44321; the runner downloads Chromium on first use. Add a stub route when a golden path calls a new Strapi endpoint. `vp run test:e2e:ci` is the CI run: it skips the `agent`-tagged test, which needs a model login (`bunx e2e login spacexai`). Results land in `.e2e/` (`report.json`, `logs/app.log`). Vitest excludes `tests/e2e`.
 
 Default branch is `master`. Conventional commits via `cz` / `ga`. `vp config` writes hooks into `.vite-hooks/`. The staged check is `vp check --fix`.
 
@@ -104,6 +104,8 @@ Copy `.env.example` to `.env`. The schema is in `astro.config.mjs` (`envField`).
 | `src/data/` | Menus, route guards, cookie options, schema.org |
 | `src/styles/` | Tailwind 4 + SCSS |
 | `tests/` | Vitest, mirrors `src/` |
+| `tests/e2e/` | e2e golden paths, stub Strapi, `serve.sh` |
+| `e2e.config.ts` | e2e runner: app command, accounts, agent model |
 | `vite.config.ts` | Lint, fmt, staged hooks, test |
 | `Makefile` | Developer entry |
 | `Dockerfile` | Multi-stage production image |
