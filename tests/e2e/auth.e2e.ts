@@ -22,7 +22,9 @@ test('valid credentials open the dashboard and logging out closes it', async ({ 
 	await expect(browser).toHaveURL('/login');
 });
 
-test('wrong password is rejected on the login form', async ({ app, screen, browser }) => {
+test('wrong password is rejected on the login form', async ({ app, screen, browser, allowedPageErrors }) => {
+	// The login action answers 400 on bad credentials.
+	allowedPageErrors.push(/^status 400: \S+\/login\?_action=auth\.login/);
 	await app.open('/login');
 	await screen.getByLabel('Adresse mail').fill(credentials.user('reader').username);
 	await screen.getByLabel('Mot de passe').fill('mauvais-mot-de-passe');

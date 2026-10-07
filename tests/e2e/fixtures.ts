@@ -7,19 +7,32 @@ import type { App, Screen } from 'e2e';
 type Account = 'editor' | 'reader';
 
 /**
- * `test` with a guard that fails the test on any `console.error` or uncaught page error that
- * `page-errors.js` recorded in the page it ends on. Browser-generated "Failed to load resource"
- * lines never reach it, so the prefetch 404s of the placeholder menu links (`/menu1`, ...) do not count.
+ * Astro prefetches every link in view, and the template menu links to placeholder routes
+ * (`/menu1`, `/menu2/...`) that have no page. Those prefetch 404s belong to the placeholder menu,
+ * not to the page under test, so they are always allowed.
  */
-const test = base.extend<{ pageErrorGuard: undefined }>({
-	pageErrorGuard: async ({ browser }, use) => {
-		await use(undefined);
-		await expectNoPageErrors(browser);
-	},
-});
+const PLACEHOLDER_MENU_PREFETCH = /^(?:status 404|resource failed): \S+\/menu\d/;
 
-/** Fails when the current page recorded a `console.error` or an uncaught error. */
-const expectNoPageErrors = async (browser: Browser) => {
+/**
+ * `test` with a guard that fails the test on any `console.error`, uncaught page error, failed
+ * same-origin load or CSP violation that `page-errors.js` recorded in the page it ends on. A test
+ * expecting one pushes a pattern onto `allowedPageErrors`.
+ */
+const test = base
+	.extend<{ allowedPageErrors: RegExp[] }>({
+		allowedPageErrors: async (_fixtures, use) => {
+			await use([PLACEHOLDER_MENU_PREFETCH]);
+		},
+	})
+	.extend<{ pageErrorGuard: undefined }>({
+		pageErrorGuard: async ({ browser, allowedPageErrors }, use) => {
+			await use(undefined);
+			await expectNoPageErrors(browser, allowedPageErrors);
+		},
+	});
+
+/** Fails when the current page recorded an error that no `allowed` pattern matches. */
+const expectNoPageErrors = async (browser: Browser, allowed: RegExp[]) => {
 	const errors = await browser.evaluate<string[]>(() => {
 		try {
 			return JSON.parse(sessionStorage.getItem('__e2ePageErrors') ?? '[]');
@@ -27,7 +40,8 @@ const expectNoPageErrors = async (browser: Browser) => {
 			return [];
 		}
 	});
-	expect(errors, 'console errors and uncaught page errors').toEqual([]);
+	const unexpected = errors.filter((error) => !allowed.some((pattern) => pattern.test(error)));
+	expect(unexpected, 'page errors (console, uncaught, failed loads, CSP)').toEqual([]);
 };
 
 /** Signs `account` in through the login form and waits for the dashboard. */

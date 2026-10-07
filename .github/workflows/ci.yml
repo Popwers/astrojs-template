@@ -83,6 +83,7 @@ jobs:
               uses: actions/upload-artifact@v4
               with:
                   name: e2e-report
+                  include-hidden-files: true
                   path: |
                       .e2e/report.json
                       .e2e/junit.xml

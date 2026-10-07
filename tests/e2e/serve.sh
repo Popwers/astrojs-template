@@ -19,7 +19,13 @@ trap 'exit 130' INT
 
 bun tests/e2e/strapi-stub.ts &
 stub=$!
+# Any HTTP answer (even 401) proves the stub listens; a dead stub fails fast instead of timing out.
+until curl -s -o /dev/null "http://localhost:${STRAPI_STUB_PORT}/api/users/me"; do
+	kill -0 "$stub" 2>/dev/null || { echo "Strapi stub exited before it answered" >&2; exit 1; }
+	sleep 0.2
+done
 vp run build
 bun ./start.mjs &
 server=$!
-wait "$server"
+# Exit as soon as either child dies: the app is useless without the stub.
+wait -n "$stub" "$server"

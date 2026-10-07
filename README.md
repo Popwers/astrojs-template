@@ -85,7 +85,7 @@ Type `make` (or `make help`) to list targets.
 
 The test script is `vp test`. Tests import from `vitest`. The Makefile target is `vp test`, not `vp run test`.
 
-The E2E suite in `tests/e2e` runs through the [e2e](https://e2e.tester.army) runner, not Vitest. Run `vp run test:e2e`. The runner starts `tests/e2e/serve.sh`, which starts the Bun stub Strapi on port 41337, builds the app and serves it on port 44321. No real Strapi is needed. Chromium downloads on the first run. `vp run test:e2e:ci` skips the `agent`-tagged test, whose `agent.act` steps need a model login (`bunx e2e login spacexai`). Results land in `.e2e/report.json`, failure traces and screenshots in `.e2e/artifacts/`, the app log in `.e2e/logs/app.log`.
+The E2E suite in `tests/e2e` runs through the [e2e](https://e2e.tester.army) runner, not Vitest. Run `vp run test:e2e`. The runner starts `tests/e2e/serve.sh`, which starts the Bun stub Strapi on port 41337, builds the app and serves it on port 44321. No real Strapi is needed. Chromium downloads on the first run. `vp run test:e2e:ci` skips the `agent`-tagged test, whose `agent.act` steps need a model login (`bunx e2e login spacexai`). Every test ends with a page-error guard (`tests/e2e/fixtures.ts`): it fails on `console.error`, uncaught errors, failed same-origin loads (HTTP 4xx/5xx) and CSP violations, and a test that expects one pushes a pattern onto `allowedPageErrors`. Results land in `.e2e/report.json`, failure traces and screenshots in `.e2e/artifacts/`, the app log in `.e2e/logs/app.log`.
 
 ## Toolchain
 

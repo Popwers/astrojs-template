@@ -16,6 +16,11 @@ test('header login link opens the login form', async ({ app, screen, browser }) 
 	await expect(browser).toHaveURL('/login');
 	await expect(screen.getByRole('heading', { level: 1 })).toHaveText('Se connecter');
 	await expect(screen.getByLabel('Adresse mail')).toBeEnabled();
+	// e2e has no `toBeEditable`: an enabled input can still be read-only.
+	const isReadOnly = await browser.evaluate(
+		() => document.querySelector<HTMLInputElement>('input[type="email"]')?.readOnly === true,
+	);
+	expect(isReadOnly).toBe(false);
 });
 
 test('unknown URL answers 404 with a way back home', async ({ app, screen, browser }) => {
