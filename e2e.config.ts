@@ -47,8 +47,6 @@ export default {
 			},
 		},
 	],
-	// Playwright ran with `retries: isCI ? 1 : 0`; the e2e default is 1 retry in CI.
-	retries: 0,
 	trace: 'retain-on-failure',
 	credentials: {
 		reader: { username: READER.user.email, password: READER.password },
