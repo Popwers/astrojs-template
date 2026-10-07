@@ -1,45 +1,57 @@
-import { expect, test as base } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import { test as base } from '@e2e-dev/web';
+import type { Browser } from '@e2e-dev/web';
+import { credentials, expect } from 'e2e';
+import type { App, Screen } from 'e2e';
 
-import type { StubAccount } from './accounts';
-
-interface Fixtures {
-	consoleErrors: () => string[];
-}
+/** A `credentials` entry in `e2e.config.ts`: a Strapi user the stub knows. */
+type Account = 'editor' | 'reader';
 
 /**
- * Playwright `test` that records the page's browser console errors. Astro
- * prefetches every link in view, and the template menu links to placeholder
- * routes (`/menu1`, `/menu2/...`) that have no page. Those prefetch 404s are a
- * property of the placeholder menu, not of the page under test, so they are left out.
+ * Astro prefetches every link in view, and the template menu links to placeholder routes
+ * (`/menu1`, `/menu2/...`) that have no page. Those prefetch 404s belong to the placeholder menu,
+ * not to the page under test, so they are always allowed.
  */
-const test = base.extend<Fixtures>({
-	consoleErrors: async ({ page }, use) => {
-		const errors: { text: string; url: string }[] = [];
-		const missedPrefetches = new Set<string>();
-		page.on('console', (message) => {
-			if (message.type() === 'error')
-				errors.push({ text: message.text(), url: message.location().url });
-		});
-		page.on('pageerror', (error) => errors.push({ text: error.message, url: '' }));
-		page.on('response', (response) => {
-			const purpose = response.request().headers()['sec-purpose'] ?? '';
-			if (response.status() >= 400 && purpose.includes('prefetch'))
-				missedPrefetches.add(response.url());
-		});
-		await use(() =>
-			errors.filter(({ url }) => !missedPrefetches.has(url)).map(({ text, url }) => `${text} (${url})`),
-		);
-	},
-});
+const PLACEHOLDER_MENU_PREFETCH = /^(?:status 404|resource failed): \S+\/menu\d/;
 
-/** Sign in through the login form and wait for the dashboard. */
-const logIn = async (page: Page, account: StubAccount) => {
-	await page.goto('/login');
-	await page.getByLabel('Adresse mail').fill(account.user.email);
-	await page.getByLabel('Mot de passe', { exact: true }).fill(account.password);
-	await page.getByRole('button', { name: 'Se connecter' }).click();
-	await expect(page).toHaveURL('/dashboard');
+/**
+ * `test` with a guard that fails the test on any `console.error`, uncaught page error, failed
+ * same-origin load or CSP violation that `page-errors.js` recorded in the page it ends on. A test
+ * expecting one pushes a pattern onto `allowedPageErrors`.
+ */
+const test = base
+	.extend<{ allowedPageErrors: RegExp[] }>({
+		allowedPageErrors: async (_fixtures, use) => {
+			await use([PLACEHOLDER_MENU_PREFETCH]);
+		},
+	})
+	.extend<{ pageErrorGuard: undefined }>({
+		pageErrorGuard: async ({ browser, allowedPageErrors }, use) => {
+			await use(undefined);
+			await expectNoPageErrors(browser, allowedPageErrors);
+		},
+	});
+
+/** Fails when the current page recorded an error that no `allowed` pattern matches. */
+const expectNoPageErrors = async (browser: Browser, allowed: RegExp[]) => {
+	const errors = await browser.evaluate<string[]>(() => {
+		try {
+			return JSON.parse(sessionStorage.getItem('__e2ePageErrors') ?? '[]');
+		} catch {
+			return [];
+		}
+	});
+	const unexpected = errors.filter((error) => !allowed.some((pattern) => pattern.test(error)));
+	expect(unexpected, 'page errors (console, uncaught, failed loads, CSP)').toEqual([]);
 };
 
-export { expect, logIn, test };
+/** Signs `account` in through the login form and waits for the dashboard. */
+const logIn = async (app: App, screen: Screen, browser: Browser, account: Account) => {
+	const user = credentials.user(account);
+	await app.open('/login');
+	await screen.getByLabel('Adresse mail').fill(user.username);
+	await screen.getByLabel('Mot de passe').fill(user.password);
+	await screen.getByRole('button', 'Se connecter').tap();
+	await expect(browser).toHaveURL('/dashboard');
+};
+
+export { logIn, test };

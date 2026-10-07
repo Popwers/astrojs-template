@@ -1,5 +1,5 @@
 /**
- * Minimal Strapi v5 stand-in for the Playwright suite. It answers only the
+ * Minimal Strapi v5 stand-in for the e2e suite. It answers only the
  * users-permissions endpoints the golden paths reach, with the payload shapes
  * `src/lib/strapi.ts` parses. Everything else is a Strapi 404 envelope, so the
  * pages that fetch CMS content fall back to their empty state.

@@ -65,26 +65,29 @@ jobs:
         steps:
             - uses: actions/checkout@v4
 
-            - uses: oven-sh/setup-bun@v2
+            # Installs Vite+, the latest LTS Node (e2e needs Node >= 24.8), bun from `packageManager`, and the dependencies.
+            - uses: voidzero-dev/setup-vp@v1.21.1
               with:
-                  bun-version: 1.4.1
+                  cache: true
 
-            - name: Install dependencies
-              run: bun install --frozen-lockfile
-
+            # The Chromium build of the playwright-core that @e2e-dev/web pins, plus its system libraries.
             - name: Install Chromium
-              run: bunx playwright install --with-deps chromium
+              run: vpx @e2e-dev/web install chromium --with-deps
 
-            # Playwright builds the app and starts it next to the stub Strapi in tests/e2e.
-            - name: Playwright golden paths
-              run: bun run e2e
+            # e2e starts tests/e2e/serve.sh (stub Strapi + built app). The `agent`-tagged test needs a model login CI does not have.
+            - name: e2e golden paths
+              run: vp run test:e2e:ci
 
-            - name: Upload Playwright report
-              if: failure()
+            - name: Upload e2e report
+              if: ${{ !cancelled() }}
               uses: actions/upload-artifact@v4
               with:
-                  name: playwright-report
+                  name: e2e-report
+                  include-hidden-files: true
                   path: |
-                      playwright-report/
-                      test-results/
+                      .e2e/report.json
+                      .e2e/junit.xml
+                      .e2e/artifacts/
+                      .e2e/logs/
+                  if-no-files-found: warn
                   retention-days: 7
