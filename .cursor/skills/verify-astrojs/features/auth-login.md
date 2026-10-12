@@ -1,6 +1,6 @@
 # Sign in
 
-Sign in is the `/login` form. A visitor can open it, see the email and password fields, and is sent here when they hit an account route while logged out. Completing a login needs a live Strapi and is not available on the verify stack.
+Sign in is the `/login` form. A visitor can open it, see the email and password fields, and is sent here when they hit an account route while logged out. A signed-in visitor lands on the `/dashboard` account page, can open `/dashboard/account`, and can sign out. The verify stack signs in against the repo's Strapi stub.
 
 ## Sub-features
 
@@ -10,7 +10,11 @@ Sign in is the `/login` form. A visitor can open it, see the email and password 
 - `login-forgot-link` shows `Mot de passe oublié ?` to `/lost-password`.
 - `login-home-link` shows `Retour à l'accueil` to `/`.
 - `login-guard` redirects logged-out `/dashboard`, `/dashboard/account`, and `/register/profil` to `/login`.
-- `login-submit` is `verified-unreachable` without a real Strapi.
+- `login-wrong-password` re-renders `/login` with status `400` and `Adresse email ou mot de passe incorrect`.
+- `login-submit` signs the stub reader in and redirects to `/dashboard` (`Mon compte`, name, email, `Se déconnecter`).
+- `login-account` serves `/dashboard/account` with heading `Mon profil` to a signed-in user.
+- `login-logged-in-gate` redirects a signed-in `/login` to `/dashboard`.
+- `login-logout` signs out to `/login`; `/dashboard` is gated again afterwards.
 
 ## How to get to it (user POV)
 
@@ -30,7 +34,7 @@ Preconditions:
 - **Guard account.** Run `control-astrojs http GET /dashboard/account --no-follow`. Status is `302` and `Location` is `/login`.
 - **Guard profile setup.** Run `control-astrojs http GET /register/profil --no-follow`. Status is `302` and `Location` is `/login`.
 - **Painted frame.** Run `control-astrojs screenshot --path artifacts/login.png --url /login`. The PNG shows `Se connecter`.
-- **Submit.** Do not POST `actions.auth.login` on this stack. Report `login-submit` as `verified-unreachable` (prerequisite: a local or disposable Strapi with a test user). A 200 HTML form is not a successful login.
+- **Sign in, browse, sign out.** Run `control-astrojs drive auth-login`. It prints one line per step and writes `proof/auth-login/` (`steps.txt`, one `.headers` + `.html` per step, `doctor.txt`, `manifest.json`). Expected steps: `guard` `302 /login`, `wrong-password` `400`, `login` `302 /dashboard` with `user_token`, `user_data`, `user_data_timestamp` set, `dashboard` `200` with `Mon compte` and `Jean Dupont`, `account` `200` with `Mon profil`, `login-when-logged-in` `302 /dashboard`, `logout` `302 /login`, `guard-after-logout` `302 /login`. A 200 HTML form after the login POST is not a successful login.
 
 ## Gotchas
 
@@ -38,5 +42,8 @@ Preconditions:
 - `PasswordInput` is a React island (`client:idle`). `#password` is in the SSR HTML.
 - Submit is a React island. The accessible name is the `label` prop `Se connecter`.
 - Query `?error=server-unavailable` shows `Le serveur ne répond pas pour le moment` without submitting.
-- A successful login sets `user_token` and `user_data` then redirects to `/dashboard` (or a same-origin `?redirect=` path). There is no Better Auth cookie.
+- A successful login sets `user_token`, `user_data`, and `user_data_timestamp`, then redirects to `/dashboard` (or a `?redirect=` path starting with a single `/`). There is no Better Auth cookie.
+- Action POSTs (`/login?_action=auth.login`, `/dashboard?_action=auth.logout`) need `Origin` equal to the app origin. Without it Astro answers `403`.
+- Login allows 10 POSTs per 15 minutes per client, in memory. `drive auth-login` spends 2. Relaunch resets the bucket.
+- Only the stub accounts in `tests/e2e/accounts.ts` sign in. Use the reader; the e2e suite renames the editor.
 - Do not follow redirects when proving the guard. `http GET /dashboard` without `--no-follow` lands on `/login` `200` and hides the 302.

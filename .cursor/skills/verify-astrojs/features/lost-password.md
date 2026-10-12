@@ -1,6 +1,6 @@
 # Lost password
 
-Lost password is the `/lost-password` form. A visitor can ask for a reset email. Wait-mail and reset are gated. Sending mail and completing a reset need a live Strapi and are not available on the verify stack.
+Lost password is the `/lost-password` form. A visitor can ask for a reset email. Wait-mail and reset are gated. Sending mail and completing a reset need a Strapi that serves those endpoints. The verify stub does not, so submit is not available on the verify stack.
 
 ## Sub-features
 
@@ -9,6 +9,7 @@ Lost password is the `/lost-password` form. A visitor can ask for a reset email.
 - `lost-home-link` shows `Retour à l'accueil` to `/`.
 - `lost-wait-gate` redirects `/lost-password/wait-mail` to `/lost-password` when cookie `wait-mail-password` is missing.
 - `lost-reset-gate` redirects `/lost-password/reset` to `/lost-password` when cookie `password-reset-code` and `?code=` are missing.
+- `lost-reset-code` turns the mail link `/lost-password/reset?code=<token>` into cookie `password-reset-code` and a 302 to `/lost-password/reset`.
 - `lost-submit` is `verified-unreachable` without a real Strapi.
 
 ## How to get to it (user POV)
@@ -26,7 +27,8 @@ Preconditions:
 - **Open form.** Run `control-astrojs http GET /lost-password`. Status is `200`. The body contains `Vous avez oublié votre mot de passe ?`, `id="email"`, `Réinitialiser mon mot de passe`, and `Retour à l'accueil`.
 - **Wait-mail gate.** Run `control-astrojs http GET /lost-password/wait-mail --no-follow`. Status is `302` and `Location` is `/lost-password`.
 - **Reset gate.** Run `control-astrojs http GET /lost-password/reset --no-follow`. Status is `302` and `Location` is `/lost-password`.
-- **Submit.** Do not POST `actions.password.forgotPassword` on this stack. Report `lost-submit` as `verified-unreachable` (prerequisite: disposable Strapi that accepts the forgot-password endpoint). A successful submit would set cookie `wait-mail-password` and redirect to `/lost-password/wait-mail`.
+- **Reset link.** Run `control-astrojs http GET '/lost-password/reset?code=verify' --no-follow`. Status is `302` and `Location` is `/lost-password/reset`. A fake code is safe: the page stores it and calls no API.
+- **Submit.** Do not POST `actions.password.forgotPassword` on this stack. Report `lost-submit` as `verified-unreachable` (prerequisite: a disposable Strapi that serves `auth/forgot-password`; the repo stub does not). A successful submit would set cookie `wait-mail-password` and redirect to `/lost-password/wait-mail`.
 
 ## Gotchas
 

@@ -1,0 +1,12 @@
+HTTP/1.1 302 Found
+Access-Control-Allow-Origin: http://127.0.0.1:4331
+Vary: Origin
+location: /login
+set-cookie: user_data=<redacted>; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax
+set-cookie: user_data_timestamp=<redacted>; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax
+set-cookie: user_token=<redacted>; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT; HttpOnly; SameSite=Lax
+Date: Mon, 12 Oct 2026 00:43:02 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+

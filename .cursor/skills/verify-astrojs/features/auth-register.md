@@ -1,6 +1,6 @@
 # Register
 
-Register is the `/register` form. A visitor can open it and see email plus password fields. Mail confirmation and profile setup are gated. Completing a registration needs a live Strapi and is not available on the verify stack.
+Register is the `/register` form. A visitor can open it and see email plus password fields. Mail confirmation and profile setup are gated. Completing a registration needs a Strapi that serves registration. The verify stub does not, so submit is not available on the verify stack.
 
 ## Sub-features
 
@@ -27,7 +27,7 @@ Preconditions:
 - **Open register.** Run `control-astrojs http GET /register`. Status is `200`. The body contains `S’inscrire` (U+2019), `id="email"`, `id="password"`, `id="passwordConfirmation"`, and `Connectez-vous`.
 - **Mail gate.** Run `control-astrojs http GET /register/mail-confirmation --no-follow`. Status is `302` and `Location` is `/register`.
 - **Profile gate.** Run `control-astrojs http GET /register/profil --no-follow`. Status is `302` and `Location` is `/login`.
-- **Submit.** Do not POST `actions.auth.register` on this stack. Report `register-submit` as `verified-unreachable` (prerequisite: disposable Strapi). A successful register would set cookie `mail-confirmation` and redirect to `/register/mail-confirmation`.
+- **Submit.** Do not POST `actions.auth.register` on this stack. Report `register-submit` as `verified-unreachable` (prerequisite: a disposable Strapi that serves `auth/local/register`; the repo stub does not). A successful register would set cookie `mail-confirmation` and redirect to `/register/mail-confirmation`.
 
 ## Gotchas
 

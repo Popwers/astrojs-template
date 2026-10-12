@@ -1,0 +1,45 @@
+{
+  "feature": "auth-login",
+  "baseUrl": "http://127.0.0.1:4331",
+  "strapi": "tests/e2e/strapi-stub.ts on 127.0.0.1:4381",
+  "capturedAt": "2026-10-12T00:43:03.332022+00:00",
+  "commands": [
+    "guard GET /dashboard -> 302 /login",
+    "wrong-password POST /login?_action=auth.login -> 400",
+    "login POST /login?_action=auth.login -> 302 /dashboard",
+    "dashboard GET /dashboard -> 200",
+    "account GET /dashboard/account -> 200",
+    "login-when-logged-in GET /login -> 302 /dashboard",
+    "logout POST /dashboard?_action=auth.logout -> 302 /login",
+    "guard-after-logout GET /dashboard -> 302 /login"
+  ],
+  "checks": [
+    "logged-out /dashboard -> 302 /login",
+    "wrong password -> 400 with Adresse email ou mot de passe incorrect",
+    "reader login -> 302 /dashboard, sets user_token, user_data, user_data_timestamp",
+    "/dashboard shows Mon compte, Jean Dupont, logout button; /dashboard/account shows Mon profil",
+    "logged-in /login -> 302 /dashboard",
+    "logout -> 302 /login, then /dashboard -> 302 /login"
+  ],
+  "files": [
+    "account.headers",
+    "account.html",
+    "dashboard.headers",
+    "dashboard.html",
+    "doctor.txt",
+    "guard-after-logout.headers",
+    "guard-after-logout.html",
+    "guard.headers",
+    "guard.html",
+    "login-when-logged-in.headers",
+    "login-when-logged-in.html",
+    "login.headers",
+    "login.html",
+    "logout.headers",
+    "logout.html",
+    "manifest.json",
+    "steps.txt",
+    "wrong-password.headers",
+    "wrong-password.html"
+  ]
+}
