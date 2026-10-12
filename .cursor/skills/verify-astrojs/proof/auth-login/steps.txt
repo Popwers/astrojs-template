@@ -1,0 +1,8 @@
+guard GET /dashboard -> 302 /login
+wrong-password POST /login?_action=auth.login -> 400
+login POST /login?_action=auth.login -> 302 /dashboard
+dashboard GET /dashboard -> 200
+account GET /dashboard/account -> 200
+login-when-logged-in GET /login -> 302 /dashboard
+logout POST /dashboard?_action=auth.logout -> 302 /login
+guard-after-logout GET /dashboard -> 302 /login

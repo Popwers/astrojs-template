@@ -6,8 +6,8 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 - Launch with `.cursor/skills/verify-astrojs/bin/control-astrojs launch`.
 - Default URL is `http://127.0.0.1:4331`. There is no local database.
-- Run `control-astrojs doctor` and require `owned` health: `/login` `< 500` with `Se connecter`, `/` `200` with `Welcome to Astro`.
-- `COOKIE_SIGNING_SECRET` is a generated verify secret. `STRAPI_URL` is `http://127.0.0.1:1` (closed). Auth POSTs that need Strapi are unreachable.
+- Run `control-astrojs doctor` and require `owned` health: app and Strapi stub alive, `/login` `< 500` with `Se connecter`, `/` `200` with `Welcome to Astro`.
+- `COOKIE_SIGNING_SECRET` is a generated verify secret. `STRAPI_URL` is the repo's in-memory stub on loopback (`tests/e2e/strapi-stub.ts`, default port 4381). It serves login and the current user only. Register and password-reset POSTs are unreachable.
 - Never drive an instance this run did not start. Do not use `localhost:4321` unless doctor says that URL is ours.
 
 ## Driving conventions
@@ -17,7 +17,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 - Use `control-astrojs screenshot` when the proof needs a painted frame.
 - Prefer labels, ids, and the handles in the parent `SKILL.md` over CSS or coordinates.
 - Treat every command as literal. Keep quoted names and flags unchanged.
-- Do not POST login, register, or password-reset against a remote Strapi. Report those paths `verified-unreachable`.
+- Sign in only through `control-astrojs drive auth-login` against the stub. Do not POST login, register, or password-reset against a remote Strapi. Report register and password-reset submits `verified-unreachable`.
 - Do not remove proof artifacts during cleanup.
 
 ## Proof and skip reporting
@@ -44,7 +44,7 @@ Keep implementation details out of the map. Name only user paths, stable handles
 ## Features
 
 - [Public home](./public-home.md) covers `/`, the welcome hero, nav/footer chrome, cookie-banner markup, and the 404 page.
-- [Sign in](./auth-login.md) covers `/login` and logged-out redirects into it.
+- [Sign in](./auth-login.md) covers `/login`, logged-out redirects into it, and the stub-backed sign-in, dashboard, account page, and sign-out.
 - [Register](./auth-register.md) covers `/register` and the mail-confirmation / profile gates.
 - [Lost password](./lost-password.md) covers `/lost-password` and the wait-mail / reset gates.
 - [Legal pages](./legal-pages.md) covers `/mentions-legales` and `/politique-confidentialite`.
@@ -53,9 +53,9 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 These user-facing paths exist. They are not a pass for any feature above. Do not invent recipes mid-run.
 
-- `/dashboard` and `/dashboard/account` **after a real Strapi session** (anon access is covered by [Sign in](./auth-login.md))
+- Profile update and avatar upload on `/dashboard/account` (page load is covered by [Sign in](./auth-login.md))
 - `/register/mail-confirmation` and `/register/profil` **with the required cookies / session**
-- `/lost-password/wait-mail` and `/lost-password/reset` **with the required cookies / `?code=`**
+- `/lost-password/wait-mail` and the `/lost-password/reset` form **with the required cookies** (the `?code=` hop is covered by [Lost password](./lost-password.md))
 - Cookie-banner accept / customize clicks (markup is covered on public home; visibility needs hydration)
 - PWA install / service worker (`/manifest.webmanifest`, `src/sw.ts`)
 - `/robots.txt` and `/sitemap-index.xml`

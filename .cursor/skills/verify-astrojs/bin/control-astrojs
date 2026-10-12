@@ -8,9 +8,13 @@ TMP_DIR="${ASTROJS_VERIFY_TMP:-/tmp/verify-astrojs}"
 STATE_FILE="$TMP_DIR/state"
 ENV_FILE="$TMP_DIR/run.env"
 LOG_FILE="$TMP_DIR/astro.log"
+STUB_LOG_FILE="$TMP_DIR/strapi-stub.log"
 PID_FILE="$TMP_DIR/pid"
 PROOF_DIR="${ASTROJS_VERIFY_EVIDENCE_DIR:-$SKILL_DIR/proof}"
 DEFAULT_PORT="${ASTROJS_VERIFY_PORT:-4331}"
+# Below the kernel ephemeral range (32768+), where a TIME-WAIT client socket can hold the port,
+# and above the app's 4331-4351 pick range.
+DEFAULT_STUB_PORT="${ASTROJS_VERIFY_STUB_PORT:-4381}"
 
 export PATH="${HOME}/.local/bin:${HOME}/.grok/bin:${HOME}/.bun/bin:${HOME}/.local/node22/bin:${PATH}"
 
@@ -19,17 +23,18 @@ usage() {
 control-astrojs <command>
 
 Commands:
-  launch [--port N] [--json]          Start isolated astro dev
+  launch [--port N] [--json]          Start the Strapi stub + isolated astro dev
   doctor [--json]                     Read-only health check (exit 0 = driveable)
   http GET PATH [--no-follow]         Request against the owned origin
   screenshot --path FILE [--url /p]   Headless Chrome PNG
-  drive public-home                   Scripted public-home recipe + proof/
+  drive public-home|auth-login        Scripted recipe + proof/<feature>/
   cleanup                             Stop what launch started (keep proof/)
   self-check                          CLI smoke without starting the app
   help                                Show this text
 
 Env:
   ASTROJS_VERIFY_PORT           default 4331
+  ASTROJS_VERIFY_STUB_PORT      default 4381
   ASTROJS_VERIFY_TMP            default /tmp/verify-astrojs
   ASTROJS_VERIFY_EVIDENCE_DIR   default <skill>/proof
 EOF
@@ -87,6 +92,20 @@ else:
 PY
 }
 
+# A port nobody listens on can still be unbindable (TIME-WAIT), so pick by binding.
+port_bindable() {
+	python3 - "$1" <<'PY'
+import socket, sys
+s = socket.socket()
+try:
+    s.bind(("127.0.0.1", int(sys.argv[1])))
+except OSError:
+    sys.exit(1)
+finally:
+    s.close()
+PY
+}
+
 ensure_node() {
 	local vp_node="" candidate ver major
 	if command -v vp >/dev/null 2>&1; then
@@ -129,6 +148,7 @@ load_state() {
 	. "$STATE_FILE"
 	[ -n "${PORT:-}" ] || die "state is missing PORT"
 	[ -n "${PID:-}" ] || die "state is missing PID"
+	[ -n "${STUB_PID:-}" ] || die "state is missing STUB_PID (relaunch)"
 }
 
 origin() {
@@ -140,6 +160,8 @@ write_state() {
 	cat >"$STATE_FILE" <<EOF
 PID=$1
 PORT=$2
+STUB_PID=$3
+STUB_PORT=$4
 STARTED_AT=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 REPO=$ROOT
 LOG=$LOG_FILE
@@ -157,7 +179,7 @@ pick_port() {
 			port=$((port + 1))
 			continue
 		fi
-		if ! port_in_use "$port"; then
+		if ! port_in_use "$port" && port_bindable "$port"; then
 			printf '%s\n' "$port"
 			return 0
 		fi
@@ -182,8 +204,20 @@ wait_ready() {
 	die "app did not become ready on :$port (see $LOG_FILE)"
 }
 
+# Any HTTP answer (even a 401) proves the stub listens.
+wait_stub_ready() {
+	local port="$1" stub_pid="$2"
+	local deadline=$((SECONDS + 20))
+	while [ "$SECONDS" -lt "$deadline" ]; do
+		pid_alive "$stub_pid" || return 1
+		curl -s -o /dev/null --max-time 2 "http://127.0.0.1:${port}/api/users/me" && return 0
+		sleep 0.2
+	done
+	return 1
+}
+
 cmd_launch() {
-	local want_json=0 requested="" port secret
+	local want_json=0 requested="" port stub_port secret
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		--json) want_json=1; shift ;;
@@ -223,6 +257,8 @@ cmd_launch() {
 		port="$(pick_port "$DEFAULT_PORT")"
 	fi
 
+	stub_port="$(pick_port "$DEFAULT_STUB_PORT")"
+
 	ensure_node
 	ensure_deps
 	command -v openssl >/dev/null 2>&1 || die "missing openssl"
@@ -230,10 +266,19 @@ cmd_launch() {
 
 	mkdir -p "$TMP_DIR" "$PROOF_DIR"
 	: >"$LOG_FILE"
+	(
+		cd "$ROOT"
+		STRAPI_STUB_PORT="$stub_port" exec bun tests/e2e/strapi-stub.ts
+	) >"$STUB_LOG_FILE" 2>&1 </dev/null &
+	local stub_pid=$!
+	if ! wait_stub_ready "$stub_port" "$stub_pid"; then
+		stop_pid_tree "$stub_pid"
+		die "Strapi stub did not answer on :$stub_port (see $STUB_LOG_FILE)"
+	fi
 	cat >"$ENV_FILE" <<EOF
 COOKIE_SIGNING_SECRET=$secret
-STRAPI_URL=http://127.0.0.1:1
-STRAPI_TOKEN=verify-placeholder-not-a-real-token
+STRAPI_URL=http://127.0.0.1:$stub_port
+STRAPI_TOKEN=verify-stub-token
 HOST=127.0.0.1
 PORT=$port
 ASTROJS_VERIFY_ORIGIN=http://127.0.0.1:$port
@@ -245,10 +290,11 @@ EOF
 		# shellcheck disable=SC1090
 		. "$ENV_FILE"
 		set +a
-		exec ./node_modules/.bin/astro dev --host 127.0.0.1 --port "$port"
+		# Astro auto-backgrounds `astro dev` under an agent unless --ignore-lock; stay in the foreground under $pid.
+		exec ./node_modules/.bin/astro dev --ignore-lock --host 127.0.0.1 --port "$port"
 	) >"$LOG_FILE" 2>&1 </dev/null &
 	local pid=$!
-	write_state "$pid" "$port"
+	write_state "$pid" "$port" "$stub_pid" "$stub_port"
 	wait_ready "$port" "$pid"
 	if [ "$want_json" -eq 1 ]; then
 		python3 - "$pid" "$port" <<'PY'
@@ -257,7 +303,7 @@ pid, port = sys.argv[1], int(sys.argv[2])
 print(json.dumps({"pid": pid, "port": port, "origin": f"http://127.0.0.1:{port}", "owned": True}))
 PY
 	fi
-	printf 'launched pid=%s port=%s origin=%s\n' "$pid" "$port" "http://127.0.0.1:${port}"
+	printf 'launched pid=%s port=%s origin=%s strapi-stub=%s\n' "$pid" "$port" "http://127.0.0.1:${port}" "$stub_port"
 }
 
 cmd_doctor() {
@@ -271,6 +317,8 @@ cmd_doctor() {
 	load_state
 	pid_alive "$PID" || die "recorded pid $PID is dead"
 	port_in_use "$PORT" || die "port $PORT is not listening"
+	pid_alive "$STUB_PID" || die "recorded Strapi stub pid $STUB_PID is dead"
+	port_in_use "$STUB_PORT" || die "Strapi stub port $STUB_PORT is not listening"
 
 	local login_body home_body login_status home_status
 	login_body="$(mktemp)"
@@ -299,13 +347,14 @@ cmd_doctor() {
 	rm -f "$login_body" "$home_body"
 
 	if [ "$want_json" -eq 1 ]; then
-		python3 - "$PID" "$PORT" "$login_status" "$home_status" <<'PY'
+		python3 - "$PID" "$PORT" "$login_status" "$home_status" "$STUB_PORT" <<'PY'
 import json, sys
-pid, port, login, home = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4]
+pid, port, login, home, stub = sys.argv[1], int(sys.argv[2]), sys.argv[3], sys.argv[4], int(sys.argv[5])
 print(json.dumps({
     "pid": pid,
     "port": port,
     "origin": f"http://127.0.0.1:{port}",
+    "strapiStubPort": stub,
     "owned": True,
     "loginStatus": login,
     "homeStatus": home,
@@ -318,6 +367,7 @@ pid=$PID
 port=$PORT
 origin=$(origin)
 owned=true
+strapi=stub:$STUB_PORT
 login=$login_status
 home=$home_status
 markers=Se connecter,Welcome to Astro
@@ -497,7 +547,102 @@ require_markers() {
 
 cmd_drive() {
 	local feature="${1:-}"
-	[ "$feature" = "public-home" ] || die "drive supports public-home (got ${feature:-empty})"
+	case "$feature" in
+	public-home) drive_public_home ;;
+	auth-login) drive_auth_login ;;
+	*) die "drive supports public-home, auth-login (got ${feature:-empty})" ;;
+	esac
+}
+
+# Stub reader account, from tests/e2e/accounts.ts.
+READER_EMAIL='jean.dupont@example.com'
+READER_PASSWORD='Lecteur-2026!'
+
+# One request of the auth-login round trip, sharing a cookie jar. Writes
+# <name>.headers (cookie values redacted) and <name>.html under $out, then
+# asserts the status, the Location path when given, and every body marker.
+auth_step() {
+	local name="$1" method="$2" path="$3" want_status="$4" want_location="$5"
+	shift 5
+	local markers=() form=()
+	while [ $# -gt 0 ]; do
+		case "$1" in
+		--form) form+=(--data-urlencode "$2"); shift 2 ;;
+		*) markers+=("$1"); shift ;;
+		esac
+	done
+	# Astro actions answer 415 to a POST without a form content type, even when the form has no fields.
+	if [ "$method" = POST ] && [ "${#form[@]}" -eq 0 ]; then
+		form=(--data '')
+	fi
+	local raw_headers="$TMP_DIR/auth-login.headers" status location
+	status="$(curl -sS -X "$method" -b "$jar" -c "$jar" -H "Origin: $(origin)" "${form[@]}" \
+		-D "$raw_headers" -o "$out/$name.html" -w '%{http_code}' --max-time 20 "$(origin)$path")" ||
+		die "$name: curl failed for $method $path"
+	sed -E 's/^([Ss]et-[Cc]ookie: [^=]+=)[^;]*/\1<redacted>/' "$raw_headers" >"$out/$name.headers"
+	location="$(awk 'tolower($1)=="location:"{ sub("\r",""); print $2; exit }' "$raw_headers")"
+	location="${location#"$(origin)"}"
+	rm -f "$raw_headers"
+	printf '%s %s %s -> %s%s\n' "$name" "$method" "$path" "$status" "${location:+ $location}" | tee -a "$out/steps.txt"
+	[ "$status" = "$want_status" ] || die "$name: expected status $want_status, got $status"
+	[ -z "$want_location" ] || [ "$location" = "$want_location" ] ||
+		die "$name: expected Location $want_location, got ${location:-none}"
+	local needle
+	for needle in "${markers[@]}"; do
+		grep -q -F "$needle" "$out/$name.html" "$out/$name.headers" || die "$name: missing marker: $needle"
+	done
+}
+
+drive_auth_login() {
+	cmd_doctor >/dev/null
+	out="$PROOF_DIR/auth-login"
+	jar="$TMP_DIR/auth-login.jar"
+	rm -rf "$out" "$jar"
+	mkdir -p "$out"
+
+	auth_step guard GET /dashboard 302 /login
+	auth_step wrong-password POST '/login?_action=auth.login' 400 '' \
+		--form "email=$READER_EMAIL" --form 'password=not-the-password' \
+		'Adresse email ou mot de passe incorrect'
+	auth_step login POST '/login?_action=auth.login' 302 /dashboard \
+		--form "email=$READER_EMAIL" --form "password=$READER_PASSWORD" \
+		'user_token=' 'user_data=' 'user_data_timestamp='
+	auth_step dashboard GET /dashboard 200 '' \
+		'Mon compte' 'Jean Dupont' "$READER_EMAIL" 'id="logout-button"' 'Informations personnelles'
+	auth_step account GET /dashboard/account 200 '' 'Mon profil' 'Jean Dupont'
+	auth_step login-when-logged-in GET /login 302 /dashboard
+	auth_step logout POST '/dashboard?_action=auth.logout' 302 /login
+	auth_step guard-after-logout GET /dashboard 302 /login
+	rm -f "$jar"
+
+	cmd_doctor | tee "$out/doctor.txt" >/dev/null
+	python3 - "$out" "$(origin)" "$STUB_PORT" <<'PY'
+import json, sys, os, datetime
+out, origin, stub = sys.argv[1], sys.argv[2], sys.argv[3]
+steps = open(os.path.join(out, "steps.txt")).read().splitlines()
+files = sorted(set(os.listdir(out)) | {"manifest.json"})
+payload = {
+    "feature": "auth-login",
+    "baseUrl": origin,
+    "strapi": f"tests/e2e/strapi-stub.ts on 127.0.0.1:{stub}",
+    "capturedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    "commands": steps,
+    "checks": [
+        "logged-out /dashboard -> 302 /login",
+        "wrong password -> 400 with Adresse email ou mot de passe incorrect",
+        "reader login -> 302 /dashboard, sets user_token, user_data, user_data_timestamp",
+        "/dashboard shows Mon compte, Jean Dupont, logout button; /dashboard/account shows Mon profil",
+        "logged-in /login -> 302 /dashboard",
+        "logout -> 302 /login, then /dashboard -> 302 /login",
+    ],
+    "files": files,
+}
+open(os.path.join(out, "manifest.json"), "w").write(json.dumps(payload, indent=2) + "\n")
+PY
+	printf 'drove auth-login evidence=%s\n' "$out"
+}
+
+drive_public_home() {
 	cmd_doctor >/dev/null
 	local out="$PROOF_DIR/public-home"
 	mkdir -p "$out"
@@ -564,9 +709,12 @@ cmd_cleanup() {
 	if [ -n "${PID:-}" ] && pid_alive "$PID"; then
 		stop_pid_tree "$PID"
 	fi
-	rm -f "$STATE_FILE" "$PID_FILE" "$ENV_FILE"
+	if [ -n "${STUB_PID:-}" ] && pid_alive "$STUB_PID"; then
+		stop_pid_tree "$STUB_PID"
+	fi
+	rm -f "$STATE_FILE" "$PID_FILE" "$ENV_FILE" "$TMP_DIR/auth-login.jar"
 	rm -rf "$TMP_DIR/chrome-profile" "$TMP_DIR/chrome-profile-old"
-	printf 'cleaned pid=%s port=%s evidence=%s\n' "${PID:-none}" "${PORT:-none}" "$PROOF_DIR"
+	printf 'cleaned pid=%s port=%s stub-pid=%s evidence=%s\n' "${PID:-none}" "${PORT:-none}" "${STUB_PID:-none}" "$PROOF_DIR"
 	[ -d "$PROOF_DIR" ] || die "cleanup deleted evidence at $PROOF_DIR"
 }
 
