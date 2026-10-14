@@ -4,8 +4,9 @@ import { grok } from 'e2e/oauth/grok';
 
 import { EDITOR, READER } from './tests/e2e/accounts';
 
-const APP_PORT = 44321;
-const STRAPI_STUB_PORT = 41337;
+// CI shards override both ports so several runs can share one host.
+const APP_PORT = Number(process.env.E2E_APP_PORT ?? 44321);
+const STRAPI_STUB_PORT = Number(process.env.E2E_STRAPI_STUB_PORT ?? 41337);
 const BASE_URL = `http://localhost:${APP_PORT}`;
 
 /**
