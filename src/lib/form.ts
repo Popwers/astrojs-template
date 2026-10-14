@@ -37,14 +37,12 @@ const appendFiles = (formData: FormData, files: SubmitFiles): void => {
 export default function convertToFormData(data: SubmitBody): FormData {
 	const formData = new FormData();
 
-	// Handle nested objects and files
 	for (const [key, value] of Object.entries(data)) {
 		if (!isStructuredValue(value)) {
 			formData.append(key, String(value));
 			continue;
 		}
 
-		// Handle files object
 		if (key === 'files') {
 			appendFiles(formData, isFileMap(value) ? value : {});
 			continue;

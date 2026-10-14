@@ -92,7 +92,6 @@ const menus: MenuItems[] = menuArray.header;
 				document.body.style.overflow = menu?.getAttribute('data-active') ? 'hidden' : 'auto';
 			});
 
-			// On windows resize, close menu
 			window.addEventListener('resize', () => {
 				if (window.innerWidth >= 1280 && menu?.getAttribute('data-active')) {
 					menuButton?.dispatchEvent(new Event('click'));

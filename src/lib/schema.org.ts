@@ -49,7 +49,6 @@ export const getSchemas = (url: URL): SchemaResult => {
 			email: CONTACT_EMAIL,
 			contactType: 'customer service',
 		},
-		// Legal information
 		vatID: COMPANY_INFO.registrationNumber,
 		foundingLocation: {
 			'@type': 'Place',

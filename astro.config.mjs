@@ -64,7 +64,6 @@ export default defineConfig({
 						handler: 'NetworkFirst',
 						options: {
 							cacheName: 'offline-ssr-pages-cache',
-							/* check the options in the workbox-build docs */
 							matchOptions: {
 								ignoreVary: true,
 								ignoreSearch: true,
@@ -84,8 +83,6 @@ export default defineConfig({
 										params.state ??= {};
 										params.state.dontRedirect = params.cachedResponse;
 									},
-									// This callback will be called when the fetch call fails.
-									// Beware of the logic, will be also invoked if the server is down.
 									handlerDidError: async ({ state }) => {
 										// Offline fallback: when `cachedResponseWillBeUsed` captured a
 										// cached Response, serve it instead of letting the failure bubble.

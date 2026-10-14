@@ -25,15 +25,12 @@ if (process.env.NODE_ENV === 'production' && SENTRY_DSN) {
 		],
 
 		tracesSampler: ({ name, parentSampled }) => {
-			// Do not sample health checks ever
 			if (name.includes('health')) return 0;
 
-			// Continue trace decision, if there is any parentSampled information
 			if (parentSampled !== undefined) {
 				return parentSampled;
 			}
 
-			// Else, use default sample rate
 			return 0.5;
 		},
 

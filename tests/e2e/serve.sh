@@ -27,7 +27,6 @@ done
 vp run build
 bun ./start.mjs &
 server=$!
-# Exit as soon as either child dies: the app is useless without the stub.
 # Exit as soon as either child dies (portable: macOS ships bash 3.2, which lacks `wait -n`).
 while kill -0 "$stub" 2>/dev/null && kill -0 "$server" 2>/dev/null; do
 	sleep 1

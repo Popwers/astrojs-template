@@ -162,7 +162,6 @@ export async function submitApi({
 	try {
 		const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
 
-		// Handle multipart/form-data body
 		const multipartBody = contentType === 'multipart/form-data' ? toMultipartBody(body) : undefined;
 
 		const url = new URL(`${STRAPI_URL}/api/${normalizedEndpoint}`);

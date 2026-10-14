@@ -8,9 +8,7 @@ import { ClientRouter } from "astro:transitions";
 import { pwaInfo } from "virtual:pwa-info";
 import CookieBanner from "@components/site/global/CookieBanner.astro";
 // Vite resolves and hashes these URLs at build time so the preload href is always correct.
-// biome-ignore lint/correctness/noUnusedImports: used in template <link rel="preload">
 import montserratWoff2 from "@fontsource-variable/montserrat/files/montserrat-latin-wght-normal.woff2";
-// biome-ignore lint/correctness/noUnusedImports: used in template <link rel="preload">
 import ralewayWoff2 from "@fontsource-variable/raleway/files/raleway-latin-wght-normal.woff2";
 import { enableReactComponents } from "@legendapp/state/config/enableReactComponents";
 import { withPwaAssetVersion } from "@lib/pwaAssets";
