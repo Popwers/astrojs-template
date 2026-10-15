@@ -1,6 +1,10 @@
 name: CI
 
 # Pull requests run the suites; main does not re-run what the PR just passed. Client repos generated from this template do the same.
+# Runner switch: jobs run on GitHub-hosted runners while enough included Actions minutes remain, else on the self-hosted build server.
+#   vars.CI_FORCE_RUNNER     github | build-server | auto (empty = auto)
+#   vars.CI_QUOTA_THRESHOLD  remaining-minutes percentage under which jobs move to the build server (default 10)
+#   secrets.CI_BILLING_TOKEN fine-grained token that reads the owner's billing usage; empty = build server
 on:
     pull_request:
         # Docs-only PRs skip CI: nothing they touch is built or tested. Re-include any markdown the build reads.
@@ -17,16 +21,46 @@ on:
             - 'bun.lock'
             - 'package.json'
             - '.github/workflows/ci.yml'
+    # Manual run of every suite, on the runner picked here (auto follows the quota).
+    workflow_dispatch:
+        inputs:
+            runner:
+                description: Where the jobs run
+                type: choice
+                options:
+                    - auto
+                    - github
+                    - build-server
+                default: auto
 
-# A new push to a PR supersedes the run in flight.
+# A new push to a PR supersedes the run in flight. The event name keeps a manual run apart from the PR runs of its branch,
+# and the runner input keeps manual runs of one branch on different runners apart.
 concurrency:
-    group: ci-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+    group: ci-${{ github.workflow }}-${{ github.event_name }}-${{ inputs.runner || 'auto' }}-${{ github.event.pull_request.number || github.ref }}
     cancel-in-progress: true
 
 jobs:
-    verify:
-        if: github.event_name == 'pull_request'
+    pick-runner:
         runs-on: ubuntu-latest
+        timeout-minutes: 5
+        permissions:
+            contents: read
+        outputs:
+            runner: ${{ steps.pick.outputs.runner }}
+            target: ${{ steps.pick.outputs.target }}
+        steps:
+            - id: pick
+              uses: Popwers/mini-bun/.github/actions/pick-runner@c7dd7157ec6a9c2c8706a377201eeeff6cc755ad
+              # Fork PRs get no secrets, so the empty token would send untrusted code to the build server: keep them on GitHub.
+              with:
+                  force: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'github' || (inputs.runner != '' && inputs.runner != 'auto' && inputs.runner || vars.CI_FORCE_RUNNER) }}
+                  threshold: ${{ vars.CI_QUOTA_THRESHOLD || '10' }}
+                  token: ${{ secrets.CI_BILLING_TOKEN }}
+
+    verify:
+        needs: pick-runner
+        if: github.event_name != 'push'
+        runs-on: ${{ fromJSON(needs.pick-runner.outputs.runner) }}
         timeout-minutes: 15
         steps:
             - uses: actions/checkout@v4
@@ -68,17 +102,19 @@ jobs:
                   STRAPI_TOKEN: ci-dummy-token
                   COOKIE_SIGNING_SECRET: ci-cookie-signing-secret
 
-    # The e2e suite only runs when the PR touches the app, its dependencies, the suite or this workflow.
+    # The e2e suite only runs when the PR touches the app, its dependencies, the suite or this workflow. A manual run always runs it.
     changes:
-        if: github.event_name == 'pull_request'
-        runs-on: ubuntu-latest
+        needs: pick-runner
+        if: github.event_name != 'push'
+        runs-on: ${{ fromJSON(needs.pick-runner.outputs.runner) }}
         timeout-minutes: 5
         permissions:
             pull-requests: read
         outputs:
-            e2e: ${{ steps.filter.outputs.e2e }}
+            e2e: ${{ github.event_name == 'workflow_dispatch' && 'true' || steps.filter.outputs.e2e }}
         steps:
             - uses: dorny/paths-filter@v3
+              if: github.event_name == 'pull_request'
               id: filter
               with:
                   filters: |
@@ -99,9 +135,9 @@ jobs:
 
     e2e-shard:
         name: e2e shard ${{ matrix.shard }}/${{ strategy.job-total }}
-        needs: changes
+        needs: [pick-runner, changes]
         if: needs.changes.outputs.e2e == 'true'
-        runs-on: ubuntu-latest
+        runs-on: ${{ fromJSON(needs.pick-runner.outputs.runner) }}
         timeout-minutes: 15
         strategy:
             fail-fast: false
@@ -123,20 +159,27 @@ jobs:
                   echo "E2E_APP_PORT=$(( 20000 + offset ))" >> "$GITHUB_ENV"
                   echo "E2E_STRAPI_STUB_PORT=$(( 23000 + offset ))" >> "$GITHUB_ENV"
 
+            # GitHub-hosted runners start empty and restore Chromium from the cache. The build server keeps ~/.cache/ms-playwright
+            # on disk, and restoring a tarball there would race the other shard on the same host.
             - name: Resolve Playwright version
+              if: runner.environment == 'github-hosted'
               id: playwright
               run: echo "version=$(jq -r .version node_modules/playwright-core/package.json)" >> "$GITHUB_OUTPUT"
 
             - uses: actions/cache@v4
+              if: runner.environment == 'github-hosted'
               id: playwright-cache
               with:
                   path: ~/.cache/ms-playwright
-                  key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium-headless-shell
+                  key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}-chromium-headless-shell
 
-            # Headless runs launch the Chromium headless shell only; the runner image already ships its system libraries.
+            # Headless runs launch the Chromium headless shell only. System libraries come from apt on GitHub-hosted runners;
+            # the build server already has them and no sudo. On the build server the install is a no-op once Chromium is there.
             - name: Install Chromium
               if: steps.playwright-cache.outputs.cache-hit != 'true'
-              run: bunx playwright-core install --with-deps --only-shell chromium
+              env:
+                  WITH_DEPS: ${{ runner.environment == 'github-hosted' && 'true' || '' }}
+              run: bunx playwright-core install ${WITH_DEPS:+--with-deps} --only-shell chromium
 
             # e2e starts tests/e2e/serve.sh (stub Strapi + built app). The `agent`-tagged test needs a model login CI does not have.
             - name: e2e golden paths
@@ -157,10 +200,11 @@ jobs:
                   retention-days: 7
 
     # Keeps the historical `e2e` check: green when the shards pass or the PR touches nothing they test.
+    # Falls back to ubuntu-latest when pick-runner failed, so the check still reports red instead of erroring on runs-on.
     e2e:
-        needs: [changes, e2e-shard]
-        if: always() && github.event_name == 'pull_request'
-        runs-on: ubuntu-latest
+        needs: [pick-runner, changes, e2e-shard]
+        if: always() && github.event_name != 'push'
+        runs-on: ${{ fromJSON(needs.pick-runner.outputs.runner || '"ubuntu-latest"') }}
         timeout-minutes: 5
         steps:
             - name: e2e result
@@ -176,8 +220,9 @@ jobs:
 
     # Fills master's caches whenever their keys can change, so the next PR starts warm.
     warm-cache:
+        needs: pick-runner
         if: github.event_name == 'push'
-        runs-on: ubuntu-latest
+        runs-on: ${{ fromJSON(needs.pick-runner.outputs.runner) }}
         timeout-minutes: 10
         steps:
             - uses: actions/checkout@v4
@@ -186,15 +231,18 @@ jobs:
               with:
                   cache: true
 
+            # Only GitHub-hosted runners read the Chromium cache; the build server keeps its own copy on disk.
             - name: Resolve Playwright version
+              if: runner.environment == 'github-hosted'
               id: playwright
               run: echo "version=$(jq -r .version node_modules/playwright-core/package.json)" >> "$GITHUB_OUTPUT"
 
             - uses: actions/cache@v4
+              if: runner.environment == 'github-hosted'
               id: playwright-cache
               with:
                   path: ~/.cache/ms-playwright
-                  key: playwright-${{ runner.os }}-${{ steps.playwright.outputs.version }}-chromium-headless-shell
+                  key: playwright-${{ runner.os }}-${{ runner.arch }}-${{ steps.playwright.outputs.version }}-chromium-headless-shell
 
             - name: Install Chromium
               if: steps.playwright-cache.outputs.cache-hit != 'true'
