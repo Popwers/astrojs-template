@@ -11,7 +11,6 @@ export default defineMiddleware((context, next) => {
 		const userToken = context.cookies.has('user_token');
 		const userData = context.cookies.has('user_data');
 
-		// If the user is logged in, redirect to the dashboard
 		if (userToken && userData) return context.redirect('/dashboard', 302);
 	}
 

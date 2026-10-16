@@ -1,11 +1,6 @@
 ---
 import { actions } from 'astro:actions';
 
-/**
- * -------------------------------------------
- * ------------ LOGOUT ACTION ----------------
- * -------------------------------------------
- */
 const result = Astro.getActionResult(actions.auth.logout);
 if (result && !result.error && result.data.disconnect) {
 	return Astro.redirect('/login');

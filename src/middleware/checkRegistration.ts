@@ -10,8 +10,6 @@ export default defineMiddleware((context, next) => {
 	if (context.locals.user) {
 		const needsRegistration = context.locals.user?.username?.includes('username_') ?? false;
 
-		// If the user has not completed registration and tries to access a protected route,
-		// redirect to the registration page.
 		if (
 			needsRegistration &&
 			context.url.pathname !== '/register/profil' &&
@@ -20,8 +18,6 @@ export default defineMiddleware((context, next) => {
 			return context.redirect('/register/profil', 302);
 		}
 
-		// If the user has completed registration and is on the registration page,
-		// redirect to the dashboard.
 		if (!needsRegistration && context.url.pathname === '/register/profil') {
 			return context.redirect('/dashboard', 302);
 		}

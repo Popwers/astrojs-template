@@ -47,7 +47,6 @@ describe('userDataHydratation middleware', () => {
 	});
 
 	it('keeps the cached user when refresh fails with a non-auth error', async () => {
-		// Cookie stores minimal CookieUser format
 		const cookieUser = {
 			id: 12,
 			documentId: 'user-doc',
@@ -55,7 +54,6 @@ describe('userDataHydratation middleware', () => {
 			username: 'user_12',
 			avatar_url: null,
 		};
-		// Expanded cookie user for locals
 		const expandedCookieUser = {
 			id: 12,
 			documentId: 'user-doc',
@@ -126,9 +124,7 @@ describe('userDataHydratation middleware', () => {
 		expect(response.status).toBe(200);
 		// The refresh must populate the avatar relation so the cookie keeps avatar_url.
 		expect(receivedParams?.query?.['populate[avatar][fields]']).toBe('url');
-		// Full user data stored in locals
 		expect(context.locals.user).toEqual(apiResponse);
-		// Cookie stores only minimal auth data (HMAC-signed)
 		expect(getUserFromCookie(context.cookies)).toEqual({
 			id: 12,
 			documentId: 'user-doc',
@@ -139,7 +135,6 @@ describe('userDataHydratation middleware', () => {
 	});
 
 	it('keeps the cached user when refresh succeeds with an incomplete payload', async () => {
-		// Cookie stores minimal CookieUser format
 		const cookieUser = {
 			id: 12,
 			documentId: 'user-doc',
@@ -147,7 +142,6 @@ describe('userDataHydratation middleware', () => {
 			username: 'user_12',
 			avatar_url: null,
 		};
-		// Expanded cookie user for locals (matches what getUserFromCookie returns)
 		const expandedCookieUser = {
 			id: 12,
 			documentId: 'user-doc',

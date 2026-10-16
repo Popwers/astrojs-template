@@ -2,12 +2,6 @@ import { MAX_FILE_SIZE, SUPPORTED_FILE_TYPES } from '@data/userOptions';
 import type { JsonValue } from '@interfaces/json';
 import { z } from 'astro/zod';
 
-/**
- * -----------------------------------------------------
- * REPEATABLE SCHEMA COMPONENTS
- * -----------------------------------------------------
- */
-
 const usernameSchema = z
 	.string({
 		error: 'Le nom prénom ou la dénomination est requise',
@@ -34,10 +28,6 @@ const emptyToUndefined = (value: JsonValue | File | undefined) => {
 const optionalString = () => z.preprocess(emptyToUndefined, z.string().optional());
 
 const optionalUrl = () => z.preprocess(emptyToUndefined, z.url("L'url est invalide").optional());
-
-/**
- * -----------------------------------------------------
- */
 
 const profile = z.object({
 	username: usernameSchema,

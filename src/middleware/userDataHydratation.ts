@@ -34,7 +34,6 @@ export async function hydrateUserData(
 
 			const cookieUser = getUserFromCookie(context.cookies);
 
-			// Cookie only has minimal data — set it as base
 			if (cookieUser) context.locals.user = cookieUser;
 
 			// Always revalidate against Strapi so blocked/deleted accounts cannot
@@ -52,7 +51,6 @@ export async function hydrateUserData(
 export default defineMiddleware((context, next) => hydrateUserData(context, next));
 
 export async function refreshUserData(context: APIContext, loadUser: LoadUser = defaultLoadUser) {
-	// Fetch full user data from API
 	const userData = await loadUser({
 		endpoint: 'users/me',
 		token: context.locals.userToken,
@@ -84,7 +82,6 @@ export async function refreshUserData(context: APIContext, loadUser: LoadUser = 
 		return;
 	}
 
-	// Update cookie with minimal data, but store full user in locals
 	updateUserCookie(context.cookies, userData);
 	context.locals.user = userData;
 }

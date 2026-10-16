@@ -1,11 +1,6 @@
 ---
 import BaseLayout from '@layouts/base.astro';
 
-//import { Image } from 'astro:assets';
-//import LostPasswordIllustration from '@assets/illustrations/password_illustration.svg';
-//import ProfilIllustration from '@assets/illustrations/profil_illustration.svg';
-//import LoginIllustration from '@assets/illustrations/signin_illustration.svg';
-
 interface Props {
 	title?: string;
 	description?: string;
@@ -29,21 +24,7 @@ const {
 					</a>
 				)
 			}
-			<div class='relative flex-1 lg:min-h-150'>
-				{
-					/*<Image
-					src={mode === 'login'
-						? LoginIllustration
-						: mode === 'profil'
-							? ProfilIllustration
-							: LostPasswordIllustration}
-					class='absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 p-5 hidden lg:block'
-					alt='Illustration de connexion'
-					densities={[1.5, 2]}
-					loading='eager'
-				/>*/
-				}
-			</div>
+			<div class='relative flex-1 lg:min-h-150'></div>
 		</aside>
 		<main
 			class='relative min-h-login w-full flex-1 bg-white p-12 lg:min-w-login lg:rounded-l-login lg:p-32 lg:w-1/2'>

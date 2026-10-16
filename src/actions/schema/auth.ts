@@ -1,11 +1,5 @@
 import { z } from 'astro/zod';
 
-/**
- * -----------------------------------------------------
- * REPEATABLE SCHEMA COMPONENTS
- * -----------------------------------------------------
- */
-
 const emailSchema = z.email({
 	error: "L'adresse email est invalide.",
 });
@@ -16,10 +10,6 @@ const login = z.object({
 		error: 'Le mot de passe est requis',
 	}),
 });
-
-/**
- * -----------------------------------------------------
- */
 
 const register = z
 	.object({
