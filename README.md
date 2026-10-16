@@ -87,6 +87,18 @@ The test script is `vp test`. Tests import from `vitest`. The Makefile target is
 
 The E2E suite in `tests/e2e` runs through the [e2e](https://e2e.tester.army) runner, not Vitest. Run `vp run test:e2e`. The runner starts `tests/e2e/serve.sh`, which starts the Bun stub Strapi on port 41337, builds the app and serves it on port 44321. No real Strapi is needed. Chromium downloads on the first run. `vp run test:e2e:ci` skips the `agent`-tagged test, whose `agent.act` steps need a model login (`bunx e2e login spacexai`). Every test ends with a page-error guard (`tests/e2e/fixtures.ts`): it fails on `console.error`, uncaught errors, failed same-origin loads (HTTP 4xx/5xx) and CSP violations, and a test that expects one pushes a pattern onto `allowedPageErrors`. Results land in `.e2e/report.json`, failure traces and screenshots in `.e2e/artifacts/`, the app log in `.e2e/logs/app.log`.
 
+## CI
+
+`.github/workflows/ci.yml` runs on pull requests, on manual runs (`workflow_dispatch`) and on `master` pushes that change the dependencies (cache warm-up only). Its first job, `pick-runner`, picks where the others run: a GitHub-hosted `ubuntu-latest` runner while the owner has enough included Actions minutes left, else the self-hosted build server (`self-hosted`, `ARM64`). A manual run takes a `runner` input (`auto`, `github`, `build-server`) to try either path. Pull requests from forks always run on GitHub-hosted runners: they get no secrets, and their code never reaches the build server.
+
+| Setting | Kind | Role |
+| --- | --- | --- |
+| `CI_FORCE_RUNNER` | variable | `github` or `build-server` skips the quota check. Empty or `auto` follows the quota. |
+| `CI_QUOTA_THRESHOLD` | variable | Remaining-minutes percentage under which jobs move to the build server. Default `10`. |
+| `CI_BILLING_TOKEN` | secret | Fine-grained token that reads billing usage: organization permission **Administration: Read-only** (created by an owner or billing manager) for an organization, account permission **Plan: Read-only** for a user. Without it, jobs run on the build server. |
+
+On GitHub-hosted runners, Chromium comes from the Actions cache and its system libraries from apt. The build server keeps Chromium in `~/.cache/ms-playwright` and needs no sudo.
+
 ## Toolchain
 
 - **Façade**: Vite+ (`vp` / `vpx`). Type `vp` in this repo. Do not type `npm i` / `npx` / `bun add`.

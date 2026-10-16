@@ -29,7 +29,7 @@ Type `make` for the list. `vp` calls bun because `packageManager` is bun.
 | Preview the build | `make preview` | `vp run preview` → `astro preview` |
 | One-shot binary | `vpx <bin>` | Vite+ one-shot |
 
-The e2e runner (`e2e.config.ts`) starts `tests/e2e/serve.sh`, which runs `tests/e2e/strapi-stub.ts` on port 41337, builds the app and serves it on port 44321; the runner downloads Chromium on first use. Add a stub route when a golden path calls a new Strapi endpoint. `vp run test:e2e:ci` is the CI run: it skips the `agent`-tagged test, which needs a model login (`bunx e2e login spacexai`). Results land in `.e2e/` (`report.json`, `logs/app.log`). Vitest excludes `tests/e2e`.
+The e2e runner (`e2e.config.ts`) starts `tests/e2e/serve.sh`, which runs `tests/e2e/strapi-stub.ts` on port 41337, builds the app and serves it on port 44321 (`E2E_STRAPI_STUB_PORT` and `E2E_APP_PORT` override both; CI shards do); the runner downloads Chromium on first use. Add a stub route when a golden path calls a new Strapi endpoint. `vp run test:e2e:ci` is the CI run: it skips the `agent`-tagged test, which needs a model login (`bunx e2e login spacexai`). Results land in `.e2e/` (`report.json`, `logs/app.log`). Vitest excludes `tests/e2e`.
 
 Default branch is `master`. Conventional commits via `cz` / `ga`. `vp config` writes hooks into `.vite-hooks/`. The staged check is `vp check --fix`.
 

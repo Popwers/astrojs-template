@@ -57,6 +57,8 @@ logs
 # Test and coverage
 coverage*
 tests
+.e2e
+e2e.config.ts
 *.test.ts
 *.test.tsx
 *.spec.ts
