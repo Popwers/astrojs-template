@@ -50,7 +50,7 @@ jobs:
             target: ${{ steps.pick.outputs.target }}
         steps:
             - id: pick
-              uses: Popwers/mini-bun/.github/actions/pick-runner@c7dd7157ec6a9c2c8706a377201eeeff6cc755ad
+              uses: Popwers/mini-bun/.github/actions/pick-runner@d01e440c7fcdefb32ec5e92c3d3b4704a746dd8f
               # Fork PRs get no secrets, so the empty token would send untrusted code to the build server: keep them on GitHub.
               with:
                   force: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name != github.repository && 'github' || (inputs.runner != '' && inputs.runner != 'auto' && inputs.runner || vars.CI_FORCE_RUNNER) }}
