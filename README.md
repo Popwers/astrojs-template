@@ -109,6 +109,8 @@ There is no CI workflow. Checks run on your machine in the `pre-push` Git hook (
 
 Error monitoring via Sentry (`@sentry/astro`, prod-only). The DSN comes from `PUBLIC_SENTRY_DSN` at build time (empty keeps Sentry off); set the org/project in `astro.config.mjs`. Source maps and release tagging need `SENTRY_AUTH_TOKEN` and `SENTRY_RELEASE` (git SHA) at build time.
 
+Known browser noise (ClientRouter aborts, WebView and link-preview crawler errors, visitor network failures) is dropped by anchored patterns in `src/lib/sentryNoise.ts`, tested in `tests/lib/sentryNoise.test.ts`: add a pattern there with a noise sample and a real-bug sample next to it, never a bare substring such as `'AbortError'`. A failed call to the CMS (`STRAPI_URL` at build time, default in `astro.config.mjs`) is still reported.
+
 ## Deployment
 
 Multi-stage Docker build (Alpine + Bun):
