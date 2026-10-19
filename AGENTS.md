@@ -102,7 +102,7 @@ Copy `.env.example` to `.env`. The schema is in `astro.config.mjs` (`envField`).
 | `src/components/site/global/` | Shared UI |
 | `src/actions/` | Server actions |
 | `src/middleware/` | Session and guards |
-| `src/lib/` | Strapi client, cookies, `cn` |
+| `src/lib/` | Strapi client, cookies, `cn`, Sentry noise filters (`sentryNoise.ts`) |
 | `src/stores/` | Legend State |
 | `src/data/` | Menus, route guards, cookie options, schema.org |
 | `src/styles/` | Tailwind 4 + SCSS |

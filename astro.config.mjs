@@ -12,6 +12,8 @@ import { ACTION_BODY_SIZE_LIMIT } from './src/data/userOptions.ts';
 /** Deployed commit SHA (Dockerfile maps SOURCE_COMMIT to SENTRY_RELEASE). */
 const sentryRelease = process.env.SENTRY_RELEASE || undefined;
 
+const STRAPI_URL_DEFAULT = 'https://api.your-project.fr';
+
 export default defineConfig({
 	server: {
 		host: true,
@@ -113,7 +115,7 @@ export default defineConfig({
 			STRAPI_URL: envField.string({
 				context: 'server',
 				access: 'secret',
-				default: 'https://api.your-project.fr',
+				default: STRAPI_URL_DEFAULT,
 			}),
 			STRAPI_TOKEN: envField.string({
 				context: 'server',
@@ -139,6 +141,8 @@ export default defineConfig({
 	},
 	vite: {
 		plugins: [tailwindcss()],
+		// STRAPI_URL is server-only; the browser Sentry filter needs the CMS origin it reports on.
+		define: { __STRAPI_URL__: JSON.stringify(process.env.STRAPI_URL || STRAPI_URL_DEFAULT) },
 		// Modern output target: skip legacy transpilation/polyfills for smaller, faster bundles.
 		build: {
 			target: 'esnext',

@@ -13,6 +13,9 @@ declare module '@fontsource-variable/raleway/files/*.woff2' {
 	export default src;
 }
 
+/** CMS origin (`STRAPI_URL` at build time), inlined by `vite.define` in astro.config.mjs. */
+declare const __STRAPI_URL__: string;
+
 declare namespace App {
 	interface Locals {
 		/** Session user rebuilt from the cookie or refreshed from the API; `null` when logged out. */
