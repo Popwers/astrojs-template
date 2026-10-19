@@ -33,7 +33,7 @@ When you start a real project from this template:
 - [ ] Set the canonical site URL: `site` in `astro.config.mjs` (and the `image.domains` / `remotePatterns` host).
 - [ ] Fill `.env` from `.env.example`: `STRAPI_URL`, `STRAPI_TOKEN`, `COOKIE_SIGNING_SECRET`.
 - [ ] Wire Sentry: org/project in `astro.config.mjs`, `PUBLIC_SENTRY_DSN` as a build arg.
-- [ ] Run `make install` once per clone so Git hooks land in `.vite-hooks/`.
+- [ ] Run `make install` once per clone so Git hooks (staged checks on commit, `make verify` on push) land in `.vite-hooks/`.
 - [ ] Regenerate PWA assets from your own icon: `vp run generate-pwa-assets`.
 
 ## Project structure
@@ -57,7 +57,7 @@ When you start a real project from this template:
 │   └── sw.ts               # Service worker (workbox, injectManifest)
 ├── tests/                  # Vitest suite (`vp test`), e2e golden paths in tests/e2e
 ├── e2e.config.ts           # e2e runner config (`vp run test:e2e`)
-├── Makefile                # install, dev, check, test, build
+├── Makefile                # install, hooks, dev, check, test, verify, build
 ├── astro.config.mjs
 ├── vite.config.ts          # Vite+ (`vp`) config. Lint, fmt, typecheck.
 ├── pwa-assets.config.ts    # PWA asset generation preset
@@ -74,9 +74,11 @@ Type `make` (or `make help`) to list targets.
 | Command | Action |
 |---------|--------|
 | `make install` | Install dependencies (`vp i`) and Git hooks (`vp config`) |
+| `make hooks` | Reinstall Git hooks only (`vp config`) |
 | `make dev` | Dev server at `localhost:4321` (`astro dev --host`) |
 | `make check` | Oxlint + Oxfmt + tsgo (`vp check`) |
 | `make test` | Run all tests (`vp test`) |
+| `make verify` | Pre-push gate: `astro sync`, `vp check`, `astro check`, tests, build |
 | `vp run test:e2e` | e2e golden paths against a stub Strapi (`tests/e2e`) |
 | `make build` | Production build to `./dist/` (`astro build`) |
 | `make preview` | Preview the production build (`astro preview`) |
@@ -87,17 +89,11 @@ The test script is `vp test`. Tests import from `vitest`. The Makefile target is
 
 The E2E suite in `tests/e2e` runs through the [e2e](https://e2e.tester.army) runner, not Vitest. Run `vp run test:e2e`. The runner starts `tests/e2e/serve.sh`, which starts the Bun stub Strapi on port 41337, builds the app and serves it on port 44321. No real Strapi is needed. Chromium downloads on the first run. `vp run test:e2e:ci` skips the `agent`-tagged test, whose `agent.act` steps need a model login (`bunx e2e login spacexai`). Every test ends with a page-error guard (`tests/e2e/fixtures.ts`): it fails on `console.error`, uncaught errors, failed same-origin loads (HTTP 4xx/5xx) and CSP violations, and a test that expects one pushes a pattern onto `allowedPageErrors`. Results land in `.e2e/report.json`, failure traces and screenshots in `.e2e/artifacts/`, the app log in `.e2e/logs/app.log`.
 
-## CI
+## Checks
 
-`.github/workflows/ci.yml` runs on pull requests, on manual runs (`workflow_dispatch`) and on `master` pushes that change the dependencies (cache warm-up only). Its first job, `pick-runner`, picks where the others run: a GitHub-hosted `ubuntu-latest` runner while the owner has enough included Actions minutes left, else the self-hosted build server (`self-hosted`, `ARM64`). A manual run takes a `runner` input (`auto`, `github`, `build-server`) to try either path. Pull requests from forks always run on GitHub-hosted runners: they get no secrets, and their code never reaches the build server.
+There is no CI workflow. Checks run on your machine in the `pre-push` Git hook (`.vite-hooks/pre-push`): `make verify` first, then the e2e suite (`vp run test:e2e:ci`) when the push touches app code. A push that only changes docs or Markdown skips the gate. Hooks install themselves with the dependencies (`prepare` runs `vp config`); `make hooks` reinstalls them; projects started from this template inherit them. `git push --no-verify` bypasses the gate once.
 
-| Setting | Kind | Role |
-| --- | --- | --- |
-| `CI_FORCE_RUNNER` | variable | `github` or `build-server` skips the quota check. Empty or `auto` follows the quota. |
-| `CI_QUOTA_THRESHOLD` | variable | Remaining-minutes percentage under which jobs move to the build server. Default `10`. |
-| `CI_BILLING_TOKEN` | secret | Fine-grained token that reads billing usage: organization permission **Administration: Read-only** (created by an owner or billing manager) for an organization, account permission **Plan: Read-only** for a user. Without it, jobs run on the build server. |
-
-On GitHub-hosted runners, Chromium comes from the Actions cache and its system libraries from apt. The build server keeps Chromium in `~/.cache/ms-playwright` and needs no sudo.
+`make verify` runs `astro sync`, `vp check`, `astro check`, `vp test run`, the test portability guard (`scripts/check-test-portability.sh`) and `make build`, with dummy `STRAPI_*` and `COOKIE_SIGNING_SECRET` values, so it needs no `.env`. Releases stay on GitHub: `.github/workflows/versionning.yml` runs semantic-release on `ubuntu-latest`.
 
 ## Toolchain
 

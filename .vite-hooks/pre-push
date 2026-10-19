@@ -1,0 +1,53 @@
+#!/usr/bin/env sh
+# Local gate that replaces the GitHub Actions CI: a push only leaves this machine once the pushed
+# changes pass the checks CI used to run. One-off bypass: `git push --no-verify`.
+set -eu
+
+# A push touching only these paths cannot break the app, so it skips the gate.
+SKIP_PATHS='(\.md$|^docs/|^LICENSE$)'
+# A push touching these paths runs the e2e suite on top of verify.
+E2E_PATHS='^(src/|public/|tests/e2e/|e2e\.config\.ts$|astro\.config\.mjs$|vite\.config\.ts$|tsconfig\.json$|pwa-assets\.config\.ts$|sentry\.[^/]*\.js$|start\.mjs$|package\.json$|bun\.lock$)'
+
+verify() { make verify; }
+e2e() { vp run test:e2e:ci; }
+
+remote="$1"
+changed=$(mktemp)
+trap 'rm -f "$changed"' EXIT
+
+is_null() { case "$1" in *[!0]*) return 1 ;; *) return 0 ;; esac; }
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+	is_null "$local_sha" && continue
+	case "$local_ref" in refs/tags/*) continue ;; esac
+	if ! is_null "$remote_sha" && git cat-file -e "$remote_sha^{commit}" 2>/dev/null; then
+		base="$remote_sha"
+	else
+		base=$(git merge-base "$local_sha" "refs/remotes/$remote/HEAD" 2>/dev/null || true)
+	fi
+	if [ -n "$base" ]; then
+		git diff --name-only "$base" "$local_sha" >> "$changed"
+	else
+		echo "pre-push: no base to diff $local_ref against, running the full gate" >&2
+		echo '<full>' >> "$changed"
+	fi
+done
+
+if ! grep -qvE "$SKIP_PATHS" "$changed"; then
+	echo "pre-push: no app change in the pushed commits, gate skipped" >&2
+	exit 0
+fi
+
+if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
+	echo "pre-push: uncommitted changes present, the gate checks the working tree as it is" >&2
+fi
+
+echo "pre-push: verify" >&2
+verify
+
+if grep -qE "$E2E_PATHS|^<full>$" "$changed"; then
+	echo "pre-push: e2e" >&2
+	e2e
+else
+	echo "pre-push: no change e2e can see, e2e skipped" >&2
+fi
