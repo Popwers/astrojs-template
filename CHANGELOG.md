@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/Popwers/astrojs-template/compare/v1.0.2...v1.0.3) (2026-10-19)
+
+
+### Bug Fixes
+
+* **sentry:** anchor the browser noise filters and drop visitor network failures ([#33](https://github.com/Popwers/astrojs-template/issues/33)) ([3ced0e5](https://github.com/Popwers/astrojs-template/commit/3ced0e5bb995eb040633977b41dec148b29542bb))
+
 ## [1.0.2](https://github.com/Popwers/astrojs-template/compare/v1.0.1...v1.0.2) (2026-09-28)
 
 
