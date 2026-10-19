@@ -24,6 +24,9 @@ jobs:
     main:
         runs-on: ubuntu-latest
         timeout-minutes: 10
+        # `prepare` installs Git hooks on install. semantic-release commits and pushes, so keep them out.
+        env:
+            VP_GIT_HOOKS: '0'
         steps:
             - name: Checkout
               uses: actions/checkout@v4

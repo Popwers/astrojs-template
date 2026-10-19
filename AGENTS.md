@@ -32,7 +32,7 @@ Type `make` for the list. `vp` calls bun because `packageManager` is bun.
 
 The e2e runner (`e2e.config.ts`) starts `tests/e2e/serve.sh`, which runs `tests/e2e/strapi-stub.ts` on port 41337, builds the app and serves it on port 44321 (`E2E_STRAPI_STUB_PORT` and `E2E_APP_PORT` override both); the runner downloads Chromium on first use. Add a stub route when a golden path calls a new Strapi endpoint. `vp run test:e2e:ci` is the run the pre-push gate uses: it skips the `agent`-tagged test, which needs a model login (`bunx e2e login spacexai`). Results land in `.e2e/` (`report.json`, `logs/app.log`). Vitest excludes `tests/e2e`.
 
-Default branch is `master`. Conventional commits via `cz` / `ga`. `vp config` writes hooks into `.vite-hooks/` (`make install` or `make hooks`). The staged check is `vp check --fix`.
+Default branch is `master`. Conventional commits via `cz` / `ga`. `vp config` writes hooks into `.vite-hooks/` (installed with the dependencies by `prepare`, or `make hooks`). The staged check is `vp check --fix`.
 
 There is no CI workflow. Checks run locally in the `pre-push` hook: `make verify`, then e2e when the push touches app code. `git push --no-verify` bypasses it once. Releases stay on GitHub (`versionning.yml`, `ubuntu-latest`).
 

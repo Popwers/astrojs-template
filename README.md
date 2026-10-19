@@ -91,7 +91,7 @@ The E2E suite in `tests/e2e` runs through the [e2e](https://e2e.tester.army) run
 
 ## Checks
 
-There is no CI workflow. Checks run on your machine in the `pre-push` Git hook (`.vite-hooks/pre-push`): `make verify` first, then the e2e suite (`vp run test:e2e:ci`) when the push touches app code. A push that only changes docs or Markdown skips the gate. Hooks install with `make install` or `make hooks`; projects started from this template inherit them. `git push --no-verify` bypasses the gate once.
+There is no CI workflow. Checks run on your machine in the `pre-push` Git hook (`.vite-hooks/pre-push`): `make verify` first, then the e2e suite (`vp run test:e2e:ci`) when the push touches app code. A push that only changes docs or Markdown skips the gate. Hooks install themselves with the dependencies (`prepare` runs `vp config`); `make hooks` reinstalls them; projects started from this template inherit them. `git push --no-verify` bypasses the gate once.
 
 `make verify` runs `astro sync`, `vp check`, `astro check`, `vp test run`, the test portability guard (`scripts/check-test-portability.sh`) and `make build`, with dummy `STRAPI_*` and `COOKIE_SIGNING_SECRET` values, so it needs no `.env`. Releases stay on GitHub: `.github/workflows/versionning.yml` runs semantic-release on `ubuntu-latest`.
 
