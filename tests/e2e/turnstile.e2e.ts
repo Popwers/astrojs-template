@@ -50,14 +50,9 @@ test('a reset link signs the visitor in on the dashboard', async ({ app, screen,
 	await expect(browser).toHaveURL('/dashboard');
 });
 
-/**
- * The reset page renders two sets of password fields and they share ids, so labels reach only the
- * first set. Every field is required, so each one gets the same value.
- */
 async function fillResetPassword(screen: Screen) {
-	for (const field of await screen.getByRole('textbox').all()) {
-		await field.fill(PASSWORD);
-	}
+	await screen.getByLabel('Nouveau mot de passe').fill(PASSWORD);
+	await screen.getByLabel('Confirmer votre mot de passe').fill(PASSWORD);
 }
 
 interface RejectCase {
