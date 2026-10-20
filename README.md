@@ -19,6 +19,8 @@ make dev               # Astro dev server at localhost:4321
 | `STRAPI_URL` | Yes (prod) | `https://api.your-project.fr` | Base URL of the Strapi backend. The default lets `make build` succeed without a real backend. Set it for any real run. |
 | `STRAPI_TOKEN` | Yes (prod) | `replace-me-with-a-strapi-api-token` | Strapi API token. The placeholder keeps the build green out of the box. Replace it before talking to a real backend. |
 | `COOKIE_SIGNING_SECRET` | Yes | none | HMAC secret for session cookies. The process throws if this is unset. |
+| `TURNSTILE_SITE_KEY` | Yes | none | Public key of the Cloudflare Turnstile widget. Read at runtime, so one image serves every environment. Prerendered pages make the build check every secret, so a build needs a value too, as for `COOKIE_SIGNING_SECRET`. `make verify` passes the test keys. |
+| `TURNSTILE_SECRET_KEY` | Yes | none | Secret key of the same widget. The server checks every form token with it. |
 | `TRUST_PROXY` | No | none | `cloudflare` to rate-limit on `CF-Connecting-IP`. `1` or `forwarded` to use `X-Forwarded-For`. Unset ignores spoofable forwarded headers. |
 | `SENTRY_AUTH_TOKEN` | No | none | Build-time token for Sentry source-map upload. Pass it as a BuildKit secret, never as an image ARG or ENV. |
 | `SENTRY_RELEASE` | No | none | Deployed git SHA, so errors map to the commit that introduced them. |
@@ -32,6 +34,7 @@ When you start a real project from this template:
 - [ ] Rename the project: `name` in `package.json`.
 - [ ] Set the canonical site URL: `site` in `astro.config.mjs` (and the `image.domains` / `remotePatterns` host).
 - [ ] Fill `.env` from `.env.example`: `STRAPI_URL`, `STRAPI_TOKEN`, `COOKIE_SIGNING_SECRET`.
+- [ ] Create a Turnstile widget in the Cloudflare dashboard with the project hostnames. Set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` at runtime.
 - [ ] Wire Sentry: org/project in `astro.config.mjs`, `PUBLIC_SENTRY_DSN` as a build arg.
 - [ ] Run `make install` once per clone so Git hooks (staged checks on commit, `make verify` on push) land in `.vite-hooks/`.
 - [ ] Regenerate PWA assets from your own icon: `vp run generate-pwa-assets`.
@@ -87,7 +90,25 @@ Type `make` (or `make help`) to list targets.
 
 The test script is `vp test`. Tests import from `vitest`. The Makefile target is `vp test`, not `vp run test`.
 
-The E2E suite in `tests/e2e` runs through the [e2e](https://e2e.tester.army) runner, not Vitest. Run `vp run test:e2e`. The runner starts `tests/e2e/serve.sh`, which starts the Bun stub Strapi on port 41337, builds the app and serves it on port 44321. No real Strapi is needed. Chromium downloads on the first run. `vp run test:e2e:ci` skips the `agent`-tagged test, whose `agent.act` steps need a model login (`bunx e2e login spacexai`). Every test ends with a page-error guard (`tests/e2e/fixtures.ts`): it fails on `console.error`, uncaught errors, failed same-origin loads (HTTP 4xx/5xx) and CSP violations, and a test that expects one pushes a pattern onto `allowedPageErrors`. Results land in `.e2e/report.json`, failure traces and screenshots in `.e2e/artifacts/`, the app log in `.e2e/logs/app.log`.
+The E2E suite in `tests/e2e` runs through the [e2e](https://e2e.tester.army) runner, not Vitest. Run `vp run test:e2e`. The runner starts `tests/e2e/serve.sh`, which starts the Bun stub Strapi on port 41337, builds the app and serves it on port 44321. A second instance of the same build runs on port 44322 with Turnstile's always-fail secret, for the rejection tests. No real Strapi is needed, but the Turnstile widget loads from `challenges.cloudflare.com`, so the suite needs network access to it. Chromium downloads on the first run. `vp run test:e2e:ci` skips the `agent`-tagged test, whose `agent.act` steps need a model login (`bunx e2e login spacexai`). Every test ends with a page-error guard (`tests/e2e/fixtures.ts`): it fails on `console.error`, uncaught errors, failed same-origin loads (HTTP 4xx/5xx) and CSP violations, and a test that expects one pushes a pattern onto `allowedPageErrors`. Results land in `.e2e/report.json`, failure traces and screenshots in `.e2e/artifacts/`, the app log in `.e2e/logs/app.log`.
+
+## Bot protection (Turnstile)
+
+Every public form carries a [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) widget: login, register, mail confirmation, forgot password, the resend page and reset password. The widget is a managed one with explicit rendering. It fills a `cf-turnstile-response` field, and the form waits for it before it submits. The action verifies the token with Cloudflare's siteverify endpoint before it calls Strapi. It fails closed: a missing or refused token answers `FORBIDDEN`, and an unreachable or misconfigured siteverify answers `SERVICE_UNAVAILABLE` and logs the cause.
+
+Forms behind a login (profile, dashboard) are not covered.
+
+To protect a new public form:
+
+1. Put `<Turnstile />` (`@components/site/global/input/Turnstile.astro`) inside the `<form>`, before the submit button.
+2. Spread `...turnstile` (`@actions/schema/turnstile`) into the form's Zod schema.
+3. Call `await assertTurnstile(context, input['cf-turnstile-response'])` (`@lib/turnstile`) in the action handler, after the rate limit and before any Strapi call.
+
+Keep the page server-rendered (the default). A prerendered page would carry the build's site key in its HTML.
+
+Local development and tests use Cloudflare's test keys, pre-filled in `.env.example`. The site key `1x00000000000000000000AA` with the secret `1x0000000000000000000000000000000AA` always passes. The site key `2x00000000000000000000AB` always blocks, and the secret `2x0000000000000000000000000000000AA` always fails.
+
+This template sets no Content Security Policy. If you add one, allow `https://challenges.cloudflare.com` in `script-src` and `frame-src`.
 
 ## Checks
 
