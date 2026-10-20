@@ -58,7 +58,7 @@ These user-facing paths exist. They are not a pass for any feature above. Do not
 - `/lost-password/wait-mail` and the `/lost-password/reset` form **with the required cookies** (the `?code=` hop is covered by [Lost password](./lost-password.md))
 - Cookie-banner accept / customize clicks (markup is covered on public home; visibility needs hydration)
 - PWA install / service worker (`/manifest.webmanifest`, `src/sw.ts`)
-- `/robots.txt` and `/sitemap-index.xml`
+- `/robots.txt` and `/sitemap-index.xml`. The sitemap is emitted by `astro build` only, so it is a 404 on the `astro dev` verify stack.
 - `/500` (`src/pages/500.astro`) returns HTTP 500 with heading `Erreur 500`. It is the custom error page, not a health check and not a pass for any feature above.
 
 `/terms` is linked from register copy and has no page. Hitting it is a 404, not a mapped legal page.
