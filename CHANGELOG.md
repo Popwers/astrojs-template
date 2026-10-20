@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/Popwers/astrojs-template/compare/v1.0.3...v1.1.0) (2026-10-20)
+
+
+### Features
+
+* **auth:** verify Cloudflare Turnstile on public forms ([#35](https://github.com/Popwers/astrojs-template/issues/35)) ([7f6ab51](https://github.com/Popwers/astrojs-template/commit/7f6ab513c59804a28114ba995a23afeebaf019b3))
+
 ## [1.0.3](https://github.com/Popwers/astrojs-template/compare/v1.0.2...v1.0.3) (2026-10-19)
 
 
