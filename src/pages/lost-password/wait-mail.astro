@@ -4,6 +4,7 @@ import { actions, isInputError } from 'astro:actions';
 import ErrorInput from '@components/site/global/input/ErrorInput.astro';
 import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
 import SubmitButton from '@components/site/global/input/SubmitButton';
+import Turnstile from '@components/site/global/input/Turnstile.astro';
 import LoginLayout from '@layouts/login.astro';
 
 const email = Astro.cookies.get('wait-mail-password')?.value;
@@ -27,6 +28,8 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 		<input type='hidden' name='email' value={email} />
 		<p>Vous n’avez pas reçu de mail ?</p>
 		<ErrorInput errors={inputErrors.email} />
+
+		<Turnstile />
 
 		<SubmitButton client:idle className='mt-2 w-full bordered' label='Renvoyer un mail' />
 		<ReturnInfo result={result} />

@@ -1,0 +1,146 @@
+---
+import { TURNSTILE_SITE_KEY } from 'astro:env/server';
+---
+
+<div class='form-group' data-turnstile data-sitekey={TURNSTILE_SITE_KEY}></div>
+
+<script>
+	interface TurnstileOptions {
+		sitekey: string;
+		language: string;
+		theme: 'light';
+		size: 'flexible' | 'compact';
+		callback: () => void;
+		'error-callback': () => void;
+	}
+
+	interface TurnstileApi {
+		render(container: HTMLElement, options: TurnstileOptions): string | undefined;
+		getResponse(widgetId: string): string | undefined;
+		remove(widgetId: string): void;
+	}
+
+	declare global {
+		interface Window {
+			turnstile?: TurnstileApi;
+		}
+	}
+
+	interface HeldSubmit {
+		submitter: HTMLElement | null;
+	}
+
+	const API_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+	// The flexible widget never shrinks below 300 px, so a narrower form (phones) gets the compact one.
+	const FLEXIBLE_MIN_WIDTH = 300;
+
+	let loader: Promise<TurnstileApi> | null = null;
+	let renderedWidgetIds: string[] = [];
+
+	function loadTurnstile(): Promise<TurnstileApi> {
+		const loaded = window.turnstile;
+		if (loaded) return Promise.resolve(loaded);
+
+		loader ??= new Promise<TurnstileApi>((resolve, reject) => {
+			const script = document.createElement('script');
+			script.src = API_URL;
+			script.async = true;
+			script.addEventListener('load', () => {
+				const api = window.turnstile;
+				if (api) {
+					resolve(api);
+					return;
+				}
+				loader = null;
+				reject(new Error('Turnstile loaded without defining window.turnstile'));
+			});
+			script.addEventListener('error', () => {
+				loader = null;
+				script.remove();
+				reject(new Error('Turnstile api.js failed to load'));
+			});
+			document.head.append(script);
+		});
+
+		return loader;
+	}
+
+	async function mount(container: HTMLElement) {
+		const form = container.closest('form');
+		let widgetId: string | undefined;
+		let api: TurnstileApi | undefined;
+		let held: HeldSubmit | null = null;
+		// A failed widget lets the submit through, so the visitor sees the server's rejection, not a stuck form.
+		let hasWidgetFailed = false;
+
+		const isAnswered = () => api !== undefined && widgetId !== undefined && Boolean(api.getResponse(widgetId));
+
+		const releaseHeldSubmit = () => {
+			if (!held) return;
+
+			const { submitter } = held;
+			held = null;
+			form?.requestSubmit(submitter);
+		};
+
+		// Registered before the script loads so a fast submit is held too, not posted without a token.
+		form?.addEventListener(
+			'submit',
+			(event) => {
+				if (hasWidgetFailed || isAnswered()) return;
+
+				event.preventDefault();
+				// The submit has not happened yet, so no other listener (SubmitButton's loading state) may see it.
+				event.stopImmediatePropagation();
+				held = { submitter: event.submitter };
+			},
+			{ capture: true },
+		);
+
+		try {
+			api = await loadTurnstile();
+		} catch (error) {
+			hasWidgetFailed = true;
+			console.warn('[turnstile]', error instanceof Error ? error.message : String(error));
+			releaseHeldSubmit();
+			return;
+		}
+
+		if (!container.isConnected) return;
+
+		widgetId = api.render(container, {
+			sitekey: container.dataset.sitekey ?? '',
+			language: document.documentElement.lang || 'auto',
+			theme: 'light',
+			size: container.clientWidth < FLEXIBLE_MIN_WIDTH ? 'compact' : 'flexible',
+			callback: () => {
+				hasWidgetFailed = false;
+				releaseHeldSubmit();
+			},
+			// Without this callback Turnstile throws on a widget error.
+			'error-callback': () => {
+				hasWidgetFailed = true;
+				releaseHeldSubmit();
+			},
+		});
+		if (widgetId !== undefined) renderedWidgetIds.push(widgetId);
+	}
+
+	function renderWidgets() {
+		for (const container of document.querySelectorAll<HTMLElement>('[data-turnstile]:not([data-turnstile-claimed])')) {
+			container.dataset.turnstileClaimed = '';
+			void mount(container);
+		}
+	}
+
+	function removeWidgets() {
+		for (const widgetId of renderedWidgetIds) window.turnstile?.remove(widgetId);
+		renderedWidgetIds = [];
+	}
+
+	document.addEventListener('astro:page-load', renderWidgets);
+	document.addEventListener('astro:before-swap', removeWidgets);
+	renderWidgets();
+
+	export {};
+</script>

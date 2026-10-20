@@ -1,3 +1,4 @@
+import { turnstile } from '@actions/schema/turnstile';
 import { z } from 'astro/zod';
 
 const emailSchema = z.email({
@@ -9,6 +10,7 @@ const login = z.object({
 	password: z.string({
 		error: 'Le mot de passe est requis',
 	}),
+	...turnstile,
 });
 
 const register = z
@@ -30,6 +32,7 @@ const register = z
 		passwordConfirmation: z.string({
 			error: 'La confirmation du mot de passe est requise',
 		}),
+		...turnstile,
 	})
 	.superRefine(({ passwordConfirmation, password }, ctx) => {
 		if (passwordConfirmation !== password) {
@@ -43,6 +46,7 @@ const register = z
 
 const confirmMail = z.object({
 	email: emailSchema,
+	...turnstile,
 });
 
 export { confirmMail, login, register };

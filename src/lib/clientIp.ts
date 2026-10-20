@@ -2,7 +2,6 @@ interface HeaderReader {
 	get(name: string): string | null;
 }
 
-/** The slice of an Astro request context that carries the client address. */
 interface ClientContext {
 	request: {
 		headers: HeaderReader;

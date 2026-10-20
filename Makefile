@@ -25,7 +25,8 @@ test: ## Run the Vitest suite (vp test)
 	@vp test
 
 # Dummy values the former CI used: `make verify` needs no .env and never reaches a real Strapi.
-VERIFY_ENV = STRAPI_URL=http://localhost:1337 STRAPI_TOKEN=ci-dummy-token COOKIE_SIGNING_SECRET=ci-cookie-signing-secret
+# The Turnstile values are Cloudflare's always-pass test keys.
+VERIFY_ENV = STRAPI_URL=http://localhost:1337 STRAPI_TOKEN=ci-dummy-token COOKIE_SIGNING_SECRET=ci-cookie-signing-secret TURNSTILE_SITE_KEY=1x00000000000000000000AA TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 
 # Runs on every push through .vite-hooks/pre-push. `vp test run` never enters watch mode.
 verify: ## Pre-push gate: astro sync, check, astro check, tests, build

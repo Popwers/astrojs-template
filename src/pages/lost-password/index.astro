@@ -4,6 +4,7 @@ import { actions, isInputError } from 'astro:actions';
 import ErrorInput from '@components/site/global/input/ErrorInput.astro';
 import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
 import SubmitButton from '@components/site/global/input/SubmitButton';
+import Turnstile from '@components/site/global/input/Turnstile.astro';
 import LoginLayout from '@layouts/login.astro';
 
 import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
@@ -41,6 +42,8 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 			/>
 			<ErrorInput errors={inputErrors.email} />
 		</div>
+
+		<Turnstile />
 
 		<ReturnInfo result={result} />
 

@@ -126,6 +126,16 @@ export default defineConfig({
 				context: 'server',
 				access: 'secret',
 			}),
+			// The site key is public, but `secret` makes astro:env read it at runtime instead of
+			// inlining it at build, so one Docker image serves every environment.
+			TURNSTILE_SITE_KEY: envField.string({
+				context: 'server',
+				access: 'secret',
+			}),
+			TURNSTILE_SECRET_KEY: envField.string({
+				context: 'server',
+				access: 'secret',
+			}),
 		},
 	},
 	image: {
