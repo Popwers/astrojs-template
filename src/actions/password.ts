@@ -36,6 +36,8 @@ export const password = {
 		accept: 'form',
 		input: resetPassword,
 		handler: async (input, context) => {
+			const { assertRateLimit } = await import('@lib/rateLimit');
+			assertRateLimit(context, 'password-reset', 5, 60 * 60 * 1000);
 			await assertTurnstile(context, input['cf-turnstile-response']);
 
 			const { code, password, passwordConfirmation } = input;
