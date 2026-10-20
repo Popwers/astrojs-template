@@ -30,7 +30,7 @@ Type `make` for the list. `vp` calls bun because `packageManager` is bun.
 | Preview the build | `make preview` | `vp run preview` → `astro preview` |
 | One-shot binary | `vpx <bin>` | Vite+ one-shot |
 
-The e2e runner (`e2e.config.ts`) starts `tests/e2e/serve.sh`, which runs `tests/e2e/strapi-stub.ts` on port 41337, builds the app and serves it on port 44321 (`E2E_STRAPI_STUB_PORT` and `E2E_APP_PORT` override both); the runner downloads Chromium on first use. Add a stub route when a golden path calls a new Strapi endpoint. `vp run test:e2e:ci` is the run the pre-push gate uses: it skips the `agent`-tagged test, which needs a model login (`bunx e2e login spacexai`). Results land in `.e2e/` (`report.json`, `logs/app.log`). Vitest excludes `tests/e2e`.
+The e2e runner (`e2e.config.ts`) starts `tests/e2e/serve.sh`, which runs `tests/e2e/strapi-stub.ts` on port 41337, builds the app and serves it on port 44321, plus a second instance of the build on port 44322 whose Turnstile secret always fails (`E2E_STRAPI_STUB_PORT`, `E2E_APP_PORT` and `E2E_REJECT_PORT` override the three; ports and Turnstile test keys live in `tests/e2e/servers.ts`); the runner downloads Chromium on first use and the widget loads from `challenges.cloudflare.com`, so the run needs network access to it. Add a stub route when a golden path calls a new Strapi endpoint. `vp run test:e2e:ci` is the run the pre-push gate uses: it skips the `agent`-tagged test, which needs a model login (`bunx e2e login spacexai`). Results land in `.e2e/` (`report.json`, `logs/app.log`). Vitest excludes `tests/e2e`.
 
 Default branch is `master`. Conventional commits via `cz` / `ga`. `vp config` writes hooks into `.vite-hooks/` (installed with the dependencies by `prepare`, or `make hooks`). The staged check is `vp check --fix`.
 
@@ -89,6 +89,8 @@ Copy `.env.example` to `.env`. The schema is in `astro.config.mjs` (`envField`).
 | `STRAPI_URL` | Strapi API origin |
 | `STRAPI_TOKEN` | Strapi API token |
 | `COOKIE_SIGNING_SECRET` | Signed cookies |
+| `TURNSTILE_SITE_KEY` | Turnstile widget site key (runtime) |
+| `TURNSTILE_SECRET_KEY` | Turnstile siteverify secret (runtime) |
 | `TRUST_PROXY` | Reverse-proxy trust |
 | `SENTRY_AUTH_TOKEN` | Sentry (optional) |
 | `SENTRY_RELEASE` | Sentry release name (optional) |
@@ -130,6 +132,8 @@ docker run -p 4321:4321 astro-app
 Add a page: create `src/pages/*.astro`, import a layout from `@layouts/`, update `src/data/routes.ts` if it is protected.
 
 Add an action: Zod schema in `src/actions/schema/`, handler in `src/actions/`, export from `src/actions/index.ts`.
+
+Protect a public form: `<Turnstile />` inside the form, `...turnstile` in its Zod schema, `await assertTurnstile(context, input['cf-turnstile-response'])` in its handler after `assertRateLimit`.
 
 Add a shared component: `src/components/site/global/`. `.astro` for server, `.tsx` for interactive React. Import with `@components/...`.
 

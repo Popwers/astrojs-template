@@ -2,16 +2,32 @@ import { auth } from '@actions/auth';
 import type { JsonValue } from '@interfaces/json';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 
-import { messageOf } from '../utils/actionError';
+import { codeOf, messageOf } from '../utils/actionError';
 import { createActionContext, handlerOf } from '../utils/actionHandler';
-import { installFetchStub } from '../utils/fetchStub';
+import { fetchUrl, installFetchStub } from '../utils/fetchStub';
+
+const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+const TURNSTILE_TOKEN = { 'cf-turnstile-response': 'test-token' };
 
 let originalFetch: typeof globalThis.fetch;
 let originalError: typeof console.error;
+let strapiCalls: number;
 
-/** Install a fetch stub resolving to the given Response (or throwing if a thunk throws). */
-function stubFetch(response: Response | (() => never)) {
-	installFetchStub(async () => (response instanceof Response ? response : response()));
+/**
+ * Install a fetch stub that answers the Turnstile siteverify call with `siteverify` and every other
+ * call with the given Strapi Response (or throws if a thunk throws).
+ */
+function stubFetch(
+	response: Response | (() => never),
+	siteverify: Response = jsonResponse({ success: true }),
+) {
+	strapiCalls = 0;
+	installFetchStub(async (input) => {
+		if (fetchUrl(input) === SITEVERIFY_URL) return siteverify.clone();
+
+		strapiCalls += 1;
+		return response instanceof Response ? response : response();
+	});
 }
 
 function jsonResponse(body: JsonValue, status = 200): Response {
@@ -37,7 +53,7 @@ describe('auth.login', () => {
 		stubFetch(jsonResponse({ jwt: 'token-1', user: { id: 1, email: 'a@b.com' } }));
 
 		const result = await handlerOf(auth.login)(
-			{ email: 'a@b.com', password: 'secret123' },
+			{ email: 'a@b.com', password: 'secret123', ...TURNSTILE_TOKEN },
 			createActionContext(),
 		);
 
@@ -60,11 +76,34 @@ describe('auth.login', () => {
 		);
 
 		try {
-			await handlerOf(auth.login)({ email: 'a@b.com', password: 'wrong' }, createActionContext());
+			await handlerOf(auth.login)(
+				{ email: 'a@b.com', password: 'wrong', ...TURNSTILE_TOKEN },
+				createActionContext(),
+			);
 			throw new Error('expected login to throw');
 		} catch (error) {
 			expect(messageOf(error)).toBe('Adresse email ou mot de passe incorrect');
 		}
+	});
+});
+
+describe('auth.login Turnstile gate', () => {
+	it('rejects a refused token before Strapi is called', async () => {
+		stubFetch(
+			jsonResponse({ jwt: 'token-1', user: { id: 1, email: 'a@b.com' } }),
+			jsonResponse({ success: false, 'error-codes': ['invalid-input-response'] }),
+		);
+
+		try {
+			await handlerOf(auth.login)(
+				{ email: 'a@b.com', password: 'secret123', ...TURNSTILE_TOKEN },
+				createActionContext(),
+			);
+			throw new Error('expected login to throw');
+		} catch (error) {
+			expect(codeOf(error)).toBe('FORBIDDEN');
+		}
+		expect(strapiCalls).toBe(0);
 	});
 });
 
@@ -73,7 +112,7 @@ describe('auth.register', () => {
 		stubFetch(jsonResponse({ jwt: 'token-1', user: { id: 2, email: 'new@b.com' } }));
 
 		const result = await handlerOf(auth.register)(
-			{ email: 'new@b.com', password: 'secret123', master: undefined },
+			{ email: 'new@b.com', password: 'secret123', master: undefined, ...TURNSTILE_TOKEN },
 			createActionContext(),
 		);
 

@@ -5,6 +5,7 @@ import ErrorInput from '@components/site/global/input/ErrorInput.astro';
 import PasswordChecker from '@components/site/global/input/PasswordChecker.tsx';
 import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
 import SubmitButton from '@components/site/global/input/SubmitButton';
+import Turnstile from '@components/site/global/input/Turnstile.astro';
 import LoginLayout from '@layouts/login.astro';
 
 import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
@@ -70,6 +71,8 @@ if (!code) return Astro.redirect('/lost-password');
 			/>
 			<ErrorInput errors={inputErrors.passwordConfirmation} />
 		</div>
+
+		<Turnstile />
 
 		<ReturnInfo result={result} />
 

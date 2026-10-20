@@ -62,6 +62,49 @@ const routes: Route[] = [
 		},
 	},
 	{
+		// Strapi with email confirmation on answers a registration with the user and no jwt.
+		method: 'POST',
+		path: /^\/api\/auth\/local\/register$/,
+		handle: async (request) => {
+			const { email } = await readBody(request);
+			if (!isJsonString(email)) return strapiError(400, 'ValidationError', 'email must be a string');
+
+			return Response.json({
+				user: {
+					id: 100,
+					username: email,
+					email: email.toLowerCase(),
+					provider: 'local',
+					confirmed: false,
+				},
+			});
+		},
+	},
+	{
+		method: 'POST',
+		path: /^\/api\/auth\/send-email-confirmation$/,
+		handle: async (request) => {
+			const { email } = await readBody(request);
+			return Response.json({ email, sent: true });
+		},
+	},
+	{
+		method: 'POST',
+		path: /^\/api\/auth\/forgot-password$/,
+		handle: () => Response.json({ ok: true }),
+	},
+	{
+		// Signs READER in without touching the account, so the other specs keep their password.
+		method: 'POST',
+		path: /^\/api\/auth\/reset-password$/,
+		handle: () => {
+			const reader = accounts.get(READER.user.id);
+			return reader
+				? Response.json({ jwt: tokenFor(reader.user), user: reader.user })
+				: strapiError(404, 'NotFoundError', 'Not Found');
+		},
+	},
+	{
 		method: 'GET',
 		path: /^\/api\/users\/me$/,
 		handle: (request) => {
