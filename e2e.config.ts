@@ -6,8 +6,12 @@ import { EDITOR, READER } from './tests/e2e/accounts';
 import {
 	APP_PORT,
 	BASE_URL,
+	BLOCK_PORT,
+	CHALLENGE_PORT,
 	REJECT_PORT,
 	STRAPI_STUB_PORT,
+	TURNSTILE_BLOCK_SITE_KEY,
+	TURNSTILE_CHALLENGE_SITE_KEY,
 	TURNSTILE_PASS_SECRET_KEY,
 	TURNSTILE_REJECT_SECRET_KEY,
 	TURNSTILE_SITE_KEY,
@@ -15,8 +19,10 @@ import {
 
 /**
  * Golden-path suite against the production build. `tests/e2e/serve.sh` starts the in-memory
- * Strapi stub (`tests/e2e/strapi-stub.ts`), builds the app and serves it twice with `start.mjs`: on
- * `APP_PORT` with the Turnstile always-pass secret and on `REJECT_PORT` with the always-fail one.
+ * Strapi stub (`tests/e2e/strapi-stub.ts`), builds the app and serves it four times with `start.mjs`:
+ * on `APP_PORT` with the Turnstile always-pass keys, on `REJECT_PORT` with the always-fail secret, on
+ * `CHALLENGE_PORT` with the site key that always asks for a click and on `BLOCK_PORT` with the site
+ * key that always fails.
  * Everything starts fresh on every run, so the in-memory rate limits and the stub accounts reset.
  */
 export default {
@@ -51,7 +57,11 @@ export default {
 						TURNSTILE_SITE_KEY,
 						TURNSTILE_SECRET_KEY: TURNSTILE_PASS_SECRET_KEY,
 						TURNSTILE_REJECT_SECRET_KEY,
+						TURNSTILE_CHALLENGE_SITE_KEY,
+						TURNSTILE_BLOCK_SITE_KEY,
 						REJECT_PORT: String(REJECT_PORT),
+						CHALLENGE_PORT: String(CHALLENGE_PORT),
+						BLOCK_PORT: String(BLOCK_PORT),
 					},
 				},
 			},

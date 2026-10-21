@@ -90,11 +90,22 @@ Type `make` (or `make help`) to list targets.
 
 The test script is `vp test`. Tests import from `vitest`. The Makefile target is `vp test`, not `vp run test`.
 
-The E2E suite in `tests/e2e` runs through the [e2e](https://e2e.tester.army) runner, not Vitest. Run `vp run test:e2e`. The runner starts `tests/e2e/serve.sh`, which starts the Bun stub Strapi on port 41337, builds the app and serves it on port 44321. A second instance of the same build runs on port 44322 with Turnstile's always-fail secret, for the rejection tests. No real Strapi is needed, but the Turnstile widget loads from `challenges.cloudflare.com`, so the suite needs network access to it. Chromium downloads on the first run. `vp run test:e2e:ci` skips the `agent`-tagged test, whose `agent.act` steps need a model login (`bunx e2e login spacexai`). Every test ends with a page-error guard (`tests/e2e/fixtures.ts`): it fails on `console.error`, uncaught errors, failed same-origin loads (HTTP 4xx/5xx) and CSP violations, and a test that expects one pushes a pattern onto `allowedPageErrors`. Results land in `.e2e/report.json`, failure traces and screenshots in `.e2e/artifacts/`, the app log in `.e2e/logs/app.log`.
+The E2E suite in `tests/e2e` runs through the [e2e](https://e2e.tester.army) runner, not Vitest. Run `vp run test:e2e`. The runner starts `tests/e2e/serve.sh`, which starts the Bun stub Strapi on port 41337, builds the app and serves it on port 44321. Three more instances of the same build cover Turnstile: port 44322 with the always-fail secret (server rejections), port 44323 with the site key that always asks for a click, and port 44324 with the site key that always blocks. No real Strapi is needed, but the Turnstile widget loads from `challenges.cloudflare.com`, so the suite needs network access to it. Chromium downloads on the first run. `vp run test:e2e:ci` skips the `agent`-tagged test, whose `agent.act` steps need a model login (`bunx e2e login spacexai`). Every test ends with a page-error guard (`tests/e2e/fixtures.ts`): it fails on `console.error`, uncaught errors, failed same-origin loads (HTTP 4xx/5xx) and CSP violations, and a test that expects one pushes a pattern onto `allowedPageErrors`. Results land in `.e2e/report.json`, failure traces and screenshots in `.e2e/artifacts/`, the app log in `.e2e/logs/app.log`.
 
 ## Bot protection (Turnstile)
 
-Every public form carries a [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) widget: login, register, mail confirmation, forgot password, the resend page and reset password. The widget is a managed one with explicit rendering. It fills a `cf-turnstile-response` field, and the form waits for it before it submits. The action verifies the token with Cloudflare's siteverify endpoint before it calls Strapi. It fails closed: a missing or refused token answers `FORBIDDEN`, and an unreachable or misconfigured siteverify answers `SERVICE_UNAVAILABLE` and logs the cause.
+Every public form carries a [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) widget: login, register, mail confirmation, forgot password, the resend page and reset password. The widget is a managed one with explicit rendering and `appearance: 'interaction-only'`: most visitors pass in the background and never see it, and it takes no room in the form until Cloudflare asks for a click. It fills a `cf-turnstile-response` field and renews an expired token on its own (`refresh-expired: 'auto'`).
+
+A submit made before the token exists is held, never posted without it. A line under the widget tells the visitor what happens:
+
+| Widget | What the visitor sees |
+| --- | --- |
+| Challenge still running | "Vérification anti-robot en cours…", then the form sends itself when the token arrives |
+| Cloudflare asks for a click | The checkbox and "Cochez la case ci-dessus pour envoyer le formulaire.", then the form sends itself once it is ticked |
+| No token after 8 seconds | The submit is dropped with a notice to retry, and the button stays usable |
+| Challenge failed | A failure notice. Turnstile retries on its own, and the next submit resets the widget |
+| Script blocked (content blocker, network) | A notice asking to disable the blocker or reload the page |
+ The action verifies the token with Cloudflare's siteverify endpoint before it calls Strapi. It fails closed: a missing or refused token answers `FORBIDDEN`, and an unreachable or misconfigured siteverify answers `SERVICE_UNAVAILABLE` and logs the cause.
 
 Forms behind a login (profile, dashboard) are not covered.
 
@@ -106,7 +117,7 @@ To protect a new public form:
 
 Keep the page server-rendered (the default). A prerendered page would carry the build's site key in its HTML.
 
-Local development and tests use Cloudflare's test keys, pre-filled in `.env.example`. The site key `1x00000000000000000000AA` with the secret `1x0000000000000000000000000000000AA` always passes. The site key `2x00000000000000000000AB` always blocks, and the secret `2x0000000000000000000000000000000AA` always fails.
+Local development and tests use Cloudflare's test keys, pre-filled in `.env.example`. The site key `1x00000000000000000000AA` with the secret `1x0000000000000000000000000000000AA` always passes. The site key `2x00000000000000000000AB` always blocks, the site key `3x00000000000000000000FF` always asks for a click (the widget then shows), and the secret `2x0000000000000000000000000000000AA` always fails.
 
 This template sets no Content Security Policy. If you add one, allow `https://challenges.cloudflare.com` in `script-src` and `frame-src`.
 
