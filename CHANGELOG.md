@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/Popwers/astrojs-template/compare/v1.1.0...v1.2.0) (2026-10-21)
+
+
+### Features
+
+* **auth:** render Turnstile in interaction-only mode ([#37](https://github.com/Popwers/astrojs-template/issues/37)) ([be03fe1](https://github.com/Popwers/astrojs-template/commit/be03fe1f6c2aa26bf2105919fcbb4fd8407a8c98))
+
 # [1.1.0](https://github.com/Popwers/astrojs-template/compare/v1.0.3...v1.1.0) (2026-10-20)
 
 
