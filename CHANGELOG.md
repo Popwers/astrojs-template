@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/Popwers/astrojs-template/compare/v1.2.0...v1.2.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* **auth:** one password pair and a rate limit on password reset ([#36](https://github.com/Popwers/astrojs-template/issues/36)) ([05774ec](https://github.com/Popwers/astrojs-template/commit/05774ecfa015bd88329910f657263b7a20fa9d80))
+
 # [1.2.0](https://github.com/Popwers/astrojs-template/compare/v1.1.0...v1.2.0) (2026-10-21)
 
 
