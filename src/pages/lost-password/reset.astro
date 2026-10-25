@@ -1,4 +1,7 @@
 ---
+// On demand: form actions, session cookies and auth guards run per request.
+export const prerender = false;
+
 import { actions, isInputError } from 'astro:actions';
 
 import ErrorInput from '@components/site/global/input/ErrorInput.astro';

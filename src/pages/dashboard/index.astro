@@ -1,4 +1,7 @@
 ---
+// On demand: form actions, session cookies and auth guards run per request.
+export const prerender = false;
+
 import { actions } from 'astro:actions';
 
 const result = Astro.getActionResult(actions.auth.logout);

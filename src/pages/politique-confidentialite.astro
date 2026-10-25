@@ -1,7 +1,6 @@
 ---
-// Static legal content changes rarely — prerender at build time for instant delivery.
+// Prerendered at build like every page without `prerender = false` (`output: 'static'`).
 // Content falls back to empty array when Strapi is unreachable (see fetchApi returnError default).
-export const prerender = true;
 
 import TextRenderer from "@components/site/global/TextRenderer";
 import type TextPage from "@interfaces/textPage";

@@ -18,11 +18,17 @@ export default defineConfig({
 	server: {
 		host: true,
 	},
-	output: 'server',
+	// Static by default: every page is prerendered at build unless it exports `prerender = false`
+	// (forms, session, auth guards). The Node adapter serves those on-demand routes, the actions and
+	// the server islands, and hands the prerendered HTML and assets to its static handler.
+	output: 'static',
 	adapter: node({
 		mode: 'standalone',
 	}),
 	site: 'https://your-project.fr',
+	// Prerendered pages get the same slash-less URL as the on-demand ones (canonical, sitemap):
+	// `normalizePath` and the static handler redirect `/page/` to `/page`.
+	trailingSlash: 'never',
 	// Astro caps Action request bodies at 1 MB by default, which would reject any avatar over
 	// that limit. The ceiling is derived from MAX_FILE_SIZE in userOptions.ts — the single source
 	// of truth — so there is one place to change the limit.

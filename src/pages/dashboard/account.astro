@@ -1,4 +1,7 @@
 ---
+// On demand: form actions, session cookies and auth guards run per request.
+export const prerender = false;
+
 import { actions, isInputError } from 'astro:actions';
 
 import Avatar from '@components/site/global/Avatar.astro';
