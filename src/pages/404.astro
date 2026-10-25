@@ -1,6 +1,5 @@
 ---
-// SSR 404: a prerendered 404.html is served as a host-canonical redirect to
-// `site` (https://your-project.fr/404) instead of the custom error page.
+// On demand: the page-cache middleware marks the 404 `no-store`, so a missing asset is never cached.
 export const prerender = false;
 
 import DefaultLayout from '@layouts/index.astro';

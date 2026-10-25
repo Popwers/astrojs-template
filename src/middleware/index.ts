@@ -2,11 +2,13 @@ import { defineMiddleware, sequence } from 'astro/middleware';
 
 import checkRegistration from './checkRegistration';
 import normalizePath from './normalizePath';
+import pageCache from './pageCache';
 import restrictedWhenLogged from './restrictedWhenLogged';
 import restrictedWhenNotLogged from './restrictedWhenNotLogged';
 import userDataHydratation from './userDataHydratation';
 
 const perRequest = sequence(
+	pageCache,
 	normalizePath,
 	userDataHydratation,
 	checkRegistration,
