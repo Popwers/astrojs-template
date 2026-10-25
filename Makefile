@@ -40,8 +40,9 @@ verify: ## Pre-push gate: astro sync, check, astro check, tests, build
 dev: ## Start the Astro dev server (astro dev --host)
 	@vp run dev
 
-build: ## Build the production app (astro build)
-	@vp run build
+# `bun --bun` runs Astro and Vite under Bun, like the Docker build (the image ships no Node).
+build: ## Build the production app (astro build, under Bun)
+	@bun --bun vp run build
 
 preview: ## Preview the production build (astro preview)
 	@vp run preview

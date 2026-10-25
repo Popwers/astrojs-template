@@ -1,4 +1,4 @@
-# syntax=docker/dockerfile:1.7
+# syntax=docker/dockerfile:1
 
 # --- base: minimal runtime image (alpine + bun) ------------------------------
 FROM popwers/mini-bun:latest AS base
@@ -27,9 +27,13 @@ COPY package.json bun.lock ./
 RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
     bun install --frozen-lockfile
 COPY . .
+# Prerendering loads astro:env/server, which reads every required secret as it loads. Build-only
+# placeholders satisfy it: `access: 'secret'` values are read again at runtime, never inlined, and no
+# prerendered page renders them. `bun --bun` runs Astro and Vite under Bun.
 RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
     --mount=type=secret,id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN,required=false \
-    bun run build
+    COOKIE_SIGNING_SECRET=build-only TURNSTILE_SITE_KEY=build-only TURNSTILE_SECRET_KEY=build-only \
+    bun --bun run build
 
 # --- runtime: ship only node_modules + dist + entry -------------------------
 FROM base AS runtime
