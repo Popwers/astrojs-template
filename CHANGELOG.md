@@ -1,3 +1,14 @@
+## [1.2.2](https://github.com/Popwers/astrojs-template/compare/v1.2.1...v1.2.2) (2026-10-25)
+
+
+### Performance Improvements
+
+* **assets:** hover prefetch with viewport on the nav, AVIF/WebP LCP example, lighter precache ([07efeee](https://github.com/Popwers/astrojs-template/commit/07efeee597eb7a2d9a77334c90526226e01549f2))
+* **cache:** edge-cacheable anonymous HTML, no-store for sessions and errors ([0d709a7](https://github.com/Popwers/astrojs-template/commit/0d709a7cc059fc9df3e0b88f7e2bc1b50466d8cd))
+* **render:** prerender by default, on-demand only for forms and session routes ([685a31e](https://github.com/Popwers/astrojs-template/commit/685a31e3054d83af8cd98fd1a13eabcf42823dbd))
+* **render:** serve the Strapi legal pages on demand, cached at the edge ([42e31fb](https://github.com/Popwers/astrojs-template/commit/42e31fb9355fe604794c238a0e5665579859e92d))
+* **server:** serve precompressed assets, cache headers on static files, drain on SIGTERM ([04ed194](https://github.com/Popwers/astrojs-template/commit/04ed194eed091ae2c02984aff62d4252f9cc542f))
+
 ## [1.2.1](https://github.com/Popwers/astrojs-template/compare/v1.2.0...v1.2.1) (2026-10-22)
 
 
