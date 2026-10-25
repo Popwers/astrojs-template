@@ -1,12 +1,12 @@
 # Astro.js template
 
-Astro 7 SSR template with React 19 islands, Tailwind 4, Legend State, and Strapi auth. The package manager is Bun (`bun.lock`). Vite+ (`vp`) is the JS façade. Dev, build, and preview stay on the Astro CLI. Never run `vp dev` here. That starts a bare Vite server and skips routing, SSR, and the Node adapter.
+Astro 7 template (static by default, on-demand routes on the Node adapter) with React 19 islands, Tailwind 4, Legend State, and Strapi auth. The package manager is Bun (`bun.lock`). Vite+ (`vp`) is the JS façade. Dev, build, and preview stay on the Astro CLI. Never run `vp dev` here. That starts a bare Vite server and skips routing, SSR, and the Node adapter.
 
 ## Stack
 
 | Layer | Choice |
 | --- | --- |
-| App | Astro 7 SSR (`@astrojs/node` standalone), React 19 islands |
+| App | Astro 7 `output: 'static'` + `@astrojs/node` standalone for `prerender = false` routes, React 19 islands |
 | UI | Tailwind CSS 4, SCSS, npm `cn` |
 | State | Legend State (`useObservable`, `observer`) |
 | API | Strapi (`STRAPI_URL`, `STRAPI_TOKEN`) |
@@ -40,19 +40,21 @@ There is no CI workflow. Checks run locally in the `pre-push` hook: `make verify
 
 ### Middleware
 
-`src/middleware/index.ts` runs `sequence` in this order:
+`src/middleware/index.ts` skips prerendered routes (it would run once at build, cookie-less), then runs `sequence` in this order:
 
-1. `normalizePath`
-2. `userDataHydratation` — cookies into `context.locals`
-3. `checkRegistration` — profile completion
-4. `restrictedWhenNotLogged` — dashboard routes
-5. `restrictedWhenLogged` — auth pages
+1. `pageCache` — `Cache-Control` of on-demand pages (`src/lib/pageCache.ts`): public at the edge for an anonymous 200 GET, `private, no-store` for a session cookie, `PRIVATE_ROUTES`, redirects, errors and POSTs
+2. `normalizePath`
+3. `userDataHydratation` — cookies into `context.locals`
+4. `checkRegistration` — profile completion
+5. `restrictedWhenNotLogged` — dashboard routes
+6. `restrictedWhenLogged` — auth pages
 
 Route lists live in `src/data/routes.ts`:
 
 - `RESTRICTED_WHEN_LOGGED_IN` — login, register, lost-password
 - `RESTRICTED_WHEN_LOGGED_OUT` — `/dashboard`, `/dashboard/account`, `/register/profil`
 - `NEED_REGISTER_ROUTES` — routes that need a completed profile
+- `PRIVATE_ROUTES` — never stored by a shared cache (auth flow, dashboard, server islands, actions)
 
 ### Astro actions
 
@@ -114,7 +116,9 @@ Copy `.env.example` to `.env`. The schema is in `astro.config.mjs` (`envField`).
 | `vite.config.ts` | Lint, fmt, staged hooks, test |
 | `Makefile` | Developer entry |
 | `Dockerfile` | Multi-stage production image |
-| `start.mjs` | Production Node entry |
+| `start.mjs` | Production entry: imports the adapter with autostart off, hands it to `server/start.ts` |
+| `server/` | Production HTTP server: precompressed static files and their `Cache-Control`, graceful SIGTERM drain; `cacheControl.ts` holds the header values the middleware shares |
+| `src/integrations/precompress.ts` | Writes `.br`/`.gz` next to the text files of `dist/client` at build |
 
 ## Docker
 
@@ -129,7 +133,7 @@ docker run -p 4321:4321 astro-app
 
 ## Common tasks
 
-Add a page: create `src/pages/*.astro`, import a layout from `@layouts/`, update `src/data/routes.ts` if it is protected.
+Add a page: create `src/pages/*.astro`, import a layout from `@layouts/`. It is prerendered unless it exports `prerender = false` (needed to read cookies, handle a form or fetch Strapi per request). A protected page goes in `src/data/routes.ts`; an on-demand page whose HTML differs per visitor goes in `PRIVATE_ROUTES` or sets `Cache-Control: private, no-store` itself. Per-visitor bits on a shared page go in a `server:defer` island.
 
 Add an action: Zod schema in `src/actions/schema/`, handler in `src/actions/`, export from `src/actions/index.ts`.
 

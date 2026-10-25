@@ -143,14 +143,27 @@ Error monitoring via Sentry (`@sentry/astro`, prod-only). The DSN comes from `PU
 
 Known browser noise (ClientRouter aborts, WebView and link-preview crawler errors, visitor network failures) is dropped by anchored patterns in `src/lib/sentryNoise.ts`, tested in `tests/lib/sentryNoise.test.ts`: add a pattern there with a noise sample and a real-bug sample next to it, never a bare substring such as `'AbortError'`. A failed call to the CMS (`STRAPI_URL` at build time, default in `astro.config.mjs`) is still reported.
 
+## Performance (réglages par défaut)
+
+Pensé pour un visiteur loin du serveur (La Réunion → Hetzner, 300 à 500 ms par aller-retour) : le HTML est prérendu ou cachable à l'edge, le premier affichage reste léger.
+
+- **Statique par défaut** (`output: 'static'`, `astro.config.mjs`) : toute page est prérendue au build. Une page qui lit la session, traite un formulaire ou affiche du contenu Strapi déclare `export const prerender = false` (ex. `src/pages/login.astro`, `src/pages/mentions-legales.astro`). L'adaptateur Node (`standalone`) sert ces routes, les actions et les server islands. Le balisage propre au visiteur va dans un `server:defer` (`AvatarIsland`).
+- **Cache HTTP** (`server/cacheControl.ts`, `src/lib/pageCache.ts`, `src/middleware/pageCache.ts`) : HTML public anonyme en `public, max-age=0, s-maxage=86400, stale-while-revalidate=604800` ; `private, no-store` dès que le cookie `user_token` existe, pour `PRIVATE_ROUTES` (`src/data/routes.ts`), les server islands, les redirections, les erreurs (un asset `/_astro/` absent n'est jamais caché) et les POST. Une page peut se retirer elle-même avec `Astro.response.headers.set('Cache-Control', PRIVATE_CACHE_CONTROL)`. Assets hashés en `immutable`. Côté Cloudflare : règle de cache « Eligible » sur le HTML, contournée quand le cookie `user_token` est présent.
+- **Compression** : `src/integrations/precompress.ts` écrit `.br` (qualité 11) et `.gz` à côté de chaque fichier texte de `dist/client` ; `server/start.ts` les sert selon `Accept-Encoding` (`Vary`, `ETag`, 304). Le HTML rendu à la demande n'est pas compressé par Node : Cloudflare ou le proxy s'en charge.
+- **Arrêt propre** : sur `SIGTERM`, `start.mjs` cesse d'accepter, laisse finir les requêtes en cours et sort en 0 sous `SHUTDOWN_TIMEOUT_MS` (8 s, sous les 10 s de Coolify). Sans ça, Bun en PID 1 ignorait `SIGTERM` jusqu'au `SIGKILL`.
+- **Navigation** : `prefetch` au survol par défaut, `data-astro-prefetch='viewport'` sur la nav principale.
+- **Premier affichage** : `compressHTML`, `build.inlineStylesheets: 'auto'` (CSS < 4 ko inline), polices `@fontsource-variable/*` self-hostées et préchargées (`src/layouts/base.astro`), image LCP via `<Picture formats={['avif', 'webp']} priority>` (`src/pages/index.astro`), îlots sous la ligne de flottaison en `client:visible` (`src/pages/dashboard/account.astro`). Le service worker ne précache pas les vendors d'upload (HEIC, compression d'image).
+- **Build sous Bun** : `make build` = `bun --bun vp run build`, comme l'image Docker.
+
 ## Deployment
 
 Multi-stage Docker build (Alpine + Bun):
 
 - `base` → `deps` (prod-only via `bun install --no-dev`) → `build` → `runtime`
 - BuildKit cache mount on `~/.bun/install/cache`
-- `HEALTHCHECK` baked in: `fetch('/login')` returns < 500
-- Exposes port `4321`, runtime via `bun ./start.mjs`
+- The build RUN sets build-only placeholders for the required `astro:env` secrets (prerendering loads them); real values come at runtime
+- `HEALTHCHECK` baked in: `GET /api/health` returns 200
+- Exposes port `4321`, runtime via `bun ./start.mjs` (`server/`), graceful exit on `SIGTERM`
 
 ```bash
 docker build --secret id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN -t your-project .
@@ -159,7 +172,7 @@ docker run -p 4321:4321 --env-file .env your-project
 
 ## Technologies
 
-- [Astro](https://astro.build) (SSR)
+- [Astro](https://astro.build) (static by default, on-demand routes on the Node adapter)
 - [React](https://react.dev) (islands)
 - [Legend State](https://legendapp.com/open-source/state/) (reactive state)
 - [Tailwind CSS](https://tailwindcss.com)
