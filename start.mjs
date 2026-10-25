@@ -29,6 +29,13 @@ console.error = (...args) => {
 	origConsoleError(...args);
 };
 
+// The adapter would start its own server on import; `server/start.ts` serves its handler instead
+// (precompressed assets, cache headers, graceful SIGTERM).
+process.env.ASTRO_NODE_AUTOSTART = 'disabled';
+
 // The server entry only exists after `astro build`; a non-literal specifier keeps typecheck independent of it.
 const serverEntry = './dist/server/entry.mjs';
-await import(serverEntry);
+/** @type {import('./server/start.ts').AstroNodeEntry} */
+const entry = await import(serverEntry);
+const { startServer } = await import('./server/start.ts');
+startServer(entry, new URL('./dist/client/', import.meta.url));

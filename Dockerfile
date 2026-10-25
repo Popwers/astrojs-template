@@ -40,11 +40,15 @@ ENV HOST=0.0.0.0 \
 COPY --from=deps  /app/node_modules ./node_modules
 COPY --from=build /app/dist          ./dist
 COPY start.mjs ./start.mjs
+COPY server ./server
 
 EXPOSE 4321
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD bun -e "fetch('http://127.0.0.1:'+process.env.PORT+'/login').then(r=>process.exit(r.status<500?0:1)).catch(()=>process.exit(1))"
+    CMD bun -e "fetch('http://127.0.0.1:'+process.env.PORT+'/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
 
 USER bun
+# start.mjs drains in-flight requests on SIGTERM and exits within SHUTDOWN_TIMEOUT_MS (8 s), under
+# the 10 s Docker / Coolify wait before SIGKILL. Bun as PID 1 gets no default SIGTERM action.
+STOPSIGNAL SIGTERM
 CMD ["bun", "./start.mjs"]

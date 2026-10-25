@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import node from '@astrojs/node';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
@@ -8,11 +10,15 @@ import AstroPWA from '@vite-pwa/astro';
 import { defineConfig, envField } from 'astro/config';
 
 import { ACTION_BODY_SIZE_LIMIT } from './src/data/userOptions.ts';
+import precompress from './src/integrations/precompress.ts';
 
 /** Deployed commit SHA (Dockerfile maps SOURCE_COMMIT to SENTRY_RELEASE). */
 const sentryRelease = process.env.SENTRY_RELEASE || undefined;
 
 const STRAPI_URL_DEFAULT = 'https://api.your-project.fr';
+
+/** Client half of the build (`build.client`), where the Node adapter serves static files from. */
+const clientDir = fileURLToPath(new URL('./dist/client/', import.meta.url));
 
 export default defineConfig({
 	server: {
@@ -61,6 +67,10 @@ export default defineConfig({
 			strategies: 'injectManifest',
 			srcDir: 'src',
 			filename: 'sw.ts',
+			// @vite-pwa/astro targets build.client only for output 'server'; with 'static' + adapter it
+			// would write the worker and glob the precache in dist/server.
+			outDir: clientDir,
+			injectManifest: { globDirectory: clientDir },
 			workbox: {
 				navigateFallback: '/',
 				globPatterns: ['**/*.{css,js,html,svg,png,ico,txt,woff2}'],
@@ -110,6 +120,8 @@ export default defineConfig({
 				navigateFallbackAllowlist: [/^\/$/],
 			},
 		}),
+		// Last: writes .br/.gz next to the final files (after the minifier and the service worker).
+		precompress(),
 	],
 	prefetch: {
 		prefetchAll: true,
