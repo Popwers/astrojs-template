@@ -97,8 +97,9 @@ const description: string = 'Modifier mes informations personnelles';
 				</label>
 			</div>
 
+			{/* Below the fold: hydrate when it scrolls into view, not on every visit to the page. */}
 			<SubmitButton
-				client:idle
+				client:visible
 				className='mt-6 w-full bordered'
 				danger
 				label='Supprimer définitivement mon compte'

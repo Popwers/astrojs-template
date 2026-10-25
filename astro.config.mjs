@@ -70,7 +70,12 @@ export default defineConfig({
 			// @vite-pwa/astro targets build.client only for output 'server'; with 'static' + adapter it
 			// would write the worker and glob the precache in dist/server.
 			outDir: clientDir,
-			injectManifest: { globDirectory: clientDir },
+			// The upload helpers (HEIC decoder, image compression) load on demand in the dashboard;
+			// precaching them would make every first visit download 1.4 MB more.
+			injectManifest: {
+				globDirectory: clientDir,
+				globIgnores: ['**/vendor-heic2any.*', '**/vendor-browser-image-compression.*'],
+			},
 			workbox: {
 				navigateFallback: '/',
 				globPatterns: ['**/*.{css,js,html,svg,png,ico,txt,woff2}'],
@@ -123,9 +128,17 @@ export default defineConfig({
 		// Last: writes .br/.gz next to the final files (after the minifier and the service worker).
 		precompress(),
 	],
+	// Every link prefetches on hover/focus; the main nav (`data-astro-prefetch='viewport'`) as soon as
+	// it is visible. A prefetched page then costs no round trip to Hetzner.
 	prefetch: {
 		prefetchAll: true,
-		defaultStrategy: 'viewport',
+		defaultStrategy: 'hover',
+	},
+	// Astro defaults, stated so a project does not lose them by accident: minified HTML, and
+	// stylesheets under 4 kB inlined in <head> (no extra request), larger ones linked and cached.
+	compressHTML: true,
+	build: {
+		inlineStylesheets: 'auto',
 	},
 	cacheDir: './buildCache',
 	env: {
