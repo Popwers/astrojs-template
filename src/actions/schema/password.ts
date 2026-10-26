@@ -1,9 +1,11 @@
+import { turnstile } from '@actions/schema/turnstile';
 import { z } from 'astro/zod';
 
 const forgotPassword = z.object({
 	email: z.email({
 		error: "L'adresse email est invalide.",
 	}),
+	...turnstile,
 });
 
 const resetPassword = z
@@ -26,6 +28,7 @@ const resetPassword = z
 		passwordConfirmation: z.string({
 			error: 'La confirmation du mot de passe est requise',
 		}),
+		...turnstile,
 	})
 	.superRefine(({ passwordConfirmation, password }, ctx) => {
 		if (passwordConfirmation !== password) {

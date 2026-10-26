@@ -3,16 +3,27 @@ import type { E2EConfig } from 'e2e';
 import { grok } from 'e2e/oauth/grok';
 
 import { EDITOR, READER } from './tests/e2e/accounts';
-
-// Both ports can be overridden so several runs can share one host.
-const APP_PORT = Number(process.env.E2E_APP_PORT ?? 44321);
-const STRAPI_STUB_PORT = Number(process.env.E2E_STRAPI_STUB_PORT ?? 41337);
-const BASE_URL = `http://localhost:${APP_PORT}`;
+import {
+	APP_PORT,
+	BASE_URL,
+	BLOCK_PORT,
+	CHALLENGE_PORT,
+	REJECT_PORT,
+	STRAPI_STUB_PORT,
+	TURNSTILE_BLOCK_SITE_KEY,
+	TURNSTILE_CHALLENGE_SITE_KEY,
+	TURNSTILE_PASS_SECRET_KEY,
+	TURNSTILE_REJECT_SECRET_KEY,
+	TURNSTILE_SITE_KEY,
+} from './tests/e2e/servers';
 
 /**
  * Golden-path suite against the production build. `tests/e2e/serve.sh` starts the in-memory
- * Strapi stub (`tests/e2e/strapi-stub.ts`), builds the app and serves it with `start.mjs`. Both
- * start fresh on every run, so the in-memory login rate limit and the stub accounts reset.
+ * Strapi stub (`tests/e2e/strapi-stub.ts`), builds the app and serves it four times with `start.mjs`:
+ * on `APP_PORT` with the Turnstile always-pass keys, on `REJECT_PORT` with the always-fail secret, on
+ * `CHALLENGE_PORT` with the site key that always asks for a click and on `BLOCK_PORT` with the site
+ * key that always fails.
+ * Everything starts fresh on every run, so the in-memory rate limits and the stub accounts reset.
  */
 export default {
 	targets: [
@@ -43,6 +54,14 @@ export default {
 						STRAPI_URL: `http://localhost:${STRAPI_STUB_PORT}`,
 						STRAPI_TOKEN: 'e2e-strapi-token',
 						COOKIE_SIGNING_SECRET: 'e2e-cookie-signing-secret',
+						TURNSTILE_SITE_KEY,
+						TURNSTILE_SECRET_KEY: TURNSTILE_PASS_SECRET_KEY,
+						TURNSTILE_REJECT_SECRET_KEY,
+						TURNSTILE_CHALLENGE_SITE_KEY,
+						TURNSTILE_BLOCK_SITE_KEY,
+						REJECT_PORT: String(REJECT_PORT),
+						CHALLENGE_PORT: String(CHALLENGE_PORT),
+						BLOCK_PORT: String(BLOCK_PORT),
 					},
 				},
 			},

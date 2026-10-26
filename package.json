@@ -1,7 +1,7 @@
 {
   "name": "astro-template",
   "type": "module",
-  "version": "1.0.3",
+  "version": "1.2.2",
   "scripts": {
     "prepare": "vp config --no-agent || true",
     "dev": "astro dev --host",

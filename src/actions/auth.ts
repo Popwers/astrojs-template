@@ -1,6 +1,7 @@
 import { confirmMail, login, register } from '@actions/schema/auth';
 import scopedRequest from '@actions/utility/scopedRequest';
 import { clearUserSession } from '@lib/session';
+import { assertTurnstile } from '@lib/turnstile';
 import { defineAction } from 'astro:actions';
 
 /**
@@ -13,6 +14,7 @@ export const auth = {
 		handler: async (input, context) => {
 			const { assertRateLimit } = await import('@lib/rateLimit');
 			assertRateLimit(context, 'auth-login', 10, 15 * 60 * 1000);
+			await assertTurnstile(context, input['cf-turnstile-response']);
 
 			const { email, password } = input;
 			return await scopedRequest({
@@ -31,6 +33,7 @@ export const auth = {
 		handler: async (input, context) => {
 			const { assertRateLimit } = await import('@lib/rateLimit');
 			assertRateLimit(context, 'auth-register', 5, 60 * 60 * 1000);
+			await assertTurnstile(context, input['cf-turnstile-response']);
 
 			const { email, password, master } = input;
 			if (
@@ -56,6 +59,7 @@ export const auth = {
 		handler: async (input, context) => {
 			const { assertRateLimit } = await import('@lib/rateLimit');
 			assertRateLimit(context, 'auth-confirm-mail', 5, 60 * 60 * 1000);
+			await assertTurnstile(context, input['cf-turnstile-response']);
 
 			const { email } = input;
 			if (

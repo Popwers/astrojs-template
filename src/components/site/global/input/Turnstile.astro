@@ -1,0 +1,234 @@
+---
+import { TURNSTILE_SITE_KEY } from 'astro:env/server';
+---
+
+<div class='data-shown:mb-6' data-turnstile data-sitekey={TURNSTILE_SITE_KEY}>
+	<div data-turnstile-widget></div>
+	<p
+		class='text-blue-saturated data-error:text-red text-sm empty:hidden'
+		role='status'
+		data-turnstile-status>
+	</p>
+</div>
+
+<script>
+	interface TurnstileOptions {
+		sitekey: string;
+		language: string;
+		theme: 'light';
+		size: 'flexible' | 'compact';
+		appearance: 'interaction-only';
+		'refresh-expired': 'auto';
+		callback: () => void;
+		'error-callback': (code: string) => boolean;
+		'expired-callback': () => void;
+		'before-interactive-callback': () => void;
+	}
+
+	interface TurnstileApi {
+		render(container: HTMLElement, options: TurnstileOptions): string | undefined;
+		reset(widgetId: string): void;
+		remove(widgetId: string): void;
+	}
+
+	declare global {
+		interface Window {
+			turnstile?: TurnstileApi;
+		}
+	}
+
+	/** Where the challenge of one form stands. Only `solved` holds a token. */
+	type Challenge = 'running' | 'interactive' | 'solved' | 'failed' | 'unavailable';
+
+	interface HeldSubmit {
+		submitter: HTMLElement | null;
+	}
+
+	interface Notice {
+		text: string;
+		isError: boolean;
+	}
+
+	const API_URL = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
+	// The flexible widget never shrinks below 300 px, so a narrower form (phones) gets the compact one.
+	const FLEXIBLE_MIN_WIDTH = 300;
+	/** How long a held submit waits for a background challenge before the visitor is asked to retry. */
+	const TOKEN_WAIT_MS = 8_000;
+
+	const NOTICES = {
+		pending: { text: 'Vérification anti-robot en cours…', isError: false },
+		interact: { text: 'Cochez la case ci-dessus pour envoyer le formulaire.', isError: false },
+		slow: {
+			text: 'La vérification anti-robot prend plus de temps que prévu. Réessayez dans un instant.',
+			isError: true,
+		},
+		failed: { text: 'La vérification anti-robot a échoué. Veuillez réessayer.', isError: true },
+		unavailable: {
+			text: 'La vérification anti-robot n’a pas pu se charger. Désactivez votre bloqueur de contenu ou rechargez la page.',
+			isError: true,
+		},
+	} as const satisfies Record<string, Notice>;
+
+	let loader: Promise<TurnstileApi> | null = null;
+	let renderedWidgetIds: string[] = [];
+
+	function loadTurnstile(): Promise<TurnstileApi> {
+		const loaded = window.turnstile;
+		if (loaded) return Promise.resolve(loaded);
+
+		loader ??= new Promise<TurnstileApi>((resolve, reject) => {
+			const script = document.createElement('script');
+			script.src = API_URL;
+			script.async = true;
+			script.addEventListener('load', () => {
+				const api = window.turnstile;
+				if (api) {
+					resolve(api);
+					return;
+				}
+				loader = null;
+				reject(new Error('Turnstile loaded without defining window.turnstile'));
+			});
+			script.addEventListener('error', () => {
+				loader = null;
+				script.remove();
+				reject(new Error('Turnstile api.js failed to load'));
+			});
+			document.head.append(script);
+		});
+
+		return loader;
+	}
+
+	function noticeOf(challenge: Challenge, isHeld: boolean, isSlow: boolean): Notice | null {
+		if (challenge === 'failed' || challenge === 'unavailable') return NOTICES[challenge];
+		if (isHeld) return challenge === 'interactive' ? NOTICES.interact : NOTICES.pending;
+		return isSlow ? NOTICES.slow : null;
+	}
+
+	async function mount(container: HTMLElement) {
+		const form = container.closest('form');
+		const slot = container.querySelector<HTMLElement>('[data-turnstile-widget]');
+		const status = container.querySelector<HTMLElement>('[data-turnstile-status]');
+		if (!form || !slot || !status) throw new Error('Turnstile must sit inside a form, with its widget and status');
+
+		let api: TurnstileApi | undefined;
+		let widgetId: string | undefined;
+		let challenge: Challenge = 'running';
+		let held: HeldSubmit | null = null;
+		let holdTimer: ReturnType<typeof setTimeout> | undefined;
+		// The held submit gave up on a background challenge that never answered.
+		let isSlow = false;
+
+		const paint = () => {
+			const notice = noticeOf(challenge, held !== null, isSlow);
+			status.textContent = notice?.text ?? '';
+			status.toggleAttribute('data-error', notice?.isError === true);
+			container.toggleAttribute('data-shown', container.hasAttribute('data-interactive') || notice !== null);
+		};
+
+		const dropHeldSubmit = (): HeldSubmit | null => {
+			clearTimeout(holdTimer);
+			const dropped = held;
+			held = null;
+			return dropped;
+		};
+
+		// Registered before the script loads so a fast submit is held too, not posted without a token.
+		form.addEventListener(
+			'submit',
+			(event) => {
+				if (challenge === 'solved') return;
+
+				event.preventDefault();
+				// The submit has not happened yet, so no other listener (SubmitButton's loading state) may see it.
+				event.stopImmediatePropagation();
+				if (challenge === 'unavailable') return;
+
+				if (challenge === 'failed' && api && widgetId !== undefined) {
+					api.reset(widgetId);
+					challenge = 'running';
+				}
+				dropHeldSubmit();
+				held = { submitter: event.submitter };
+				isSlow = false;
+				holdTimer = setTimeout(() => {
+					// A visible checkbox waits for the visitor, not for the clock.
+					if (challenge !== 'running') return;
+					dropHeldSubmit();
+					isSlow = true;
+					paint();
+				}, TOKEN_WAIT_MS);
+				paint();
+			},
+			{ capture: true },
+		);
+
+		try {
+			api = await loadTurnstile();
+		} catch (error) {
+			console.warn('[turnstile]', error instanceof Error ? error.message : String(error));
+			challenge = 'unavailable';
+			dropHeldSubmit();
+			paint();
+			return;
+		}
+
+		if (!container.isConnected) return;
+
+		widgetId = api.render(slot, {
+			sitekey: container.dataset.sitekey ?? '',
+			language: document.documentElement.lang || 'auto',
+			theme: 'light',
+			size: slot.clientWidth < FLEXIBLE_MIN_WIDTH ? 'compact' : 'flexible',
+			// Managed mode stays on: most visitors pass in the background and never see the widget.
+			appearance: 'interaction-only',
+			'refresh-expired': 'auto',
+			callback: () => {
+				challenge = 'solved';
+				isSlow = false;
+				const released = dropHeldSubmit();
+				paint();
+				if (released) form.requestSubmit(released.submitter);
+			},
+			// Turnstile retries on its own and calls `callback` once a retry passes.
+			'error-callback': (code) => {
+				console.warn('[turnstile] challenge error', code);
+				challenge = 'failed';
+				dropHeldSubmit();
+				paint();
+				// Handled: without this callback Turnstile throws, and a falsy return logs the code again.
+				return true;
+			},
+			// `refresh-expired: 'auto'` runs a new challenge; a submit meanwhile waits for its token.
+			'expired-callback': () => {
+				challenge = 'running';
+				paint();
+			},
+			'before-interactive-callback': () => {
+				challenge = 'interactive';
+				container.toggleAttribute('data-interactive', true);
+				paint();
+			},
+		});
+		if (widgetId !== undefined) renderedWidgetIds.push(widgetId);
+	}
+
+	function renderWidgets() {
+		for (const container of document.querySelectorAll<HTMLElement>('[data-turnstile]:not([data-turnstile-claimed])')) {
+			container.dataset.turnstileClaimed = '';
+			void mount(container);
+		}
+	}
+
+	function removeWidgets() {
+		for (const widgetId of renderedWidgetIds) window.turnstile?.remove(widgetId);
+		renderedWidgetIds = [];
+	}
+
+	document.addEventListener('astro:page-load', renderWidgets);
+	document.addEventListener('astro:before-swap', removeWidgets);
+	renderWidgets();
+
+	export {};
+</script>

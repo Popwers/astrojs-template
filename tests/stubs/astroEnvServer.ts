@@ -6,3 +6,5 @@
  */
 export const STRAPI_URL = 'http://strapi.test';
 export const STRAPI_TOKEN = 'test-token';
+export const TURNSTILE_SITE_KEY = '1x00000000000000000000AA';
+export const TURNSTILE_SECRET_KEY = 'test-turnstile-secret';
