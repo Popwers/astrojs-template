@@ -1,6 +1,6 @@
 # Legal pages
 
-Legal pages are prerendered `/mentions-legales` and `/politique-confidentialite`. A visitor can open them from the footer. Body copy comes from Strapi and is empty on the verify stack, whose stub answers CMS calls with a 404 envelope. The headings still render.
+Legal pages are `/mentions-legales` and `/politique-confidentialite`, rendered on demand. A visitor can open them from the footer. Body copy comes from Strapi and is empty on the verify stack, whose stub answers CMS calls with a 404 envelope. The headings still render.
 
 ## Sub-features
 
@@ -23,13 +23,13 @@ Preconditions:
 - `control-astrojs doctor` reports the owned URL.
 - Strapi is the verify stub. Body copy is empty.
 
-- **Mentions.** Run `control-astrojs http GET /mentions-legales`. Status is `200`. The body contains `Mentions légales`.
+- **Mentions.** Run `control-astrojs http GET /mentions-legales`. Status is `200`, `cache-control=private, no-store` while the stub has no content. The body contains `Mentions légales`.
 - **Privacy.** Run `control-astrojs http GET /politique-confidentialite`. Status is `200`. The body contains `Politique de confidentialité`.
-- **Footer entry.** Run `control-astrojs http GET /`. The home HTML contains `href="/mentions-legales"` and `href="/politique-confidentialite"`.
+- **Footer entry.** Run `control-astrojs http GET / --body artifacts/home.html`. The saved HTML contains `href="/mentions-legales"` and `href="/politique-confidentialite"`.
 - **Empty CMS body.** Do not require Strapi rich text. A heading plus empty `TextRenderer` is a pass on this stack. A 500 is a product regression.
 
 ## Gotchas
 
-- These pages `prerender = true`. They call Strapi at build, and on every request under `astro dev` (the verify stack). Verify `STRAPI_URL` must answer fast on loopback so the 30s fetch timeout does not hang; a public placeholder host can stall the request.
+- These pages render on demand (`prerender = false`) and call Strapi on every request, in dev and in a build. With content they are cached at the edge (`Cache-Control: public, max-age=0, s-maxage=86400, stale-while-revalidate=604800`); with an empty body, as on the verify stub, they answer `Cache-Control: private, no-store` so an empty page is never cached. Verify `STRAPI_URL` must answer fast on loopback so the 30s fetch timeout does not hang; a public placeholder host can stall the request.
 - `/terms` is not a legal page. Register links to it; it 404s.
 - Cookie-banner copy links to `/politique-confidentialite` even when the banner is not visible.

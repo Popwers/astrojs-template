@@ -7,17 +7,18 @@ This directory is the maintained source for verifying the user-facing behavior o
 - Launch with `.cursor/skills/verify-astrojs/bin/control-astrojs launch`.
 - Default URL is `http://127.0.0.1:4331`. There is no local database.
 - Run `control-astrojs doctor` and require `owned` health: app and Strapi stub alive, `/login` `< 500` with `Se connecter`, `/` `200` with `Welcome to Astro`.
-- `COOKIE_SIGNING_SECRET` is a generated verify secret. `STRAPI_URL` is the repo's in-memory stub on loopback (`tests/e2e/strapi-stub.ts`, default port 4381). It serves login and the current user only. Register and password-reset POSTs are unreachable.
+- `COOKIE_SIGNING_SECRET` is a generated verify secret. `STRAPI_URL` is the repo's in-memory stub on loopback (`tests/e2e/strapi-stub.ts`, default port 4381). It serves login, the current user, register, mail confirmation, forgot-password, and reset-password, and stores nothing.
 - Never drive an instance this run did not start. Do not use `localhost:4321` unless doctor says that URL is ours.
 
 ## Driving conventions
 
 - Start every recipe from the baseline state unless its preconditions say otherwise.
-- Prefer HTTP (`control-astrojs http`) for status, redirects, and HTML markers.
+- Prefer HTTP (`control-astrojs http`) for status, redirects, and HTML markers. `http` prints only hits from a fixed marker list; when a recipe names any other body string (`data-turnstile`, an `href`), add `--body FILE` and grep the file.
 - Use `control-astrojs screenshot` when the proof needs a painted frame.
 - Prefer labels, ids, and the handles in the parent `SKILL.md` over CSS or coordinates.
 - Treat every command as literal. Keep quoted names and flags unchanged.
-- Sign in only through `control-astrojs drive auth-login` against the stub. Do not POST login, register, or password-reset against a remote Strapi. Report register and password-reset submits `verified-unreachable`.
+- Submit forms only through `control-astrojs drive auth-login`, `drive auth-register`, and `drive lost-password` against the stub. Do not POST login, register, or password-reset against a remote Strapi.
+- Public form submits need network access to `challenges.cloudflare.com` (Turnstile siteverify). Without it they answer 503; report them unreachable with that prerequisite.
 - Do not remove proof artifacts during cleanup.
 
 ## Proof and skip reporting
@@ -25,7 +26,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 - Capture the user action and the resulting state, not only the final screen.
 - UI proof includes the HTML and, when Chrome is present, a screenshot with page identity visible.
 - HTTP proof includes method, URL, status, and the body or redirect target.
-- Mutation proof includes a second read of the stored value. Login/register mutations have no second view on this stack.
+- Mutation proof includes a second read: the dashboard after login or reset, the mail-confirmation or wait-mail page after register or forgot-password. The stub stores nothing, so there is no server-side record to read.
 - Record the feature ID and entry point used with every artifact.
 - Report an unreachable path with the attempted command and the unmet prerequisite.
 - Do not report a skipped entry point as verified through a different path.
@@ -45,8 +46,8 @@ Keep implementation details out of the map. Name only user paths, stable handles
 
 - [Public home](./public-home.md) covers `/`, the welcome hero, nav/footer chrome, cookie-banner markup, and the 404 page.
 - [Sign in](./auth-login.md) covers `/login`, logged-out redirects into it, and the stub-backed sign-in, dashboard, account page, and sign-out.
-- [Register](./auth-register.md) covers `/register` and the mail-confirmation / profile gates.
-- [Lost password](./lost-password.md) covers `/lost-password` and the wait-mail / reset gates.
+- [Register](./auth-register.md) covers `/register`, the stub-backed submit, the mail-confirmation page and resend, and the mail-confirmation / profile gates.
+- [Lost password](./lost-password.md) covers `/lost-password`, the stub-backed forgot and reset submits, the wait-mail page, the `?code=` hop, and the wait-mail / reset gates.
 - [Legal pages](./legal-pages.md) covers `/mentions-legales` and `/politique-confidentialite`.
 
 ## Not yet mapped (reachable, no recipe)
@@ -54,8 +55,7 @@ Keep implementation details out of the map. Name only user paths, stable handles
 These user-facing paths exist. They are not a pass for any feature above. Do not invent recipes mid-run.
 
 - Profile update and avatar upload on `/dashboard/account` (page load is covered by [Sign in](./auth-login.md))
-- `/register/mail-confirmation` and `/register/profil` **with the required cookies / session**
-- `/lost-password/wait-mail` and the `/lost-password/reset` form **with the required cookies** (the `?code=` hop is covered by [Lost password](./lost-password.md))
+- `/register/profil` **with a session whose profile is incomplete** (the stub reader's profile is complete)
 - Cookie-banner accept / customize clicks (markup is covered on public home; visibility needs hydration)
 - PWA install / service worker (`/manifest.webmanifest`, `src/sw.ts`)
 - `/robots.txt` and `/sitemap-index.xml`. The sitemap is emitted by `astro build` only, so it is a 404 on the `astro dev` verify stack.

@@ -16,7 +16,7 @@ DEFAULT_PORT="${ASTROJS_VERIFY_PORT:-4331}"
 # and above the app's 4331-4351 pick range.
 DEFAULT_STUB_PORT="${ASTROJS_VERIFY_STUB_PORT:-4381}"
 
-export PATH="${HOME}/.local/bin:${HOME}/.grok/bin:${HOME}/.bun/bin:${HOME}/.local/node22/bin:${PATH}"
+export PATH="${HOME}/.local/bin:${HOME}/.bun/bin:${HOME}/.local/node22/bin:${PATH}"
 
 usage() {
 	cat <<'EOF'
@@ -26,8 +26,10 @@ Commands:
   launch [--port N] [--json]          Start the Strapi stub + isolated astro dev
   doctor [--json]                     Read-only health check (exit 0 = driveable)
   http GET PATH [--no-follow]         Request against the owned origin
+       [--body FILE] [--headers FILE]  Also save the response body / headers
   screenshot --path FILE [--url /p]   Headless Chrome PNG
-  drive public-home|auth-login        Scripted recipe + proof/<feature>/
+  drive FEATURE                       Scripted recipe + proof/<feature>/ (public-home,
+                                      auth-login, auth-register, lost-password)
   cleanup                             Stop what launch started (keep proof/)
   self-check                          CLI smoke without starting the app
   help                                Show this text
@@ -426,6 +428,11 @@ http_get() {
 	if [ -n "$location" ]; then
 		printf 'location=%s\n' "$location"
 	fi
+	local cache_control
+	cache_control="$(awk 'tolower($1)=="cache-control:"{ sub("\r",""); sub(/^[^:]*: */,""); print }' "$dump" | tail -n 1)"
+	if [ -n "$cache_control" ]; then
+		printf 'cache-control=%s\n' "$cache_control"
+	fi
 	printf 'markers='
 	local hits="" needle
 	for needle in \
@@ -467,12 +474,14 @@ http_get() {
 }
 
 cmd_http() {
-	local method="" path="" follow=1
+	local method="" path="" follow=1 body="" headers=""
 	while [ $# -gt 0 ]; do
 		case "$1" in
 		GET|POST) method="$1"; shift ;;
 		--no-follow) follow=0; shift ;;
 		--follow) follow=1; shift ;;
+		--body) body="$2"; shift 2 ;;
+		--headers) headers="$2"; shift 2 ;;
 		*)
 			if [ -z "$path" ]; then
 				path="$1"
@@ -485,7 +494,12 @@ cmd_http() {
 	done
 	[ -n "$method" ] || die "http needs a method (GET)"
 	[ -n "$path" ] || die "http needs a path"
-	http_get "$method" "$path" "$follow"
+	http_get "$method" "$path" "$follow" "$body" "$headers"
+}
+
+# GNU `timeout` is missing on macOS; perl ships on both hosts.
+with_timeout() {
+	perl -e 'alarm shift; exec @ARGV or die "exec $ARGV[0]: $!\n"' "$@"
 }
 
 cmd_screenshot() {
@@ -501,13 +515,17 @@ cmd_screenshot() {
 	load_state
 	cmd_doctor >/dev/null
 	local chrome=""
-	for chrome in google-chrome google-chrome-stable chromium chromium-browser /usr/bin/google-chrome; do
+	for chrome in google-chrome google-chrome-stable chromium chromium-browser /usr/bin/google-chrome \
+		"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"; do
 		if command -v "$chrome" >/dev/null 2>&1 || [ -x "$chrome" ]; then
 			break
 		fi
 		chrome=""
 	done
-	[ -n "$chrome" ] || die "no Chrome/Chromium on PATH"
+	if [ -z "$chrome" ]; then
+		echo "screenshot: no Chrome/Chromium on PATH" >&2
+		return 1
+	fi
 	mkdir -p "$(dirname "$path")"
 	local target
 	target="$(origin)$url_path"
@@ -516,7 +534,7 @@ cmd_screenshot() {
 	mkdir -p "$profile"
 	rm -f "$path"
 	local chrome_log="$TMP_DIR/chrome.log"
-	timeout 45 "$chrome" --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage \
+	with_timeout 45 "$chrome" --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage \
 		--hide-scrollbars --window-size=1280,800 --virtual-time-budget=8000 \
 		--user-data-dir="$profile" --screenshot="$path" "$target" >"$chrome_log" 2>&1 || true
 	if [ -s "$path" ]; then
@@ -527,7 +545,7 @@ cmd_screenshot() {
 	local profile_old="$TMP_DIR/chrome-profile-old"
 	rm -rf "$profile_old"
 	mkdir -p "$profile_old"
-	timeout 45 "$chrome" --headless --disable-gpu --no-sandbox --disable-dev-shm-usage \
+	with_timeout 45 "$chrome" --headless --disable-gpu --no-sandbox --disable-dev-shm-usage \
 		--hide-scrollbars --window-size=1280,800 \
 		--user-data-dir="$profile_old" --screenshot="$path" "$target" >>"$chrome_log" 2>&1 || true
 	if [ -s "$path" ]; then
@@ -552,15 +570,23 @@ cmd_drive() {
 	case "$feature" in
 	public-home) drive_public_home ;;
 	auth-login) drive_auth_login ;;
-	*) die "drive supports public-home, auth-login (got ${feature:-empty})" ;;
+	auth-register) drive_auth_register ;;
+	lost-password) drive_lost_password ;;
+	*) die "drive supports public-home, auth-login, auth-register, lost-password (got ${feature:-empty})" ;;
 	esac
 }
 
 # Stub reader account, from tests/e2e/accounts.ts.
 READER_EMAIL='jean.dupont@example.com'
 READER_PASSWORD='Lecteur-2026!'
+# Disposable address for register and forgot-password; the stub accepts any email and stores nothing.
+VERIFY_EMAIL='verify-astrojs@example.com'
+VERIFY_PASSWORD='Verify-2026!x'
+# Cloudflare's dummy token. The always-pass test secret from launch accepts it at siteverify;
+# an empty token is rejected before siteverify is called.
+TURNSTILE_TOKEN='cf-turnstile-response=XXXX.DUMMY.TOKEN.XXXX'
 
-# One request of the auth-login round trip, sharing a cookie jar. Writes
+# One request of a scripted round trip, sharing the cookie jar $jar. Writes
 # <name>.headers (cookie values redacted) and <name>.html under $out, then
 # asserts the status, the Location path when given, and every body marker.
 auth_step() {
@@ -577,7 +603,7 @@ auth_step() {
 	if [ "$method" = POST ] && [ "${#form[@]}" -eq 0 ]; then
 		form=(--data '')
 	fi
-	local raw_headers="$TMP_DIR/auth-login.headers" status location
+	local raw_headers="$TMP_DIR/step.headers" status location
 	status="$(curl -sS -X "$method" -b "$jar" -c "$jar" -H "Origin: $(origin)" "${form[@]}" \
 		-D "$raw_headers" -o "$out/$name.html" -w '%{http_code}' --max-time 20 "$(origin)$path")" ||
 		die "$name: curl failed for $method $path"
@@ -595,19 +621,51 @@ auth_step() {
 	done
 }
 
-drive_auth_login() {
+# Fresh proof dir and cookie jar for a scripted round trip on the owned instance.
+begin_steps() {
 	cmd_doctor >/dev/null
-	out="$PROOF_DIR/auth-login"
-	jar="$TMP_DIR/auth-login.jar"
+	out="$PROOF_DIR/$1"
+	jar="$TMP_DIR/$1.jar"
 	rm -rf "$out" "$jar"
 	mkdir -p "$out"
+}
 
-	auth_step guard GET /dashboard 302 /login
+# Writes doctor.txt and manifest.json for a round trip; remaining arguments are the checks.
+end_steps() {
+	local feature="$1"
+	shift
+	rm -f "$jar"
+	cmd_doctor | tee "$out/doctor.txt" >/dev/null
+	python3 - "$out" "$(origin)" "$STUB_PORT" "$feature" "$@" <<'PY'
+import json, sys, os, datetime
+out, origin, stub, feature, checks = sys.argv[1], sys.argv[2], sys.argv[3], sys.argv[4], sys.argv[5:]
+steps = open(os.path.join(out, "steps.txt")).read().splitlines()
+files = sorted(set(os.listdir(out)) | {"manifest.json"})
+payload = {
+    "feature": feature,
+    "baseUrl": origin,
+    "strapi": f"tests/e2e/strapi-stub.ts on 127.0.0.1:{stub}",
+    "capturedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
+    "commands": steps,
+    "checks": checks,
+    "files": files,
+}
+open(os.path.join(out, "manifest.json"), "w").write(json.dumps(payload, indent=2) + "\n")
+PY
+	printf 'drove %s evidence=%s\n' "$feature" "$out"
+}
+
+drive_auth_login() {
+	begin_steps auth-login
+	auth_step guard GET /dashboard 302 /login 'private, no-store'
+	auth_step turnstile-missing POST '/login?_action=auth.login' 403 '' \
+		--form "email=$READER_EMAIL" --form "password=$READER_PASSWORD" \
+		'La vérification anti-robot a échoué'
 	auth_step wrong-password POST '/login?_action=auth.login' 400 '' \
-		--form "email=$READER_EMAIL" --form 'password=not-the-password' \
+		--form "email=$READER_EMAIL" --form 'password=not-the-password' --form "$TURNSTILE_TOKEN" \
 		'Adresse email ou mot de passe incorrect'
 	auth_step login POST '/login?_action=auth.login' 302 /dashboard \
-		--form "email=$READER_EMAIL" --form "password=$READER_PASSWORD" \
+		--form "email=$READER_EMAIL" --form "password=$READER_PASSWORD" --form "$TURNSTILE_TOKEN" \
 		'user_token=' 'user_data=' 'user_data_timestamp='
 	auth_step dashboard GET /dashboard 200 '' \
 		'Mon compte' 'Jean Dupont' "$READER_EMAIL" 'id="logout-button"' 'Informations personnelles'
@@ -615,33 +673,64 @@ drive_auth_login() {
 	auth_step login-when-logged-in GET /login 302 /dashboard
 	auth_step logout POST '/dashboard?_action=auth.logout' 302 /login
 	auth_step guard-after-logout GET /dashboard 302 /login
-	rm -f "$jar"
-
-	cmd_doctor | tee "$out/doctor.txt" >/dev/null
-	python3 - "$out" "$(origin)" "$STUB_PORT" <<'PY'
-import json, sys, os, datetime
-out, origin, stub = sys.argv[1], sys.argv[2], sys.argv[3]
-steps = open(os.path.join(out, "steps.txt")).read().splitlines()
-files = sorted(set(os.listdir(out)) | {"manifest.json"})
-payload = {
-    "feature": "auth-login",
-    "baseUrl": origin,
-    "strapi": f"tests/e2e/strapi-stub.ts on 127.0.0.1:{stub}",
-    "capturedAt": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-    "commands": steps,
-    "checks": [
-        "logged-out /dashboard -> 302 /login",
-        "wrong password -> 400 with Adresse email ou mot de passe incorrect",
-        "reader login -> 302 /dashboard, sets user_token, user_data, user_data_timestamp",
-        "/dashboard shows Mon compte, Jean Dupont, logout button; /dashboard/account shows Mon profil",
-        "logged-in /login -> 302 /dashboard",
-        "logout -> 302 /login, then /dashboard -> 302 /login",
-    ],
-    "files": files,
+	end_steps auth-login \
+		"logged-out /dashboard -> 302 /login, Cache-Control private, no-store" \
+		"login without a Turnstile token -> 403 with La vérification anti-robot a échoué" \
+		"wrong password -> 400 with Adresse email ou mot de passe incorrect" \
+		"reader login -> 302 /dashboard, sets user_token, user_data, user_data_timestamp" \
+		"/dashboard shows Mon compte, Jean Dupont, logout button; /dashboard/account shows Mon profil" \
+		"logged-in /login -> 302 /dashboard" \
+		"logout -> 302 /login, then /dashboard -> 302 /login"
 }
-open(os.path.join(out, "manifest.json"), "w").write(json.dumps(payload, indent=2) + "\n")
-PY
-	printf 'drove auth-login evidence=%s\n' "$out"
+
+drive_auth_register() {
+	begin_steps auth-register
+	auth_step mail-gate GET /register/mail-confirmation 302 /register
+	auth_step register-form GET /register 200 '' \
+		"S’inscrire" 'id="email"' 'id="password"' 'id="passwordConfirmation"' 'data-turnstile' 'private, no-store'
+	auth_step register POST '/register?_action=auth.register' 302 /register/mail-confirmation \
+		--form "email=$VERIFY_EMAIL" --form "password=$VERIFY_PASSWORD" \
+		--form "passwordConfirmation=$VERIFY_PASSWORD" --form "$TURNSTILE_TOKEN" \
+		'mail-confirmation='
+	auth_step mail-confirmation GET /register/mail-confirmation 200 '' \
+		'Confirmation de votre adresse email' "$VERIFY_EMAIL" 'Renvoyer un mail'
+	auth_step resend-mail POST '/register/mail-confirmation?_action=auth.confirmMail' 200 '' \
+		--form "email=$VERIFY_EMAIL" --form "$TURNSTILE_TOKEN" \
+		'A confirmation email has been sent to your email address.'
+	end_steps auth-register \
+		"/register/mail-confirmation without cookie -> 302 /register" \
+		"/register shows S’inscrire, email and password pair, Turnstile widget" \
+		"register -> 302 /register/mail-confirmation, sets mail-confirmation" \
+		"/register/mail-confirmation shows the submitted email" \
+		"resend -> 200 with A confirmation email has been sent to your email address."
+}
+
+drive_lost_password() {
+	begin_steps lost-password
+	auth_step wait-gate GET /lost-password/wait-mail 302 /lost-password
+	auth_step reset-gate GET /lost-password/reset 302 /lost-password
+	auth_step forgot-form GET /lost-password 200 '' \
+		'Vous avez oublié votre mot de passe ?' 'id="email"' 'Réinitialiser mon mot de passe' "Retour à l'accueil"
+	auth_step forgot POST '/lost-password?_action=password.forgotPassword' 302 /lost-password/wait-mail \
+		--form "email=$VERIFY_EMAIL" --form "$TURNSTILE_TOKEN" \
+		'wait-mail-password='
+	auth_step wait-mail GET /lost-password/wait-mail 200 '' 'Email envoyé' "$VERIFY_EMAIL"
+	auth_step reset-link GET '/lost-password/reset?code=verify' 302 /lost-password/reset 'password-reset-code='
+	auth_step reset-form GET /lost-password/reset 200 '' \
+		'Changer votre mot de passe' 'id="passwordConfirmation"' 'Changer mon mot de passe'
+	auth_step reset POST '/lost-password/reset?_action=password.resetPassword' 302 /dashboard \
+		--form 'code=verify' --form "password=$VERIFY_PASSWORD" \
+		--form "passwordConfirmation=$VERIFY_PASSWORD" --form "$TURNSTILE_TOKEN" \
+		'user_token=' 'password-reset-code=<redacted>; Path=/; Expires='
+	auth_step dashboard GET /dashboard 200 '' 'Mon compte' 'Jean Dupont'
+	auth_step logout POST '/dashboard?_action=auth.logout' 302 /login
+	end_steps lost-password \
+		"/lost-password/wait-mail and /lost-password/reset without cookies -> 302 /lost-password" \
+		"/lost-password shows the heading, email field, submit, Retour à l'accueil" \
+		"forgot -> 302 /lost-password/wait-mail, sets wait-mail-password; wait-mail shows the email" \
+		"/lost-password/reset?code=verify -> 302 /lost-password/reset, sets password-reset-code" \
+		"reset -> 302 /dashboard signed in as the stub reader, password-reset-code cleared" \
+		"logout -> 302 /login"
 }
 
 drive_public_home() {
@@ -714,7 +803,7 @@ cmd_cleanup() {
 	if [ -n "${STUB_PID:-}" ] && pid_alive "$STUB_PID"; then
 		stop_pid_tree "$STUB_PID"
 	fi
-	rm -f "$STATE_FILE" "$PID_FILE" "$ENV_FILE" "$TMP_DIR/auth-login.jar"
+	rm -f "$STATE_FILE" "$PID_FILE" "$ENV_FILE" "$TMP_DIR"/*.jar "$TMP_DIR/step.headers"
 	rm -rf "$TMP_DIR/chrome-profile" "$TMP_DIR/chrome-profile-old"
 	printf 'cleaned pid=%s port=%s stub-pid=%s evidence=%s\n' "${PID:-none}" "${PORT:-none}" "${STUB_PID:-none}" "$PROOF_DIR"
 	[ -d "$PROOF_DIR" ] || die "cleanup deleted evidence at $PROOF_DIR"
