@@ -1,3 +1,35 @@
+## [1.2.2](https://github.com/Popwers/astrojs-template/compare/v1.2.1...v1.2.2) (2026-10-25)
+
+
+### Performance Improvements
+
+* **assets:** hover prefetch with viewport on the nav, AVIF/WebP LCP example, lighter precache ([07efeee](https://github.com/Popwers/astrojs-template/commit/07efeee597eb7a2d9a77334c90526226e01549f2))
+* **cache:** edge-cacheable anonymous HTML, no-store for sessions and errors ([0d709a7](https://github.com/Popwers/astrojs-template/commit/0d709a7cc059fc9df3e0b88f7e2bc1b50466d8cd))
+* **render:** prerender by default, on-demand only for forms and session routes ([685a31e](https://github.com/Popwers/astrojs-template/commit/685a31e3054d83af8cd98fd1a13eabcf42823dbd))
+* **render:** serve the Strapi legal pages on demand, cached at the edge ([42e31fb](https://github.com/Popwers/astrojs-template/commit/42e31fb9355fe604794c238a0e5665579859e92d))
+* **server:** serve precompressed assets, cache headers on static files, drain on SIGTERM ([04ed194](https://github.com/Popwers/astrojs-template/commit/04ed194eed091ae2c02984aff62d4252f9cc542f))
+
+## [1.2.1](https://github.com/Popwers/astrojs-template/compare/v1.2.0...v1.2.1) (2026-10-22)
+
+
+### Bug Fixes
+
+* **auth:** one password pair and a rate limit on password reset ([#36](https://github.com/Popwers/astrojs-template/issues/36)) ([05774ec](https://github.com/Popwers/astrojs-template/commit/05774ecfa015bd88329910f657263b7a20fa9d80))
+
+# [1.2.0](https://github.com/Popwers/astrojs-template/compare/v1.1.0...v1.2.0) (2026-10-21)
+
+
+### Features
+
+* **auth:** render Turnstile in interaction-only mode ([#37](https://github.com/Popwers/astrojs-template/issues/37)) ([be03fe1](https://github.com/Popwers/astrojs-template/commit/be03fe1f6c2aa26bf2105919fcbb4fd8407a8c98))
+
+# [1.1.0](https://github.com/Popwers/astrojs-template/compare/v1.0.3...v1.1.0) (2026-10-20)
+
+
+### Features
+
+* **auth:** verify Cloudflare Turnstile on public forms ([#35](https://github.com/Popwers/astrojs-template/issues/35)) ([7f6ab51](https://github.com/Popwers/astrojs-template/commit/7f6ab513c59804a28114ba995a23afeebaf019b3))
+
 ## [1.0.3](https://github.com/Popwers/astrojs-template/compare/v1.0.2...v1.0.3) (2026-10-19)
 
 

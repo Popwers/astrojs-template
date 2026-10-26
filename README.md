@@ -19,6 +19,8 @@ make dev               # Astro dev server at localhost:4321
 | `STRAPI_URL` | Yes (prod) | `https://api.your-project.fr` | Base URL of the Strapi backend. The default lets `make build` succeed without a real backend. Set it for any real run. |
 | `STRAPI_TOKEN` | Yes (prod) | `replace-me-with-a-strapi-api-token` | Strapi API token. The placeholder keeps the build green out of the box. Replace it before talking to a real backend. |
 | `COOKIE_SIGNING_SECRET` | Yes | none | HMAC secret for session cookies. The process throws if this is unset. |
+| `TURNSTILE_SITE_KEY` | Yes | none | Public key of the Cloudflare Turnstile widget. Read at runtime, so one image serves every environment. Prerendered pages make the build check every secret, so a build needs a value too, as for `COOKIE_SIGNING_SECRET`. `make verify` passes the test keys. |
+| `TURNSTILE_SECRET_KEY` | Yes | none | Secret key of the same widget. The server checks every form token with it. |
 | `TRUST_PROXY` | No | none | `cloudflare` to rate-limit on `CF-Connecting-IP`. `1` or `forwarded` to use `X-Forwarded-For`. Unset ignores spoofable forwarded headers. |
 | `SENTRY_AUTH_TOKEN` | No | none | Build-time token for Sentry source-map upload. Pass it as a BuildKit secret, never as an image ARG or ENV. |
 | `SENTRY_RELEASE` | No | none | Deployed git SHA, so errors map to the commit that introduced them. |
@@ -32,6 +34,7 @@ When you start a real project from this template:
 - [ ] Rename the project: `name` in `package.json`.
 - [ ] Set the canonical site URL: `site` in `astro.config.mjs` (and the `image.domains` / `remotePatterns` host).
 - [ ] Fill `.env` from `.env.example`: `STRAPI_URL`, `STRAPI_TOKEN`, `COOKIE_SIGNING_SECRET`.
+- [ ] Create a Turnstile widget in the Cloudflare dashboard with the project hostnames. Set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` at runtime.
 - [ ] Wire Sentry: org/project in `astro.config.mjs`, `PUBLIC_SENTRY_DSN` as a build arg.
 - [ ] Run `make install` once per clone so Git hooks (staged checks on commit, `make verify` on push) land in `.vite-hooks/`.
 - [ ] Regenerate PWA assets from your own icon: `vp run generate-pwa-assets`.
@@ -87,7 +90,36 @@ Type `make` (or `make help`) to list targets.
 
 The test script is `vp test`. Tests import from `vitest`. The Makefile target is `vp test`, not `vp run test`.
 
-The E2E suite in `tests/e2e` runs through the [e2e](https://e2e.tester.army) runner, not Vitest. Run `vp run test:e2e`. The runner starts `tests/e2e/serve.sh`, which starts the Bun stub Strapi on port 41337, builds the app and serves it on port 44321. No real Strapi is needed. Chromium downloads on the first run. `vp run test:e2e:ci` skips the `agent`-tagged test, whose `agent.act` steps need a model login (`bunx e2e login spacexai`). Every test ends with a page-error guard (`tests/e2e/fixtures.ts`): it fails on `console.error`, uncaught errors, failed same-origin loads (HTTP 4xx/5xx) and CSP violations, and a test that expects one pushes a pattern onto `allowedPageErrors`. Results land in `.e2e/report.json`, failure traces and screenshots in `.e2e/artifacts/`, the app log in `.e2e/logs/app.log`.
+The E2E suite in `tests/e2e` runs through the [e2e](https://e2e.tester.army) runner, not Vitest. Run `vp run test:e2e`. The runner starts `tests/e2e/serve.sh`, which starts the Bun stub Strapi on port 41337, builds the app and serves it on port 44321. Three more instances of the same build cover Turnstile: port 44322 with the always-fail secret (server rejections), port 44323 with the site key that always asks for a click, and port 44324 with the site key that always blocks. No real Strapi is needed, but the Turnstile widget loads from `challenges.cloudflare.com`, so the suite needs network access to it. Chromium downloads on the first run. `vp run test:e2e:ci` skips the `agent`-tagged test, whose `agent.act` steps need a model login (`bunx e2e login spacexai`). Every test ends with a page-error guard (`tests/e2e/fixtures.ts`): it fails on `console.error`, uncaught errors, failed same-origin loads (HTTP 4xx/5xx) and CSP violations, and a test that expects one pushes a pattern onto `allowedPageErrors`. Results land in `.e2e/report.json`, failure traces and screenshots in `.e2e/artifacts/`, the app log in `.e2e/logs/app.log`.
+
+## Bot protection (Turnstile)
+
+Every public form carries a [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/) widget: login, register, mail confirmation, forgot password, the resend page and reset password. The widget is a managed one with explicit rendering and `appearance: 'interaction-only'`: most visitors pass in the background and never see it, and it takes no room in the form until Cloudflare asks for a click. It fills a `cf-turnstile-response` field and renews an expired token on its own (`refresh-expired: 'auto'`).
+
+A submit made before the token exists is held, never posted without it. A line under the widget tells the visitor what happens:
+
+| Widget | What the visitor sees |
+| --- | --- |
+| Challenge still running | "Vérification anti-robot en cours…", then the form sends itself when the token arrives |
+| Cloudflare asks for a click | The checkbox and "Cochez la case ci-dessus pour envoyer le formulaire.", then the form sends itself once it is ticked |
+| No token after 8 seconds | The submit is dropped with a notice to retry, and the button stays usable |
+| Challenge failed | A failure notice. Turnstile retries on its own, and the next submit resets the widget |
+| Script blocked (content blocker, network) | A notice asking to disable the blocker or reload the page |
+ The action verifies the token with Cloudflare's siteverify endpoint before it calls Strapi. It fails closed: a missing or refused token answers `FORBIDDEN`, and an unreachable or misconfigured siteverify answers `SERVICE_UNAVAILABLE` and logs the cause.
+
+Forms behind a login (profile, dashboard) are not covered.
+
+To protect a new public form:
+
+1. Put `<Turnstile />` (`@components/site/global/input/Turnstile.astro`) inside the `<form>`, before the submit button.
+2. Spread `...turnstile` (`@actions/schema/turnstile`) into the form's Zod schema.
+3. Call `await assertTurnstile(context, input['cf-turnstile-response'])` (`@lib/turnstile`) in the action handler, after the rate limit and before any Strapi call.
+
+Keep the page server-rendered (the default). A prerendered page would carry the build's site key in its HTML.
+
+Local development and tests use Cloudflare's test keys, pre-filled in `.env.example`. The site key `1x00000000000000000000AA` with the secret `1x0000000000000000000000000000000AA` always passes. The site key `2x00000000000000000000AB` always blocks, the site key `3x00000000000000000000FF` always asks for a click (the widget then shows), and the secret `2x0000000000000000000000000000000AA` always fails.
+
+This template sets no Content Security Policy. If you add one, allow `https://challenges.cloudflare.com` in `script-src` and `frame-src`.
 
 ## Checks
 
@@ -111,14 +143,27 @@ Error monitoring via Sentry (`@sentry/astro`, prod-only). The DSN comes from `PU
 
 Known browser noise (ClientRouter aborts, WebView and link-preview crawler errors, visitor network failures) is dropped by anchored patterns in `src/lib/sentryNoise.ts`, tested in `tests/lib/sentryNoise.test.ts`: add a pattern there with a noise sample and a real-bug sample next to it, never a bare substring such as `'AbortError'`. A failed call to the CMS (`STRAPI_URL` at build time, default in `astro.config.mjs`) is still reported.
 
+## Performance (réglages par défaut)
+
+Pensé pour un visiteur loin du serveur (La Réunion → Hetzner, 300 à 500 ms par aller-retour) : le HTML est prérendu ou cachable à l'edge, le premier affichage reste léger.
+
+- **Statique par défaut** (`output: 'static'`, `astro.config.mjs`) : toute page est prérendue au build. Une page qui lit la session, traite un formulaire ou affiche du contenu Strapi déclare `export const prerender = false` (ex. `src/pages/login.astro`, `src/pages/mentions-legales.astro`). L'adaptateur Node (`standalone`) sert ces routes, les actions et les server islands. Le balisage propre au visiteur va dans un `server:defer` (`AvatarIsland`).
+- **Cache HTTP** (`server/cacheControl.ts`, `src/lib/pageCache.ts`, `src/middleware/pageCache.ts`) : HTML public anonyme en `public, max-age=0, s-maxage=86400, stale-while-revalidate=604800` ; `private, no-store` dès que le cookie `user_token` existe, pour `PRIVATE_ROUTES` (`src/data/routes.ts`), les server islands, les redirections, les erreurs (un asset `/_astro/` absent n'est jamais caché) et les POST. Une page peut se retirer elle-même avec `Astro.response.headers.set('Cache-Control', PRIVATE_CACHE_CONTROL)`. Assets hashés en `immutable`. Côté Cloudflare : règle de cache « Eligible » sur le HTML, contournée quand le cookie `user_token` est présent.
+- **Compression** : `src/integrations/precompress.ts` écrit `.br` (qualité 11) et `.gz` à côté de chaque fichier texte de `dist/client` ; `server/start.ts` les sert selon `Accept-Encoding` (`Vary`, `ETag`, 304). Le HTML rendu à la demande n'est pas compressé par Node : Cloudflare ou le proxy s'en charge.
+- **Arrêt propre** : sur `SIGTERM`, `start.mjs` cesse d'accepter, laisse finir les requêtes en cours et sort en 0 sous `SHUTDOWN_TIMEOUT_MS` (8 s, sous les 10 s de Coolify). Sans ça, Bun en PID 1 ignorait `SIGTERM` jusqu'au `SIGKILL`.
+- **Navigation** : `prefetch` au survol par défaut, `data-astro-prefetch='viewport'` sur la nav principale.
+- **Premier affichage** : `compressHTML`, `build.inlineStylesheets: 'auto'` (CSS < 4 ko inline), polices `@fontsource-variable/*` self-hostées et préchargées (`src/layouts/base.astro`), image LCP via `<Picture formats={['avif', 'webp']} priority>` (`src/pages/index.astro`), îlots sous la ligne de flottaison en `client:visible` (`src/pages/dashboard/account.astro`). Le service worker ne précache pas les vendors d'upload (HEIC, compression d'image).
+- **Build sous Bun** : `make build` = `bun --bun vp run build`, comme l'image Docker.
+
 ## Deployment
 
 Multi-stage Docker build (Alpine + Bun):
 
 - `base` → `deps` (prod-only via `bun install --no-dev`) → `build` → `runtime`
 - BuildKit cache mount on `~/.bun/install/cache`
-- `HEALTHCHECK` baked in: `fetch('/login')` returns < 500
-- Exposes port `4321`, runtime via `bun ./start.mjs`
+- The build RUN sets build-only placeholders for the required `astro:env` secrets (prerendering loads them); real values come at runtime
+- `HEALTHCHECK` baked in: `GET /api/health` returns 200
+- Exposes port `4321`, runtime via `bun ./start.mjs` (`server/`), graceful exit on `SIGTERM`
 
 ```bash
 docker build --secret id=SENTRY_AUTH_TOKEN,env=SENTRY_AUTH_TOKEN -t your-project .
@@ -127,7 +172,7 @@ docker run -p 4321:4321 --env-file .env your-project
 
 ## Technologies
 
-- [Astro](https://astro.build) (SSR)
+- [Astro](https://astro.build) (static by default, on-demand routes on the Node adapter)
 - [React](https://react.dev) (islands)
 - [Legend State](https://legendapp.com/open-source/state/) (reactive state)
 - [Tailwind CSS](https://tailwindcss.com)

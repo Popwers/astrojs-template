@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import node from '@astrojs/node';
 import react from '@astrojs/react';
 import sitemap from '@astrojs/sitemap';
@@ -8,21 +10,31 @@ import AstroPWA from '@vite-pwa/astro';
 import { defineConfig, envField } from 'astro/config';
 
 import { ACTION_BODY_SIZE_LIMIT } from './src/data/userOptions.ts';
+import precompress from './src/integrations/precompress.ts';
 
 /** Deployed commit SHA (Dockerfile maps SOURCE_COMMIT to SENTRY_RELEASE). */
 const sentryRelease = process.env.SENTRY_RELEASE || undefined;
 
 const STRAPI_URL_DEFAULT = 'https://api.your-project.fr';
 
+/** Client half of the build (`build.client`), where the Node adapter serves static files from. */
+const clientDir = fileURLToPath(new URL('./dist/client/', import.meta.url));
+
 export default defineConfig({
 	server: {
 		host: true,
 	},
-	output: 'server',
+	// Static by default: every page is prerendered at build unless it exports `prerender = false`
+	// (forms, session, auth guards). The Node adapter serves those on-demand routes, the actions and
+	// the server islands, and hands the prerendered HTML and assets to its static handler.
+	output: 'static',
 	adapter: node({
 		mode: 'standalone',
 	}),
 	site: 'https://your-project.fr',
+	// Prerendered pages get the same slash-less URL as the on-demand ones (canonical, sitemap):
+	// `normalizePath` and the static handler redirect `/page/` to `/page`.
+	trailingSlash: 'never',
 	// Astro caps Action request bodies at 1 MB by default, which would reject any avatar over
 	// that limit. The ceiling is derived from MAX_FILE_SIZE in userOptions.ts — the single source
 	// of truth — so there is one place to change the limit.
@@ -55,6 +67,15 @@ export default defineConfig({
 			strategies: 'injectManifest',
 			srcDir: 'src',
 			filename: 'sw.ts',
+			// @vite-pwa/astro targets build.client only for output 'server'; with 'static' + adapter it
+			// would write the worker and glob the precache in dist/server.
+			outDir: clientDir,
+			// The upload helpers (HEIC decoder, image compression) load on demand in the dashboard;
+			// precaching them would make every first visit download 1.4 MB more.
+			injectManifest: {
+				globDirectory: clientDir,
+				globIgnores: ['**/vendor-heic2any.*', '**/vendor-browser-image-compression.*'],
+			},
 			workbox: {
 				navigateFallback: '/',
 				globPatterns: ['**/*.{css,js,html,svg,png,ico,txt,woff2}'],
@@ -104,10 +125,20 @@ export default defineConfig({
 				navigateFallbackAllowlist: [/^\/$/],
 			},
 		}),
+		// Last: writes .br/.gz next to the final files (after the minifier and the service worker).
+		precompress(),
 	],
+	// Every link prefetches on hover/focus; the main nav (`data-astro-prefetch='viewport'`) as soon as
+	// it is visible. A prefetched page then costs no round trip to Hetzner.
 	prefetch: {
 		prefetchAll: true,
-		defaultStrategy: 'viewport',
+		defaultStrategy: 'hover',
+	},
+	// Astro defaults, stated so a project does not lose them by accident: minified HTML, and
+	// stylesheets under 4 kB inlined in <head> (no extra request), larger ones linked and cached.
+	compressHTML: true,
+	build: {
+		inlineStylesheets: 'auto',
 	},
 	cacheDir: './buildCache',
 	env: {
@@ -123,6 +154,16 @@ export default defineConfig({
 				default: 'replace-me-with-a-strapi-api-token',
 			}),
 			COOKIE_SIGNING_SECRET: envField.string({
+				context: 'server',
+				access: 'secret',
+			}),
+			// The site key is public, but `secret` makes astro:env read it at runtime instead of
+			// inlining it at build, so one Docker image serves every environment.
+			TURNSTILE_SITE_KEY: envField.string({
+				context: 'server',
+				access: 'secret',
+			}),
+			TURNSTILE_SECRET_KEY: envField.string({
 				context: 'server',
 				access: 'secret',
 			}),

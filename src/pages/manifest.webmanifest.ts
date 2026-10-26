@@ -1,8 +1,6 @@
 import { withPwaAssetVersion } from '@lib/pwaAssets';
 import type { APIRoute } from 'astro';
 
-export const prerender = true;
-
 export const GET: APIRoute = () => {
 	const manifest = {
 		$schema: 'https://json.schemastore.org/web-manifest-combined.json',

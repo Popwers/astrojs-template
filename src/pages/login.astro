@@ -1,10 +1,14 @@
 ---
+// On demand: form actions, session cookies and auth guards run per request.
+export const prerender = false;
+
 import { actions, isInputError } from 'astro:actions';
 
 import ErrorInput from '@components/site/global/input/ErrorInput.astro';
 import PasswordInput from '@components/site/global/input/PasswordInput';
 import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
 import SubmitButton from '@components/site/global/input/SubmitButton';
+import Turnstile from '@components/site/global/input/Turnstile.astro';
 import LoginLayout from '@layouts/login.astro';
 
 import DEFAULT_COOKIE_OPTIONS from '@data/cookieOptions';
@@ -85,6 +89,8 @@ const hasServerUnavailableError = sessionError === 'server-unavailable';
 		<div class='form-group'>
 			<a class='text-blue-saturated font-bold' href='/lost-password'>Mot de passe oublié ?</a>
 		</div>
+
+		<Turnstile />
 
 		<ReturnInfo result={result} />
 

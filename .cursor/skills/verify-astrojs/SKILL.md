@@ -29,6 +29,7 @@ What launch does:
    - `COOKIE_SIGNING_SECRET` — random 32-byte hex; required, the process throws if unset
    - `STRAPI_URL=http://127.0.0.1:<stub port>` — the loopback stub, never a public host
    - `STRAPI_TOKEN=verify-stub-token`
+   - `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` — Cloudflare's always-pass test keys; the forms need network access to `challenges.cloudflare.com`
 6. Waits until `GET /login` answers `< 500`.
 
 Keep `--ignore-lock`. Astro 7 detects an agent caller and moves `astro dev` to a detached background server unless that flag is set, which orphans the server from the recorded PID. Do not write `.env` in the repo. Do not use `vp run dev -- --port` (Vite+ forwards those flags as a broken Astro command). Do not use `astro preview`; production-shaped boot is `bun run build` then `bun ./start.mjs` with `HOST`/`PORT` and the same env, only when a recipe says so.
@@ -56,7 +57,7 @@ Doctor answers "is this instance worth driving?" It must be yes on all of:
 - State file exists at `/tmp/verify-astrojs/state` and was written by `launch`.
 - Recorded app PID and Strapi stub PID are alive.
 - Recorded app port and stub port are listening.
-- `GET /login` is HTTP `< 500` and the body contains `Se connecter` (same probe as the Docker `HEALTHCHECK`).
+- `GET /login` is HTTP `< 500` and the body contains `Se connecter` (the Docker `HEALTHCHECK` probes `/api/health`).
 - `GET /` is HTTP 200 and the body contains `Welcome to Astro`.
 
 If anything looks off, stop. Do not attach to `localhost:4321` or any instance this run did not start.
