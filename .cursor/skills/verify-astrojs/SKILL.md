@@ -141,7 +141,7 @@ Standards:
 - Capture the action and the result, not only the last screen.
 - A 200 on `/` is not enough for `public-home`. The HTML must contain `Welcome to Astro`.
 - A 200 on `/login` is not enough for `auth-login`. Assert `Se connecter`, `#email`, `#password`, and the logged-out `/dashboard` → `/login` redirect.
-- Chrome screenshots must show the page identity (`Welcome to Astro` on home, `Se connecter` on login). Headless Chrome is `/usr/bin/google-chrome` or `google-chrome` when present. Chrome often writes the PNG and then hangs; `control-astrojs screenshot` treats a non-empty file as success and kills the process. On a host where headless Chrome cannot paint at all (no PNG even for a `data:` URL), `drive public-home` skips the PNG; report the painted frame unreachable on that host and keep the HTML markers as proof.
+- Chrome screenshots must show the page identity (`Welcome to Astro` on home, `Se connecter` on login). Headless Chrome is `google-chrome` or `/usr/bin/google-chrome` on Linux and `/Applications/Google Chrome.app` on macOS. Chrome often writes the PNG and then hangs; `control-astrojs screenshot` treats a non-empty file as success and kills the process. On a host with no Chrome, or where headless Chrome cannot paint at all (no PNG even for a `data:` URL), `drive public-home` skips the PNG; report the painted frame unreachable on that host and keep the HTML markers as proof.
 
 Committed proofs live at `proof/public-home/` and `proof/auth-login/`. Later runs may overwrite a folder only when re-proving the same feature.
 

@@ -497,6 +497,11 @@ cmd_http() {
 	http_get "$method" "$path" "$follow" "$body" "$headers"
 }
 
+# GNU `timeout` is missing on macOS; perl ships on both hosts.
+with_timeout() {
+	perl -e 'alarm shift; exec @ARGV or die "exec $ARGV[0]: $!\n"' "$@"
+}
+
 cmd_screenshot() {
 	local path="" url_path="/"
 	while [ $# -gt 0 ]; do
@@ -510,13 +515,17 @@ cmd_screenshot() {
 	load_state
 	cmd_doctor >/dev/null
 	local chrome=""
-	for chrome in google-chrome google-chrome-stable chromium chromium-browser /usr/bin/google-chrome; do
+	for chrome in google-chrome google-chrome-stable chromium chromium-browser /usr/bin/google-chrome \
+		"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"; do
 		if command -v "$chrome" >/dev/null 2>&1 || [ -x "$chrome" ]; then
 			break
 		fi
 		chrome=""
 	done
-	[ -n "$chrome" ] || die "no Chrome/Chromium on PATH"
+	if [ -z "$chrome" ]; then
+		echo "screenshot: no Chrome/Chromium on PATH" >&2
+		return 1
+	fi
 	mkdir -p "$(dirname "$path")"
 	local target
 	target="$(origin)$url_path"
@@ -525,7 +534,7 @@ cmd_screenshot() {
 	mkdir -p "$profile"
 	rm -f "$path"
 	local chrome_log="$TMP_DIR/chrome.log"
-	timeout 45 "$chrome" --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage \
+	with_timeout 45 "$chrome" --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage \
 		--hide-scrollbars --window-size=1280,800 --virtual-time-budget=8000 \
 		--user-data-dir="$profile" --screenshot="$path" "$target" >"$chrome_log" 2>&1 || true
 	if [ -s "$path" ]; then
@@ -536,7 +545,7 @@ cmd_screenshot() {
 	local profile_old="$TMP_DIR/chrome-profile-old"
 	rm -rf "$profile_old"
 	mkdir -p "$profile_old"
-	timeout 45 "$chrome" --headless --disable-gpu --no-sandbox --disable-dev-shm-usage \
+	with_timeout 45 "$chrome" --headless --disable-gpu --no-sandbox --disable-dev-shm-usage \
 		--hide-scrollbars --window-size=1280,800 \
 		--user-data-dir="$profile_old" --screenshot="$path" "$target" >>"$chrome_log" 2>&1 || true
 	if [ -s "$path" ]; then
@@ -678,7 +687,7 @@ drive_auth_register() {
 	begin_steps auth-register
 	auth_step mail-gate GET /register/mail-confirmation 302 /register
 	auth_step register-form GET /register 200 '' \
-		'S’inscrire' 'id="email"' 'id="password"' 'id="passwordConfirmation"' 'data-turnstile' 'private, no-store'
+		"S’inscrire" 'id="email"' 'id="password"' 'id="passwordConfirmation"' 'data-turnstile' 'private, no-store'
 	auth_step register POST '/register?_action=auth.register' 302 /register/mail-confirmation \
 		--form "email=$VERIFY_EMAIL" --form "password=$VERIFY_PASSWORD" \
 		--form "passwordConfirmation=$VERIFY_PASSWORD" --form "$TURNSTILE_TOKEN" \
