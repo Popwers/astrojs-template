@@ -19,5 +19,5 @@
 		"types": ["astro/client", "vite-plugin-pwa/vanillajs", "vite-plugin-pwa/info", "bun"]
 	},
 	"include": [".astro/types.d.ts", "**/*"],
-	"exclude": ["dist"]
+	"exclude": ["dist", "buildCache"]
 }
