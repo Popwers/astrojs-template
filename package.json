@@ -27,7 +27,7 @@
     "astro-seo": "^1.2.0",
     "astro-seo-schema": "^7.0.1",
     "browser-image-compression": "^2.0.2",
-    "cn": "^0.4.0",
+    "cn": "^0.5.0",
     "heic2any": "^0.0.4",
     "motion": "^14.6.0",
     "react": "^19.3.1",
