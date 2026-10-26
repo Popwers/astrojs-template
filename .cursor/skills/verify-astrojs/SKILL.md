@@ -29,7 +29,7 @@ What launch does:
    - `COOKIE_SIGNING_SECRET` — random 32-byte hex; required, the process throws if unset
    - `STRAPI_URL=http://127.0.0.1:<stub port>` — the loopback stub, never a public host
    - `STRAPI_TOKEN=verify-stub-token`
-   - `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` — Cloudflare's always-pass test keys; the forms need network access to `challenges.cloudflare.com`
+   - `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` — Cloudflare's always-pass test keys (`1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`); the forms and the server-side siteverify need network access to `challenges.cloudflare.com`
 6. Waits until `GET /login` answers `< 500`.
 
 Keep `--ignore-lock`. Astro 7 detects an agent caller and moves `astro dev` to a detached background server unless that flag is set, which orphans the server from the recorded PID. Do not write `.env` in the repo. Do not use `vp run dev -- --port` (Vite+ forwards those flags as a broken Astro command). Do not use `astro preview`; production-shaped boot is `bun run build` then `bun ./start.mjs` with `HOST`/`PORT` and the same env, only when a recipe says so.
@@ -108,7 +108,7 @@ Route gates (`src/data/routes.ts` + middleware):
 - `/lost-password/wait-mail` without cookie `wait-mail-password` → 302 `/lost-password`
 - `/lost-password/reset` without cookie `password-reset-code` (or `?code=`) → 302 `/lost-password`
 
-A successful login sets `user_token`, `user_data`, and `user_data_timestamp`. Login works on this stack against the stub reader `jean.dupont@example.com` / `Lecteur-2026!` (`tests/e2e/accounts.ts`); `drive auth-login` runs the round trip with a cookie jar. Action POSTs need `Origin: <origin>` or Astro answers 403. Register, mail confirmation, and password-reset POSTs call Strapi endpoints the stub does not serve, so they stay **verified-unreachable**. Do not POST credentials at a shared or production API to "complete" the map. Do not mint session cookies by writing `user_token` by hand.
+A successful login sets `user_token`, `user_data`, and `user_data_timestamp`. Login works on this stack against the stub reader `jean.dupont@example.com` / `Lecteur-2026!` (`tests/e2e/accounts.ts`); `drive auth-login` runs the round trip with a cookie jar. Action POSTs need `Origin: <origin>` or Astro answers 403. Public form actions also need `cf-turnstile-response`: without it they answer 403 before Strapi; `drive auth-login` posts Cloudflare's dummy token, which the test secret accepts. Register, mail confirmation, and password-reset POSTs call Strapi endpoints the stub does not serve, so they stay **verified-unreachable**. Do not POST credentials at a shared or production API to "complete" the map. Do not mint session cookies by writing `user_token` by hand.
 
 `AvatarIsland` is `server:defer`. First-paint `GET /` often has the `Loader` fallback instead of `Se connecter`. Prove the login control on `/login`, or after hydration in Chrome.
 
@@ -160,7 +160,7 @@ If launch failed halfway, run cleanup anyway. The state file records whatever wa
 | `http GET PATH [--no-follow]` | Request against the owned origin |
 | `screenshot --path FILE [--url /path]` | Headless Chrome PNG of a path |
 | `drive public-home` | Scripted recipe + `proof/public-home/` |
-| `drive auth-login` | Stub login round trip (guard, wrong password, login, dashboard, account, logout) + `proof/auth-login/`. Other feature IDs are driven with `http` from their feature file |
+| `drive auth-login` | Stub login round trip (guard, no Turnstile token, wrong password, login, dashboard, account, logout) + `proof/auth-login/`. Other feature IDs are driven with `http` from their feature file |
 | `cleanup` | Tear down what this run started |
 | `self-check` | CLI smoke (help + doctor-without-instance). Does not start the app |
 

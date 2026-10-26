@@ -1,8 +1,8 @@
-pid=1386841
-port=4331
-origin=http://127.0.0.1:4331
+pid=24209
+port=42010
+origin=http://127.0.0.1:42010
 owned=true
-strapi=stub:4381
+strapi=stub:42011
 login=200
 home=200
 markers=Se connecter,Welcome to Astro

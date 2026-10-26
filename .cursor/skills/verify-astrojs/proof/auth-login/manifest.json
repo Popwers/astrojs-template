@@ -1,10 +1,11 @@
 {
   "feature": "auth-login",
-  "baseUrl": "http://127.0.0.1:4331",
-  "strapi": "tests/e2e/strapi-stub.ts on 127.0.0.1:4381",
-  "capturedAt": "2026-10-12T00:43:03.332022+00:00",
+  "baseUrl": "http://127.0.0.1:42010",
+  "strapi": "tests/e2e/strapi-stub.ts on 127.0.0.1:42011",
+  "capturedAt": "2026-10-26T12:43:38.492979+00:00",
   "commands": [
     "guard GET /dashboard -> 302 /login",
+    "no-turnstile POST /login?_action=auth.login -> 403",
     "wrong-password POST /login?_action=auth.login -> 400",
     "login POST /login?_action=auth.login -> 302 /dashboard",
     "dashboard GET /dashboard -> 200",
@@ -15,8 +16,9 @@
   ],
   "checks": [
     "logged-out /dashboard -> 302 /login",
-    "wrong password -> 400 with Adresse email ou mot de passe incorrect",
-    "reader login -> 302 /dashboard, sets user_token, user_data, user_data_timestamp",
+    "login without a Turnstile token -> 403 with La v\u00e9rification anti-robot a \u00e9chou\u00e9",
+    "wrong password with the test token -> 400 with Adresse email ou mot de passe incorrect",
+    "reader login with the test token -> 302 /dashboard, sets user_token, user_data, user_data_timestamp",
     "/dashboard shows Mon compte, Jean Dupont, logout button; /dashboard/account shows Mon profil",
     "logged-in /login -> 302 /dashboard",
     "logout -> 302 /login, then /dashboard -> 302 /login"
@@ -38,6 +40,8 @@
     "logout.headers",
     "logout.html",
     "manifest.json",
+    "no-turnstile.headers",
+    "no-turnstile.html",
     "steps.txt",
     "wrong-password.headers",
     "wrong-password.html"

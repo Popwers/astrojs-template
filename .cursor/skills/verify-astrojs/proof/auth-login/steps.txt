@@ -1,4 +1,5 @@
 guard GET /dashboard -> 302 /login
+no-turnstile POST /login?_action=auth.login -> 403
 wrong-password POST /login?_action=auth.login -> 400
 login POST /login?_action=auth.login -> 302 /dashboard
 dashboard GET /dashboard -> 200

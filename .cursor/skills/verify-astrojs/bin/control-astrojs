@@ -559,6 +559,9 @@ cmd_drive() {
 # Stub reader account, from tests/e2e/accounts.ts.
 READER_EMAIL='jean.dupont@example.com'
 READER_PASSWORD='Lecteur-2026!'
+# Cloudflare's documented dummy token. The always-pass test secret that launch sets verifies any
+# non-empty token at siteverify, so the server still makes the real network call.
+TURNSTILE_TEST_TOKEN='XXXX.DUMMY.TOKEN.XXXX'
 
 # One request of the auth-login round trip, sharing a cookie jar. Writes
 # <name>.headers (cookie values redacted) and <name>.html under $out, then
@@ -603,11 +606,16 @@ drive_auth_login() {
 	mkdir -p "$out"
 
 	auth_step guard GET /dashboard 302 /login
+	auth_step no-turnstile POST '/login?_action=auth.login' 403 '' \
+		--form "email=$READER_EMAIL" --form "password=$READER_PASSWORD" \
+		'La vérification anti-robot a échoué'
 	auth_step wrong-password POST '/login?_action=auth.login' 400 '' \
 		--form "email=$READER_EMAIL" --form 'password=not-the-password' \
+		--form "cf-turnstile-response=$TURNSTILE_TEST_TOKEN" \
 		'Adresse email ou mot de passe incorrect'
 	auth_step login POST '/login?_action=auth.login' 302 /dashboard \
 		--form "email=$READER_EMAIL" --form "password=$READER_PASSWORD" \
+		--form "cf-turnstile-response=$TURNSTILE_TEST_TOKEN" \
 		'user_token=' 'user_data=' 'user_data_timestamp='
 	auth_step dashboard GET /dashboard 200 '' \
 		'Mon compte' 'Jean Dupont' "$READER_EMAIL" 'id="logout-button"' 'Informations personnelles'
@@ -631,8 +639,9 @@ payload = {
     "commands": steps,
     "checks": [
         "logged-out /dashboard -> 302 /login",
-        "wrong password -> 400 with Adresse email ou mot de passe incorrect",
-        "reader login -> 302 /dashboard, sets user_token, user_data, user_data_timestamp",
+        "login without a Turnstile token -> 403 with La vérification anti-robot a échoué",
+        "wrong password with the test token -> 400 with Adresse email ou mot de passe incorrect",
+        "reader login with the test token -> 302 /dashboard, sets user_token, user_data, user_data_timestamp",
         "/dashboard shows Mon compte, Jean Dupont, logout button; /dashboard/account shows Mon profil",
         "logged-in /login -> 302 /dashboard",
         "logout -> 302 /login, then /dashboard -> 302 /login",
