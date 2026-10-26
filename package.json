@@ -40,7 +40,7 @@
   "devDependencies": {
     "@ai-sdk/xai": "^5.0.30",
     "@astrojs/check": "^0.9.12",
-    "@e2e-dev/web": "^0.14.0",
+    "@e2e-dev/web": "^0.15.3",
     "@oxlint/plugins": "1.89.0",
     "@playform/compress": "^0.2.5",
     "@semantic-release/changelog": "^7.0.0",
@@ -55,7 +55,7 @@
     "ai": "^7.0.153",
     "baseline-browser-mapping": "^2.11.33",
     "browserslist": "4.29.4",
-    "e2e": "^0.19.0",
+    "e2e": "^0.21.3",
     "sass": "^1.106.1",
     "semantic-release": "^25.0.9",
     "tailwindcss": "^4.3.3",
