@@ -24,7 +24,7 @@ What launch does:
 1. Writes `/tmp/verify-astrojs/state` and `run.env` (generated `COOKIE_SIGNING_SECRET`, never committed).
 2. Runs `bun install` if `node_modules` is missing.
 3. Puts Node `>=22.12` on `PATH` (Astro 7 refuses system Node 20). Prefers `vp env` Node, then Vite+ runtimes under `~/.local/share/vite-plus/js_runtime/node/`.
-4. Starts `bun tests/e2e/strapi-stub.ts` with `STRAPI_STUB_PORT=<stub port>` and waits until it answers. The stub knows two users from `tests/e2e/accounts.ts` and serves only `auth/local`, `users/me`, and `PUT users/:id`; every other Strapi call gets a 404 envelope, so CMS content falls back to empty.
+4. Starts `bun tests/e2e/strapi-stub.ts` with `STRAPI_STUB_PORT=<stub port>` and waits until it answers. The stub knows two users from `tests/e2e/accounts.ts` and serves `auth/local`, `auth/local/register`, `auth/send-email-confirmation`, `auth/forgot-password`, `auth/reset-password`, `users/me`, and `PUT users/:id`. Register and forgot-password accept any email and store nothing; reset-password ignores the code and signs the reader in without changing their password. Every other Strapi call gets a 404 envelope, so CMS content falls back to empty.
 5. Starts `./node_modules/.bin/astro dev --ignore-lock --host 127.0.0.1 --port <port>` with disposable env only:
    - `COOKIE_SIGNING_SECRET` — random 32-byte hex; required, the process throws if unset
    - `STRAPI_URL=http://127.0.0.1:<stub port>` — the loopback stub, never a public host
@@ -73,6 +73,8 @@ Harness is `control-astrojs` (HTTP + optional Chrome). Prefer HTTP for status, r
 .cursor/skills/verify-astrojs/bin/control-astrojs screenshot --path artifacts/home.png --url /
 .cursor/skills/verify-astrojs/bin/control-astrojs drive public-home
 .cursor/skills/verify-astrojs/bin/control-astrojs drive auth-login
+.cursor/skills/verify-astrojs/bin/control-astrojs drive auth-register
+.cursor/skills/verify-astrojs/bin/control-astrojs drive lost-password
 ```
 
 Stable handles from this repo:
@@ -91,14 +93,18 @@ Stable handles from this repo:
 | Register fields | `#email`, `#password`, `#passwordConfirmation`, button `S’inscrire` |
 | Lost-password heading | `Vous avez oublié votre mot de passe ?` on `/lost-password` |
 | Lost-password submit | button `Réinitialiser mon mot de passe` |
+| Mail confirmation | heading `Confirmation de votre adresse email`, the submitted email, button `Renvoyer un mail` |
+| Wait-mail | heading `Email envoyé`, the submitted email |
+| Reset form | heading `Changer votre mot de passe`, `#password`, `#passwordConfirmation`, button `Changer mon mot de passe` |
+| Turnstile | `data-turnstile` block inside every public form (login, register, mail confirmation, lost-password, wait-mail, reset) |
 | Dashboard (authed) | heading `Mon compte`, `#logout-button` `Se déconnecter`, link `Informations personnelles` → `/dashboard/account` |
 | Legal | `h1` `Mentions légales`, `h1` `Politique de confidentialité` |
 | Footer legal | links `/mentions-legales`, `/politique-confidentialite` |
 | Cookie banner | `#cookie-banner`, `#accept-all-cookies`, `#customize-cookies` (HTML present; visible after client JS) |
 | 404 | heading `Page non trouvée`, link `Retourner à l'accueil` |
-| Health probe | `GET /login` status `< 500` |
+| Health probe | `GET /api/health` is 200 `ok`, `Cache-Control: no-store` (the Docker `HEALTHCHECK`); doctor still probes `/login` |
 
-There is no `/api/health`. Docker probes `/login`.
+Cache headers on the verify stack: on-demand pages in `PRIVATE_ROUTES` (auth flow, dashboard, actions), errors, redirects, and the legal pages while the stub has no content answer `Cache-Control: private, no-store`. Prerendered `/` has no app `Cache-Control` under `astro dev`; the public edge header (`s-maxage=86400`) only shows on a built server.
 
 Route gates (`src/data/routes.ts` + middleware):
 
@@ -108,7 +114,7 @@ Route gates (`src/data/routes.ts` + middleware):
 - `/lost-password/wait-mail` without cookie `wait-mail-password` → 302 `/lost-password`
 - `/lost-password/reset` without cookie `password-reset-code` (or `?code=`) → 302 `/lost-password`
 
-A successful login sets `user_token`, `user_data`, and `user_data_timestamp`. Login works on this stack against the stub reader `jean.dupont@example.com` / `Lecteur-2026!` (`tests/e2e/accounts.ts`); `drive auth-login` runs the round trip with a cookie jar. Action POSTs need `Origin: <origin>` or Astro answers 403. Register, mail confirmation, and password-reset POSTs call Strapi endpoints the stub does not serve, so they stay **verified-unreachable**. Do not POST credentials at a shared or production API to "complete" the map. Do not mint session cookies by writing `user_token` by hand.
+A successful login sets `user_token`, `user_data`, and `user_data_timestamp`. Login works on this stack against the stub reader `jean.dupont@example.com` / `Lecteur-2026!` (`tests/e2e/accounts.ts`); `drive auth-login` runs the round trip with a cookie jar. Action POSTs need `Origin: <origin>` or Astro answers 403. Every public form action also needs a non-empty `cf-turnstile-response`: an empty or missing token is a 403 with `La vérification anti-robot a échoué. Veuillez réessayer.` before Strapi is called. The drives send Cloudflare's dummy token `XXXX.DUMMY.TOKEN.XXXX`, which the always-pass test secret accepts at siteverify. That call needs network access to `challenges.cloudflare.com`; without it the action answers 503. Register, mail confirmation, forgot-password, and reset POSTs are served by the stub, so `drive auth-register` and `drive lost-password` complete them. Do not POST credentials at a shared or production API to "complete" the map. Do not mint session cookies by writing `user_token` by hand.
 
 `AvatarIsland` is `server:defer`. First-paint `GET /` often has the `Loader` fallback instead of `Se connecter`. Prove the login control on `/login`, or after hydration in Chrome.
 
@@ -126,7 +132,7 @@ Every proof includes:
 
 - The user action (command + URL).
 - The resulting state (status, redirect, HTML marker, or screenshot).
-- Side effects when the feature mutates data (second GET). Login is proven by the dashboard GET that follows it. Register and password-reset mutations cannot be proven without a real Strapi — report `verified-unreachable`.
+- Side effects when the feature mutates data (second GET). Login and reset are proven by the dashboard GET that follows them. Register and forgot-password are proven by the cookie they set and the mail-confirmation or wait-mail page that shows the submitted email. The stub stores nothing, so no mail is sent.
 - `manifest.json` with `feature`, `baseUrl`, `commands`, `checks`.
 
 Standards:
@@ -135,7 +141,7 @@ Standards:
 - Capture the action and the result, not only the last screen.
 - A 200 on `/` is not enough for `public-home`. The HTML must contain `Welcome to Astro`.
 - A 200 on `/login` is not enough for `auth-login`. Assert `Se connecter`, `#email`, `#password`, and the logged-out `/dashboard` → `/login` redirect.
-- Chrome screenshots must show the page identity (`Welcome to Astro` on home, `Se connecter` on login). Headless Chrome is `/usr/bin/google-chrome` or `google-chrome` when present. Chrome often writes the PNG and then hangs; `control-astrojs screenshot` treats a non-empty file as success and kills the process.
+- Chrome screenshots must show the page identity (`Welcome to Astro` on home, `Se connecter` on login). Headless Chrome is `/usr/bin/google-chrome` or `google-chrome` when present. Chrome often writes the PNG and then hangs; `control-astrojs screenshot` treats a non-empty file as success and kills the process. On a host where headless Chrome cannot paint at all (no PNG even for a `data:` URL), `drive public-home` skips the PNG; report the painted frame unreachable on that host and keep the HTML markers as proof.
 
 Committed proofs live at `proof/public-home/` and `proof/auth-login/`. Later runs may overwrite a folder only when re-proving the same feature.
 
@@ -157,10 +163,12 @@ If launch failed halfway, run cleanup anyway. The state file records whatever wa
 | --- | --- |
 | `launch [--port N]` | Start the Strapi stub and isolated `astro dev`, write state, wait for `/login` |
 | `doctor` | Read-only ownership + health check |
-| `http GET PATH [--no-follow]` | Request against the owned origin |
+| `http GET PATH [--no-follow] [--body FILE] [--headers FILE]` | Request against the owned origin. Prints `status`, `location`, `cache-control`, and hits from a fixed marker list; `--body` / `--headers` save the response so any other string can be grepped |
 | `screenshot --path FILE [--url /path]` | Headless Chrome PNG of a path |
 | `drive public-home` | Scripted recipe + `proof/public-home/` |
-| `drive auth-login` | Stub login round trip (guard, wrong password, login, dashboard, account, logout) + `proof/auth-login/`. Other feature IDs are driven with `http` from their feature file |
+| `drive auth-login` | Stub login round trip (guard, missing Turnstile token, wrong password, login, dashboard, account, logout) + `proof/auth-login/` |
+| `drive auth-register` | Mail gate, register form, register submit, mail-confirmation page, resend + `proof/auth-register/` |
+| `drive lost-password` | Wait-mail and reset gates, forgot submit, wait-mail page, `?code=` hop, reset submit, dashboard, logout + `proof/lost-password/`. Legal pages are driven with `http` from their feature file |
 | `cleanup` | Tear down what this run started |
 | `self-check` | CLI smoke (help + doctor-without-instance). Does not start the app |
 
