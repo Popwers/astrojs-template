@@ -40,7 +40,7 @@ Preconditions:
 ## Gotchas
 
 - Docker health is `GET /api/health` (200 `ok`, plain text). Doctor probes `/login` instead, so a healthy `/api/health` does not prove the sign-in page.
-- The form holds a Turnstile widget (`data-turnstile`). A POST without `cf-turnstile-response` is a 403 before Strapi is called. `drive auth-login` sends Cloudflare's dummy token, which the always-pass test secret accepts at siteverify; that needs network access to `challenges.cloudflare.com`, or the submit answers 503.
+- The form holds a Turnstile widget (`data-turnstile`). A POST without `cf-turnstile-response` is a 403 before Strapi is called. `drive auth-login` sends Cloudflare's dummy token, which the always-pass test secret accepts at siteverify; that needs network access to `challenges.cloudflare.com`, or the submit answers 503 with `La vérification anti-robot est indisponible`, not a pass or a wrong password.
 - `/login`, `/dashboard`, and their redirects answer `Cache-Control: private, no-store`.
 - `PasswordInput` is a React island (`client:idle`). `#password` is in the SSR HTML.
 - Submit is a React island. The accessible name is the `label` prop `Se connecter`.

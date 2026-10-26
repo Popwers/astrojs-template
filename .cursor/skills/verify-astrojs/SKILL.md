@@ -29,7 +29,7 @@ What launch does:
    - `COOKIE_SIGNING_SECRET` — random 32-byte hex; required, the process throws if unset
    - `STRAPI_URL=http://127.0.0.1:<stub port>` — the loopback stub, never a public host
    - `STRAPI_TOKEN=verify-stub-token`
-   - `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` — Cloudflare's always-pass test keys; the forms need network access to `challenges.cloudflare.com`
+   - `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` — Cloudflare's always-pass test keys (`1x00000000000000000000AA` / `1x0000000000000000000000000000000AA`); the forms and the server-side siteverify need network access to `challenges.cloudflare.com`
 6. Waits until `GET /login` answers `< 500`.
 
 Keep `--ignore-lock`. Astro 7 detects an agent caller and moves `astro dev` to a detached background server unless that flag is set, which orphans the server from the recorded PID. Do not write `.env` in the repo. Do not use `vp run dev -- --port` (Vite+ forwards those flags as a broken Astro command). Do not use `astro preview`; production-shaped boot is `bun run build` then `bun ./start.mjs` with `HOST`/`PORT` and the same env, only when a recipe says so.
