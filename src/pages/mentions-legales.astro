@@ -6,6 +6,7 @@ export const prerender = false;
 
 import TextRenderer from "@components/site/global/TextRenderer";
 import type TextPage from "@interfaces/textPage";
+import { HOSTING } from "@data/legal";
 import DefaultLayout from "@layouts/index.astro";
 import { PRIVATE_CACHE_CONTROL } from "@lib/pageCache";
 import fetchApi from "@lib/strapi";
@@ -26,5 +27,7 @@ const description: string = "Page des mentions légales du site";
 	<h1>{title}</h1>
 	<div class='mb-16 lg:mb-32'>
 		<TextRenderer content={content} />
+		<h2>Hébergement</h2>
+		<p>{HOSTING}</p>
 	</div>
 </DefaultLayout>
