@@ -1,4 +1,6 @@
-@import 'tailwindcss';
+/* Explicit sources: auto-detection scanned another tree in the Docker build and shipped a CSS 404. */
+@import 'tailwindcss' source(none);
+@source '../';
 
 @theme static {
 	/* Fonts */
