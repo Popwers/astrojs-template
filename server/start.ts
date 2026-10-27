@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 
 import { servePrecompressed, type Listener } from './precompressed.ts';
+import { securityHeaders } from './securityHeaders.ts';
 import { drainServer } from './shutdown.ts';
 import { indexStaticFiles } from './staticFiles.ts';
 
@@ -21,15 +22,23 @@ function listenHost(host: string | boolean): string {
 }
 
 /**
- * Serve the Astro build: precompressed assets and cache headers in front of the adapter's handler, and
- * a graceful exit on SIGTERM/SIGINT (no new connection, in-flight requests finish, then exit 0).
+ * Serve the Astro build: security headers on every response, precompressed assets and cache headers
+ * in front of the adapter's handler, and a graceful exit on SIGTERM/SIGINT (no new connection, in-flight
+ * requests finish, then exit 0).
  * `HOST`, `PORT` and `SHUTDOWN_TIMEOUT_MS` override the defaults.
  * @param entry - The adapter's exports.
  * @param clientDir - URL of `dist/client`.
  */
 export function startServer(entry: AstroNodeEntry, clientDir: URL): void {
 	const files = indexStaticFiles(fileURLToPath(clientDir), '/_astro/');
-	const server = createServer(servePrecompressed(files, entry.handler));
+	const serveFiles = servePrecompressed(files, entry.handler);
+	const strapiUrl = process.env.STRAPI_URL;
+	const server = createServer((req, res) => {
+		// Split, not `new URL()`: a malformed request target must reach the adapter (400), not throw here.
+		const pathname = (req.url ?? '/').split('?')[0] ?? '/';
+		for (const [name, value] of securityHeaders(pathname, strapiUrl)) res.setHeader(name, value);
+		serveFiles(req, res);
+	});
 	const port = Number(process.env.PORT ?? entry.options.port);
 	const host = process.env.HOST ?? listenHost(entry.options.host);
 	const timeoutMs = Number(process.env.SHUTDOWN_TIMEOUT_MS ?? DEFAULT_SHUTDOWN_TIMEOUT_MS);

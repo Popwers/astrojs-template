@@ -117,7 +117,7 @@ Copy `.env.example` to `.env`. The schema is in `astro.config.mjs` (`envField`).
 | `Makefile` | Developer entry |
 | `Dockerfile` | Multi-stage production image |
 | `start.mjs` | Production entry: imports the adapter with autostart off, hands it to `server/start.ts` |
-| `server/` | Production HTTP server: precompressed static files and their `Cache-Control`, graceful SIGTERM drain; `cacheControl.ts` holds the header values the middleware shares |
+| `server/` | Production HTTP server: security headers and CSP on every response (`securityHeaders.ts`, no HSTS: Cloudflare sends it), precompressed static files and their `Cache-Control`, graceful SIGTERM drain; `cacheControl.ts` holds the header values the middleware shares |
 | `src/integrations/precompress.ts` | Writes `.br`/`.gz` next to the text files of `dist/client` at build |
 
 ## Docker
