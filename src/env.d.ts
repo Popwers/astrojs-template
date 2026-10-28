@@ -15,6 +15,8 @@ declare module '@fontsource-variable/raleway/files/*.woff2' {
 
 /** CMS origin (`STRAPI_URL` at build time), inlined by `vite.define` in astro.config.mjs. */
 declare const __STRAPI_URL__: string;
+/** `SENTRY_TRACES_SAMPLE_RATE` at build time (empty when unset), inlined by `vite.define`. */
+declare const __SENTRY_TRACES_SAMPLE_RATE__: string;
 
 declare namespace App {
 	interface Locals {

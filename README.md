@@ -24,6 +24,7 @@ make dev               # Astro dev server at localhost:4321
 | `TRUST_PROXY` | No | none | `cloudflare` to rate-limit on `CF-Connecting-IP`. `1` or `forwarded` to use `X-Forwarded-For`. Unset ignores spoofable forwarded headers. |
 | `SENTRY_AUTH_TOKEN` | No | none | Build-time token for Sentry source-map upload. Pass it as a BuildKit secret, never as an image ARG or ENV. |
 | `SENTRY_RELEASE` | No | none | Deployed git SHA, so errors map to the commit that introduced them. |
+| `SENTRY_TRACES_SAMPLE_RATE` | No | `0.1` | Share of traces sent to Sentry, 0 to 1, read at build time for both SDKs. An empty or out-of-range value falls back to `0.1`. Keep it at or below `0.1`: the Sentry quota is shared by the whole organisation. |
 
 The `STRAPI_*` defaults exist only so a fresh clone builds and boots without configuration. They point at no real backend. Auth and data calls fail until you set real values in `.env`.
 
@@ -140,6 +141,8 @@ There is no CI workflow. Checks run on your machine in the `pre-push` Git hook (
 ## Monitoring
 
 Error monitoring via Sentry (`@sentry/astro`, prod-only). The DSN comes from `PUBLIC_SENTRY_DSN` at build time (empty keeps Sentry off); set the org/project in `astro.config.mjs`. Source maps and release tagging need `SENTRY_AUTH_TOKEN` and `SENTRY_RELEASE` (git SHA) at build time.
+
+Traces are sampled at `SENTRY_TRACES_SAMPLE_RATE` (build time, default `0.1`, parsed in `src/lib/sentrySampling.ts`); health checks are never traced and a child span follows its parent's decision. No profiling. Session Replay records no ordinary session (`replaysSessionSampleRate: 0`): the replay integration loads only once the visitor accepts analytics cookies in the cookie banner (`hasAnalyticsConsent()` in `src/stores/consentStore.ts`), and then keeps the moments before an error (`replaysOnErrorSampleRate: 1.0`).
 
 Known browser noise (ClientRouter aborts, WebView and link-preview crawler errors, visitor network failures) is dropped by anchored patterns in `src/lib/sentryNoise.ts`, tested in `tests/lib/sentryNoise.test.ts`: add a pattern there with a noise sample and a real-bug sample next to it, never a bare substring such as `'AbortError'`. A failed call to the CMS (`STRAPI_URL` at build time, default in `astro.config.mjs`) is still reported.
 

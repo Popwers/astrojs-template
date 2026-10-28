@@ -1,5 +1,7 @@
 import { IGNORE_SENTRY_ERRORS, isVisitorNetworkFailure } from '@lib/sentryNoise';
+import { createTracesSampler, parseTracesSampleRate } from '@lib/sentrySampling';
 import * as Sentry from '@sentry/astro';
+import { hasAnalyticsConsent } from '@stores/consentStore';
 
 import { dataCollection } from './sentry.data-collection.js';
 
@@ -9,12 +11,20 @@ const SENTRY_DSN = import.meta.env.PUBLIC_SENTRY_DSN;
 // CMS origin, inlined at build from STRAPI_URL (astro.config.mjs).
 const apiOrigins = [__STRAPI_URL__];
 
+// SENTRY_TRACES_SAMPLE_RATE at build time, default 0.1 (src/lib/sentrySampling.ts).
+const tracesRate = parseTracesSampleRate(__SENTRY_TRACES_SAMPLE_RATE__);
+
 if (process.env.NODE_ENV === 'production' && SENTRY_DSN) {
+	// Replay records the session, so it loads only after the visitor accepts analytics cookies. Saving a
+	// choice in the cookie banner reloads the page, which re-runs this init with the new consent.
+	const integrations = [Sentry.browserTracingIntegration()];
+	if (hasAnalyticsConsent()) integrations.push(Sentry.replayIntegration());
+
 	Sentry.init({
 		environment: process.env.NODE_ENV,
 		dsn: SENTRY_DSN,
 		dataCollection,
-		integrations: [Sentry.browserTracingIntegration(), Sentry.replayIntegration()],
+		integrations,
 
 		// Drop known browser noise (no user impact) and visitor network failures. The patterns are
 		// anchored and tested in src/lib/sentryNoise.ts.
@@ -22,18 +32,10 @@ if (process.env.NODE_ENV === 'production' && SENTRY_DSN) {
 
 		beforeSend: (event) => (isVisitorNetworkFailure(event, apiOrigins) ? null : event),
 
-		tracesSampler: ({ name, parentSampled }) => {
-			if (name.includes('health')) return 0;
-
-			if (parentSampled !== undefined) {
-				return parentSampled;
-			}
-
-			return 0.5;
-		},
-
-		tracesSampleRate: 0.5,
-		replaysSessionSampleRate: 0.02,
+		tracesSampler: createTracesSampler(tracesRate),
+		tracesSampleRate: tracesRate,
+		// No session sampling: replay keeps only the buffer before an error, and only with consent.
+		replaysSessionSampleRate: 0,
 		replaysOnErrorSampleRate: 1.0,
 	});
 }
