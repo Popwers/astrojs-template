@@ -1,3 +1,15 @@
+# [1.3.0](https://github.com/Popwers/astrojs-template/compare/v1.2.2...v1.3.0) (2026-10-28)
+
+
+### Features
+
+* **security:** send security headers and a CSP from the production server ([27755eb](https://github.com/Popwers/astrojs-template/commit/27755ebbc0bba369efb7525936608f333a8cde33))
+
+
+### Performance Improvements
+
+* **styles:** list Tailwind sources explicitly ([b54f5fe](https://github.com/Popwers/astrojs-template/commit/b54f5fe1d21ac877823072529fa1011e8f3c3a78))
+
 ## [1.2.2](https://github.com/Popwers/astrojs-template/compare/v1.2.1...v1.2.2) (2026-10-25)
 
 
