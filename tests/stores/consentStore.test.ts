@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 
-import { hasStoredConsent, updateConsent } from '../../src/stores/consentStore';
+import { hasAnalyticsConsent, hasStoredConsent, updateConsent } from '../../src/stores/consentStore';
 
 const originalLocalStorage = globalThis.localStorage;
 const originalLocation = globalThis.location;
@@ -59,6 +59,31 @@ describe('consentStore', () => {
 	it('returns false when localStorage is blocked', () => {
 		installStorage(new Map(), true);
 		expect(hasStoredConsent()).toBe(false);
+	});
+
+	it('reads analytics consent only from a stored analytics: true', () => {
+		const record = (analytics: boolean | string) =>
+			JSON.stringify({ hasConsented: true, preferences: { functional: true, analytics } });
+		installStorage(new Map([['cookie-consent', record(true)]]));
+		expect(hasAnalyticsConsent()).toBe(true);
+		for (const stored of [
+			record(false),
+			record('true'),
+			'not-json',
+			'null',
+			'[]',
+			'{"preferences":null}',
+		]) {
+			installStorage(new Map([['cookie-consent', stored]]));
+			expect(hasAnalyticsConsent()).toBe(false);
+		}
+	});
+
+	it('refuses analytics when nothing is stored or localStorage is blocked', () => {
+		installStorage(new Map());
+		expect(hasAnalyticsConsent()).toBe(false);
+		installStorage(new Map(), true);
+		expect(hasAnalyticsConsent()).toBe(false);
 	});
 
 	it('persists preferences then reloads', () => {

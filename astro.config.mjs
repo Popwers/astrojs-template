@@ -183,7 +183,11 @@ export default defineConfig({
 	vite: {
 		plugins: [tailwindcss()],
 		// STRAPI_URL is server-only; the browser Sentry filter needs the CMS origin it reports on.
-		define: { __STRAPI_URL__: JSON.stringify(process.env.STRAPI_URL || STRAPI_URL_DEFAULT) },
+		// SENTRY_TRACES_SAMPLE_RATE is read once at build so the client and server SDKs sample alike.
+		define: {
+			__STRAPI_URL__: JSON.stringify(process.env.STRAPI_URL || STRAPI_URL_DEFAULT),
+			__SENTRY_TRACES_SAMPLE_RATE__: JSON.stringify(process.env.SENTRY_TRACES_SAMPLE_RATE ?? ''),
+		},
 		// Modern output target: skip legacy transpilation/polyfills for smaller, faster bundles.
 		build: {
 			target: 'esnext',

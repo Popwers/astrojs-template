@@ -21,8 +21,10 @@ FROM base AS build
 # ARG or ENV, so it cannot persist in image layers or `docker history`.
 ARG SOURCE_COMMIT
 ARG PUBLIC_SENTRY_DSN
+ARG SENTRY_TRACES_SAMPLE_RATE
 ENV SENTRY_RELEASE=$SOURCE_COMMIT \
-    PUBLIC_SENTRY_DSN=$PUBLIC_SENTRY_DSN
+    PUBLIC_SENTRY_DSN=$PUBLIC_SENTRY_DSN \
+    SENTRY_TRACES_SAMPLE_RATE=$SENTRY_TRACES_SAMPLE_RATE
 COPY package.json bun.lock ./
 RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
     bun install --frozen-lockfile

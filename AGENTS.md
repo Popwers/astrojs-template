@@ -96,6 +96,7 @@ Copy `.env.example` to `.env`. The schema is in `astro.config.mjs` (`envField`).
 | `TRUST_PROXY` | Reverse-proxy trust |
 | `SENTRY_AUTH_TOKEN` | Sentry (optional) |
 | `SENTRY_RELEASE` | Sentry release name (optional) |
+| `SENTRY_TRACES_SAMPLE_RATE` | Sentry traces rate at build time, default `0.1` (optional) |
 
 ## Layout
 
