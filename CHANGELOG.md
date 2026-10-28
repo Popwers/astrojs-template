@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/Popwers/astrojs-template/compare/v1.3.0...v1.4.0) (2026-10-28)
+
+
+### Features
+
+* **sentry:** cap traces at 0.1 and gate replay on analytics consent ([#42](https://github.com/Popwers/astrojs-template/issues/42)) ([57e9ab5](https://github.com/Popwers/astrojs-template/commit/57e9ab50e8fab69295b0f50b663a2670e21dc52d))
+
 # [1.3.0](https://github.com/Popwers/astrojs-template/compare/v1.2.2...v1.3.0) (2026-10-28)
 
 
