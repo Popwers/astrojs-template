@@ -130,7 +130,7 @@ docker run -p 4321:4321 astro-app
 
 ## SEO
 
-`astro-seo`, `astro-capo`, `astro-seo-schema`. Schema lives in `src/data/schema.org.ts`. Sitemap comes from `@astrojs/sitemap`.
+`astro-seo`, `astro-seo-schema`. The layout writes a plain `<head>`: do not add `astro-capo`, its `<Head>` drops component `<script>`s (the `<ClientRouter />` one included) since Astro 5. Schema lives in `src/data/schema.org.ts`. Sitemap comes from `@astrojs/sitemap`.
 
 ## Common tasks
 
