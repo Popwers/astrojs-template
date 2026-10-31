@@ -1,6 +1,6 @@
 import eye_icon from '@assets/icons/eye.svg';
 import eye_close_icon from '@assets/icons/eye_close.svg';
-import { Reactive, useObservable } from '@legendapp/state/react';
+import { useState } from 'react';
 
 interface PasswordInputProps {
 	id: string;
@@ -8,13 +8,16 @@ interface PasswordInputProps {
 	placeholder: string;
 	autocomplete: string;
 	name: string;
-	dynamicClassName?: () => string;
+	className?: string;
 	onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
-	props?: React.ComponentProps<typeof Reactive.input>;
+	props?: React.ComponentProps<'input'>;
 }
 
 /**
  * Password input component used to input a password
+ * @param props.className - Class name for the input
+ * @param props.onChange - Change handler for the input
+ * @returns The password input with its show/hide toggle
  */
 export default ({
 	id,
@@ -23,37 +26,41 @@ export default ({
 	label,
 	onChange,
 	placeholder,
-	dynamicClassName,
+	className,
 	props,
 }: PasswordInputProps) => {
-	const isPasswordVisible = useObservable(false);
-	const typeToShow = () => (isPasswordVisible.get() ? 'text' : 'password');
-	const imgToShow = () => (isPasswordVisible.get() ? eye_close_icon.src : eye_icon.src);
+	const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
 	return (
 		<div className='form-group'>
 			<label htmlFor={id}>{label} </label>
 			<div className='relative'>
-				<Reactive.input
+				<input
 					id={id}
-					$type={typeToShow}
+					type={isPasswordVisible ? 'text' : 'password'}
 					autoComplete={autocomplete}
 					placeholder={placeholder}
 					name={name}
 					onChange={onChange}
-					$className={dynamicClassName}
+					className={className}
 					required
 					{...props}
 				/>
-				<Reactive.img
-					onClick={() => isPasswordVisible.toggle()}
-					$src={imgToShow}
-					alt='Voir le mot de passe'
-					className='absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2 cursor-pointer'
-					width={20}
-					height={20}
-					decoding='async'
-				/>
+				<button
+					type='button'
+					onClick={() => setIsPasswordVisible((isVisible) => !isVisible)}
+					aria-label='Voir le mot de passe'
+					aria-pressed={isPasswordVisible}
+					className='absolute top-1/2 right-4 h-5 w-5 -translate-y-1/2 cursor-pointer'>
+					<img
+						src={isPasswordVisible ? eye_close_icon.src : eye_icon.src}
+						alt=''
+						className='h-5 w-5'
+						width={20}
+						height={20}
+						decoding='async'
+					/>
+				</button>
 			</div>
 		</div>
 	);

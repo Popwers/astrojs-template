@@ -1,7 +1,6 @@
-import { reactive, useObservable } from '@legendapp/state/react';
 import { cn } from '@lib/utils';
 import { AnimatePresence, domAnimation, LazyMotion, m, MotionConfig } from 'motion/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 
 interface Props {
 	className?: string;
@@ -12,10 +11,56 @@ interface Props {
 	danger?: boolean;
 }
 
-// `m` + LazyMotion ships only the animation features this button uses, not the full `motion` bundle.
-const $MotionButton = reactive(m.button);
+// `idle` until the form submits, `loading` right after, `long` once the wait passes a second.
+type SubmitPhase = 'idle' | 'loading' | 'long';
+
+const LONG_LOADING_DELAY_MS = 1000;
 
 const LOADING_DOT_CLASSES = ['delay-bounce-0', 'delay-bounce-1', 'delay-bounce-2'] as const;
+
+/**
+ * Tracks the submit lifecycle of the form that owns `buttonRef`.
+ * @param buttonRef - Ref of the submit button inside the form
+ * @returns The current phase, back to `idle` when the form unmounts
+ */
+const useSubmitPhase = (buttonRef: RefObject<HTMLButtonElement | null>) => {
+	const [phase, setPhase] = useState<SubmitPhase>('idle');
+
+	useEffect(() => {
+		const form = buttonRef.current?.closest('form');
+		if (!form) return;
+
+		const handleSubmit = () => setPhase('loading');
+		form.addEventListener('submit', handleSubmit);
+		return () => {
+			form.removeEventListener('submit', handleSubmit);
+			setPhase('idle');
+		};
+	}, [buttonRef]);
+
+	useEffect(() => {
+		if (phase !== 'loading') return;
+
+		const longLoadingTimer = setTimeout(() => setPhase('long'), LONG_LOADING_DELAY_MS);
+		return () => clearTimeout(longLoadingTimer);
+	}, [phase]);
+
+	return phase;
+};
+
+const LoadingDots = () => (
+	<span className='flex items-center justify-center space-x-2'>
+		{LOADING_DOT_CLASSES.map((delayClass) => (
+			<span
+				key={`loading-dot-${delayClass}`}
+				className={cn(
+					'inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-current transition-discrete duration-700',
+					delayClass,
+				)}
+			/>
+		))}
+	</span>
+);
 
 /**
  * Submit button with loading state and animation
@@ -28,60 +73,31 @@ const LOADING_DOT_CLASSES = ['delay-bounce-0', 'delay-bounce-1', 'delay-bounce-2
  * @returns The submit button component
  */
 export default ({ className, label, id, tabIndex, disabled, danger = false }: Props) => {
-	const isLoading = useObservable(false);
-	const [isLongLoading, setIsLongLoading] = useState(false);
-	const isBordered = className?.includes('bordered');
+	const buttonRef = useRef<HTMLButtonElement>(null);
+	const phase = useSubmitPhase(buttonRef);
+	const isBusy = phase !== 'idle' || Boolean(disabled);
+	const isBordered = Boolean(className?.includes('bordered'));
 	const idleBackground = danger ? 'var(--color-red)' : 'var(--color-blue)';
 	const hoverBackground = danger ? 'var(--color-red)' : 'var(--color-blue-saturated)';
 	const borderedColor = danger ? 'var(--color-red)' : 'var(--color-blue)';
-	const buttonRef = useRef<HTMLButtonElement>(null);
-
-	const handleSubmit = useCallback(() => {
-		isLoading.set(true);
-		setTimeout(() => setIsLongLoading(true), 1000);
-	}, [isLoading]);
-
-	useEffect(() => {
-		const button = buttonRef.current;
-		if (!button) return;
-
-		const form = button.closest('form');
-		if (!form) return;
-
-		form.addEventListener('submit', handleSubmit);
-		return () => {
-			form.removeEventListener('submit', handleSubmit);
-			isLoading.set(false);
-			setIsLongLoading(false);
-		};
-	}, [handleSubmit, isLoading]);
+	const restingBackground = isBordered ? 'transparent' : idleBackground;
+	const restingColor = isBordered ? borderedColor : 'var(--color-white)';
+	const pressedBackground = isBordered ? idleBackground : hoverBackground;
 
 	return (
 		<LazyMotion features={domAnimation} strict>
 			<MotionConfig reducedMotion='user'>
-				<$MotionButton
-					$animate={() => ({
+				<m.button
+					initial={false}
+					animate={{
 						opacity: disabled ? 0.5 : 1,
-						backgroundColor:
-							isLoading.get() || isLongLoading || disabled
-								? hoverBackground
-								: isBordered
-									? 'transparent'
-									: idleBackground,
-						color:
-							isLoading.get() || isLongLoading || disabled
-								? 'var(--color-white)'
-								: isBordered
-									? borderedColor
-									: 'var(--color-white)',
-						pointerEvents: isLoading.get() || isLongLoading || disabled ? 'none' : 'auto',
-					})}
-					whileHover={{
-						backgroundColor: isBordered ? idleBackground : hoverBackground,
-						color: 'var(--color-white)',
+						backgroundColor: isBusy ? hoverBackground : restingBackground,
+						color: isBusy ? 'var(--color-white)' : restingColor,
+						pointerEvents: isBusy ? 'none' : 'auto',
 					}}
+					whileHover={{ backgroundColor: pressedBackground, color: 'var(--color-white)' }}
 					whileTap={{
-						backgroundColor: isBordered ? idleBackground : hoverBackground,
+						backgroundColor: pressedBackground,
 						color: 'var(--color-white)',
 						scale: 0.95,
 					}}
@@ -90,32 +106,18 @@ export default ({ className, label, id, tabIndex, disabled, danger = false }: Pr
 					tabIndex={tabIndex}
 					ref={buttonRef}
 					id={id}
-					$disabled={() => isLoading.get() || isLongLoading || disabled}>
+					disabled={isBusy}>
 					<AnimatePresence mode='popLayout' initial={false}>
 						<m.span
 							initial={{ opacity: 0, y: -100 }}
 							animate={{ opacity: 1, y: 0 }}
 							exit={{ opacity: 0, y: 100 }}
 							className='h-4'
-							key={isLongLoading ? 'loading' : 'label'}>
-							{isLongLoading ? (
-								<span className='flex items-center justify-center space-x-2'>
-									{LOADING_DOT_CLASSES.map((delayClass) => (
-										<span
-											key={`loading-dot-${delayClass}`}
-											className={cn(
-												'inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-current transition-discrete duration-700',
-												delayClass,
-											)}
-										/>
-									))}
-								</span>
-							) : (
-								label
-							)}
+							key={phase === 'long' ? 'loading' : 'label'}>
+							{phase === 'long' ? <LoadingDots /> : label}
 						</m.span>
 					</AnimatePresence>
-				</$MotionButton>
+				</m.button>
 			</MotionConfig>
 		</LazyMotion>
 	);
