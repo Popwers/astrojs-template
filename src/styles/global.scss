@@ -480,3 +480,23 @@
 		line-height: 1.6;
 	}
 }
+
+/* Honour the OS "reduce motion" setting: no smooth scroll, no CSS transitions, no decorative bounce.
+   The spin keeps running, it is the loading indicator. */
+@media (prefers-reduced-motion: reduce) {
+	html,
+	body {
+		scroll-behavior: auto;
+	}
+
+	*,
+	*::before,
+	*::after {
+		transition-duration: 0.01ms !important;
+		transition-delay: 0s !important;
+	}
+
+	.animate-bounce {
+		animation: none;
+	}
+}

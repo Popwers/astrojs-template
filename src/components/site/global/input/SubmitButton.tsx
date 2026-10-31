@@ -1,6 +1,6 @@
 import { reactive, useObservable } from '@legendapp/state/react';
 import { cn } from '@lib/utils';
-import { AnimatePresence, domAnimation, LazyMotion, m } from 'motion/react';
+import { AnimatePresence, domAnimation, LazyMotion, m, MotionConfig } from 'motion/react';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface Props {
@@ -58,63 +58,65 @@ export default ({ className, label, id, tabIndex, disabled, danger = false }: Pr
 
 	return (
 		<LazyMotion features={domAnimation} strict>
-			<$MotionButton
-				$animate={() => ({
-					opacity: disabled ? 0.5 : 1,
-					backgroundColor:
-						isLoading.get() || isLongLoading || disabled
-							? hoverBackground
-							: isBordered
-								? 'transparent'
-								: idleBackground,
-					color:
-						isLoading.get() || isLongLoading || disabled
-							? 'var(--color-white)'
-							: isBordered
-								? borderedColor
-								: 'var(--color-white)',
-					pointerEvents: isLoading.get() || isLongLoading || disabled ? 'none' : 'auto',
-				})}
-				whileHover={{
-					backgroundColor: isBordered ? idleBackground : hoverBackground,
-					color: 'var(--color-white)',
-				}}
-				whileTap={{
-					backgroundColor: isBordered ? idleBackground : hoverBackground,
-					color: 'var(--color-white)',
-					scale: 0.95,
-				}}
-				className={cn(className, danger && 'border-red', 'overflow-hidden transition-none')}
-				type='submit'
-				tabIndex={tabIndex}
-				ref={buttonRef}
-				id={id}
-				$disabled={() => isLoading.get() || isLongLoading || disabled}>
-				<AnimatePresence mode='popLayout' initial={false}>
-					<m.span
-						initial={{ opacity: 0, y: -100 }}
-						animate={{ opacity: 1, y: 0 }}
-						exit={{ opacity: 0, y: 100 }}
-						className='h-4'
-						key={isLongLoading ? 'loading' : 'label'}>
-						{isLongLoading ? (
-							<span className='flex items-center justify-center space-x-2'>
-								{LOADING_DOT_CLASSES.map((delayClass) => (
-									<span
-										key={`loading-dot-${delayClass}`}
-										className={cn(
-											'inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-current transition-discrete duration-700',
-											delayClass,
-										)}
-									/>
-								))}
-							</span>
-						) : (
-							label
-						)}
-					</m.span>
-				</AnimatePresence>
-			</$MotionButton>
+			<MotionConfig reducedMotion='user'>
+				<$MotionButton
+					$animate={() => ({
+						opacity: disabled ? 0.5 : 1,
+						backgroundColor:
+							isLoading.get() || isLongLoading || disabled
+								? hoverBackground
+								: isBordered
+									? 'transparent'
+									: idleBackground,
+						color:
+							isLoading.get() || isLongLoading || disabled
+								? 'var(--color-white)'
+								: isBordered
+									? borderedColor
+									: 'var(--color-white)',
+						pointerEvents: isLoading.get() || isLongLoading || disabled ? 'none' : 'auto',
+					})}
+					whileHover={{
+						backgroundColor: isBordered ? idleBackground : hoverBackground,
+						color: 'var(--color-white)',
+					}}
+					whileTap={{
+						backgroundColor: isBordered ? idleBackground : hoverBackground,
+						color: 'var(--color-white)',
+						scale: 0.95,
+					}}
+					className={cn(className, danger && 'border-red', 'overflow-hidden transition-none')}
+					type='submit'
+					tabIndex={tabIndex}
+					ref={buttonRef}
+					id={id}
+					$disabled={() => isLoading.get() || isLongLoading || disabled}>
+					<AnimatePresence mode='popLayout' initial={false}>
+						<m.span
+							initial={{ opacity: 0, y: -100 }}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: 100 }}
+							className='h-4'
+							key={isLongLoading ? 'loading' : 'label'}>
+							{isLongLoading ? (
+								<span className='flex items-center justify-center space-x-2'>
+									{LOADING_DOT_CLASSES.map((delayClass) => (
+										<span
+											key={`loading-dot-${delayClass}`}
+											className={cn(
+												'inline-block h-1.5 w-1.5 animate-bounce rounded-full bg-current transition-discrete duration-700',
+												delayClass,
+											)}
+										/>
+									))}
+								</span>
+							) : (
+								label
+							)}
+						</m.span>
+					</AnimatePresence>
+				</$MotionButton>
+			</MotionConfig>
 		</LazyMotion>
 	);
 };

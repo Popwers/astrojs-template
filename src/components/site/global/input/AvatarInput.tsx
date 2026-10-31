@@ -143,6 +143,7 @@ export default ({ children }: { children: React.ReactNode }) => {
 					type='file'
 					id='avatar'
 					name='avatar'
+					aria-label='Changer l’image de profil'
 					accept={AVATAR_INPUT_ACCEPT}
 					className='absolute inset-0 -z-10 opacity-0'
 					onChange={handleChange}

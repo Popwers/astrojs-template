@@ -57,6 +57,7 @@
     "baseline-browser-mapping": "^2.11.33",
     "browserslist": "4.29.4",
     "e2e": "^0.21.3",
+    "react-doctor": "^0.9.18",
     "sass": "^1.106.1",
     "semantic-release": "^25.0.9",
     "tailwindcss": "^4.3.3",

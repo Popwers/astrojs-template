@@ -32,6 +32,11 @@ async function verdictOf(context: ClientContext, token: string): Promise<Verdict
 			body: form,
 			signal: AbortSignal.timeout(10_000),
 		});
+		if (!response.ok) {
+			console.error(`[turnstile] siteverify answered with HTTP ${response.status}`);
+			return 'unavailable';
+		}
+
 		const answer = siteverifyAnswer.safeParse(await response.json());
 		if (!answer.success) {
 			console.error('[turnstile] siteverify answered with an unexpected body');

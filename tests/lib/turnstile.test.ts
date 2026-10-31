@@ -152,6 +152,21 @@ describe('assertTurnstile', () => {
 		expect(errorLines).toHaveLength(1);
 	});
 
+	it('does not trust a body that comes with an HTTP error status', async () => {
+		stubSiteverify(
+			() =>
+				new Response(JSON.stringify({ success: true }), {
+					status: 500,
+					headers: { 'content-type': 'application/json' },
+				}),
+		);
+
+		const failure = await rejection(assertTurnstile(contextWith(), 'visitor-token'));
+
+		expect(failure).toEqual({ code: 'SERVICE_UNAVAILABLE', message: UNAVAILABLE_MESSAGE });
+		expect(errorLines).toEqual(['[turnstile] siteverify answered with HTTP 500']);
+	});
+
 	it('reports a non-JSON answer as unavailable', async () => {
 		stubSiteverify(
 			() =>
