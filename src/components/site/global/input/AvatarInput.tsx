@@ -1,9 +1,10 @@
 import { prepareAvatar } from '@data/imageCompression';
 import { AVATAR_INPUT_ACCEPT } from '@data/userOptions';
-import { Memo, Reactive, Show, useObservable } from '@legendapp/state/react';
 import { cn } from '@lib/utils';
 import { type ActionError, actions } from 'astro:actions';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+
+type AvatarStatus = 'idle' | 'preparing' | 'uploading';
 
 const LOADING_DOT_CLASSES = ['delay-bounce-0', 'delay-bounce-1', 'delay-bounce-2'] as const;
 
@@ -16,31 +17,35 @@ const LOADING_DOT_CLASSES = ['delay-bounce-0', 'delay-bounce-1', 'delay-bounce-2
  * @returns The AvatarInput component
  */
 export default ({ children }: { children: React.ReactNode }) => {
-	const isPreparing = useObservable(false);
-	const isLoading = useObservable(false);
-	const errorMessage = useObservable<ActionError | Error | null>(null);
-	// Holds the object URL for the optimistic preview; null means show the server-rendered child.
-	const optimisticUrl = useObservable<string | null>(null);
+	const [status, setStatus] = useState<AvatarStatus>('idle');
+	const [errorMessage, setErrorMessage] = useState<ActionError | Error | null>(null);
+	// Holds the file behind the optimistic preview; null means show the server-rendered child.
+	const [previewFile, setPreviewFile] = useState<File | null>(null);
+	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 	const inputRef = useRef<HTMLInputElement>(null);
+	const isPreparing = status === 'preparing';
+	const isBusy = status !== 'idle';
 
-	// Revoke stale object URLs when the component unmounts or when the URL changes.
+	// The object URL lives and dies with the file it previews: React revokes it on change and unmount.
 	useEffect(() => {
-		return () => {
-			const url = optimisticUrl.peek();
-			if (url) URL.revokeObjectURL(url);
-		};
-	}, [optimisticUrl]);
+		if (!previewFile) {
+			setPreviewUrl(null);
+			return;
+		}
+		const url = URL.createObjectURL(previewFile);
+		setPreviewUrl(url);
+		return () => URL.revokeObjectURL(url);
+	}, [previewFile]);
 
-	const isBusy = () => isPreparing.get() || isLoading.get();
+	const labelClass = cn(
+		'btn relative fit tertiary',
+		isBusy ? 'pointer-events-none opacity-50' : 'opacity-100',
+	);
 
-	const labelClass = () =>
-		cn('btn relative fit tertiary', isBusy() ? 'pointer-events-none opacity-50' : 'opacity-100');
-
-	const dotsClass = () =>
-		cn(
-			'absolute inset-0 z-10 flex items-center justify-center space-x-2 transition-opacity after:absolute after:inset-0 after:-z-10 after:bg-black after:transition-opacity',
-			isBusy() ? 'opacity-100 after:opacity-30' : 'opacity-0 after:opacity-0',
-		);
+	const dotsClass = cn(
+		'absolute inset-0 z-10 flex items-center justify-center space-x-2 transition-opacity after:absolute after:inset-0 after:-z-10 after:bg-black after:transition-opacity',
+		isBusy ? 'opacity-100 after:opacity-30' : 'opacity-0 after:opacity-0',
+	);
 
 	/**
 	 * Handle the change event of the input.
@@ -52,24 +57,23 @@ export default ({ children }: { children: React.ReactNode }) => {
 		if (!input || !input.files?.[0]) return;
 
 		const rawFile = input.files[0];
-		errorMessage.set(null);
+		setErrorMessage(null);
 
 		// Phase 1: decode HEIC and compress. The control is disabled but no preview yet.
-		isPreparing.set(true);
+		setStatus('preparing');
 		const { file, error: prepareError } = await prepareAvatar(rawFile);
-		isPreparing.set(false);
 
 		if (!file || prepareError) {
-			errorMessage.set(new Error(prepareError ?? 'Erreur lors de la préparation du fichier.'));
+			setStatus('idle');
+			setErrorMessage(new Error(prepareError ?? 'Erreur lors de la préparation du fichier.'));
 			return;
 		}
 
 		// Phase 2: upload the prepared file with an optimistic preview.
-		isLoading.set(true);
+		setStatus('uploading');
 
-		const previousUrl = optimisticUrl.peek();
-		const previewUrl = URL.createObjectURL(file);
-		optimisticUrl.set(previewUrl);
+		const previousFile = previewFile;
+		setPreviewFile(file);
 
 		const formData = new FormData();
 		formData.append('avatar', file);
@@ -78,20 +82,15 @@ export default ({ children }: { children: React.ReactNode }) => {
 			const response = await actions.user.updateAvatar(formData);
 
 			if (response.error) {
-				// Rollback: discard the optimistic preview and restore the previous state.
-				URL.revokeObjectURL(previewUrl);
-				optimisticUrl.set(previousUrl);
-				errorMessage.set(response.error);
-			} else {
-				// Confirm: release the previous object URL (the new one is now the truth).
-				if (previousUrl) URL.revokeObjectURL(previousUrl);
+				// Rollback: restore the previous preview.
+				setPreviewFile(previousFile);
+				setErrorMessage(response.error);
 			}
 		} catch (error) {
-			URL.revokeObjectURL(previewUrl);
-			optimisticUrl.set(previousUrl);
-			errorMessage.set(error instanceof Error ? error : new Error(String(error)));
+			setPreviewFile(previousFile);
+			setErrorMessage(error instanceof Error ? error : new Error(String(error)));
 		} finally {
-			isLoading.set(false);
+			setStatus('idle');
 		}
 	};
 
@@ -99,19 +98,19 @@ export default ({ children }: { children: React.ReactNode }) => {
 		<div className='flex flex-wrap items-center gap-6'>
 			<div className='relative overflow-hidden rounded-full'>
 				{/* Show the optimistic preview when available, otherwise fall back to the server-rendered child. */}
-				<Show if={optimisticUrl} else={children}>
-					{() => (
-						<img
-							src={optimisticUrl.get() ?? ''}
-							alt="Avatar de l'utilisateur"
-							className='h-36 w-36 object-cover'
-							width={144}
-							height={144}
-							decoding='async'
-						/>
-					)}
-				</Show>
-				<Reactive.span $className={dotsClass}>
+				{previewUrl ? (
+					<img
+						src={previewUrl}
+						alt="Avatar de l'utilisateur"
+						className='h-36 w-36 object-cover'
+						width={144}
+						height={144}
+						decoding='async'
+					/>
+				) : (
+					children
+				)}
+				<span className={dotsClass}>
 					{LOADING_DOT_CLASSES.map((delayClass) => (
 						<span
 							key={`loading-dot-${delayClass}`}
@@ -121,24 +120,20 @@ export default ({ children }: { children: React.ReactNode }) => {
 							)}
 						/>
 					))}
-				</Reactive.span>
+				</span>
 			</div>
 
-			<Reactive.label htmlFor='avatar' $className={labelClass}>
-				<Memo>
-					{() =>
-						isPreparing.get() ? (
-							<span className='flex items-center gap-2'>
-								<span className='inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent' />
-								Préparation...
-							</span>
-						) : isLoading.get() ? (
-							'En cours de chargement...'
-						) : (
-							'Changer l’image de profil'
-						)
-					}
-				</Memo>
+			<label htmlFor='avatar' className={labelClass}>
+				{isPreparing ? (
+					<span className='flex items-center gap-2'>
+						<span className='inline-block h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent' />
+						Préparation...
+					</span>
+				) : isBusy ? (
+					'En cours de chargement...'
+				) : (
+					'Changer l’image de profil'
+				)}
 				<input
 					type='file'
 					id='avatar'
@@ -149,10 +144,8 @@ export default ({ children }: { children: React.ReactNode }) => {
 					onChange={handleChange}
 					ref={inputRef}
 				/>
-			</Reactive.label>
-			<Show if={errorMessage}>
-				{() => <p className='text-red text-sm'>{errorMessage.get()?.message}</p>}
-			</Show>
+			</label>
+			{errorMessage && <p className='text-red text-sm'>{errorMessage.message}</p>}
 		</div>
 	);
 };

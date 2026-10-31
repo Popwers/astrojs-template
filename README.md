@@ -55,7 +55,7 @@ When you start a real project from this template:
 │   ├── lib/                # Helpers (strapi client, cookies, session, PWA, cn)
 │   ├── middleware/         # Astro middleware chain
 │   ├── pages/              # Routes (file-based)
-│   ├── stores/             # Legend State stores
+│   ├── stores/             # Client-side helpers (consent)
 │   ├── styles/             # Tailwind + globals
 │   ├── pwa.ts              # Service worker registration
 │   └── sw.ts               # Service worker (workbox, injectManifest)
@@ -134,7 +134,7 @@ There is no CI workflow. Checks run on your machine in the `pre-push` Git hook (
 - **Package manager**: bun (`bun.lock`)
 - **Quality**: Oxlint + Oxfmt + tsgo via `vp check`. Vendored [anti-slop](https://github.com/dmmulroy/anti-slop). Tailwind also uses `@shadcn/lint` and npm `cn`.
 - **Git hooks**: `.vite-hooks/` (`make install` or `vp config`)
-- **State**: Legend State
+- **State**: React `useState` per island (Zustand v5 only for state shared between islands)
 - **API**: Strapi (`STRAPI_URL` / `STRAPI_TOKEN`)
 - **Commits**: Conventional Commits (`cz` / `ga`)
 
@@ -177,7 +177,6 @@ docker run -p 4321:4321 --env-file .env your-project
 
 - [Astro](https://astro.build) (static by default, on-demand routes on the Node adapter)
 - [React](https://react.dev) (islands)
-- [Legend State](https://legendapp.com/open-source/state/) (reactive state)
 - [Tailwind CSS](https://tailwindcss.com)
 - [Bun](https://bun.sh) (runtime + package manager)
 - [Vite+](https://vite.plus) (toolchain)

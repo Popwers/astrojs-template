@@ -1,6 +1,6 @@
 # Astro.js template
 
-Astro 7 template (static by default, on-demand routes on the Node adapter) with React 19 islands, Tailwind 4, Legend State, and Strapi auth. The package manager is Bun (`bun.lock`). Vite+ (`vp`) is the JS façade. Dev, build, and preview stay on the Astro CLI. Never run `vp dev` here. That starts a bare Vite server and skips routing, SSR, and the Node adapter.
+Astro 7 template (static by default, on-demand routes on the Node adapter) with React 19 islands, Tailwind 4, and Strapi auth. The package manager is Bun (`bun.lock`). Vite+ (`vp`) is the JS façade. Dev, build, and preview stay on the Astro CLI. Never run `vp dev` here. That starts a bare Vite server and skips routing, SSR, and the Node adapter.
 
 ## Stack
 
@@ -8,7 +8,7 @@ Astro 7 template (static by default, on-demand routes on the Node adapter) with 
 | --- | --- |
 | App | Astro 7 `output: 'static'` + `@astrojs/node` standalone for `prerender = false` routes, React 19 islands |
 | UI | Tailwind CSS 4, SCSS, npm `cn` |
-| State | Legend State (`useObservable`, `observer`) |
+| State | React `useState` per island; Zustand v5 only when state is shared between islands |
 | API | Strapi (`STRAPI_URL`, `STRAPI_TOKEN`) |
 | Validation | Zod on Astro actions |
 | Runtime | Bun |
@@ -108,7 +108,7 @@ Copy `.env.example` to `.env`. The schema is in `astro.config.mjs` (`envField`).
 | `src/actions/` | Server actions |
 | `src/middleware/` | Session and guards |
 | `src/lib/` | Strapi client, cookies, `cn`, Sentry noise filters (`sentryNoise.ts`) |
-| `src/stores/` | Legend State |
+| `src/stores/` | Client-side stores and helpers (cookie consent) |
 | `src/data/` | Menus, route guards, cookie options, schema.org |
 | `src/styles/` | Tailwind 4 + SCSS |
 | `tests/` | Vitest, mirrors `src/` |

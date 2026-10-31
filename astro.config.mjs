@@ -226,7 +226,6 @@ export default defineConfig({
 				'react/jsx-runtime',
 				'react/jsx-dev-runtime',
 				'motion/react',
-				'@legendapp/state/react',
 			],
 		},
 	},

@@ -113,6 +113,11 @@ const routes: Route[] = [
 		},
 	},
 	{
+		method: 'POST',
+		path: /^\/api\/users\/avatar$/,
+		handle: (request) => (sessionAccount(request) ? Response.json({ id: 1 }) : unauthorized()),
+	},
+	{
 		method: 'PUT',
 		path: /^\/api\/users\/(\d+)$/,
 		handle: async (request, [id]) => {
