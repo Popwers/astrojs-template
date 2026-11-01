@@ -55,7 +55,7 @@
     "ai": "^7.0.159",
     "baseline-browser-mapping": "^2.11.34",
     "browserslist": "4.29.5",
-    "e2e": "^0.21.3",
+    "e2e": "^0.22.0",
     "react-doctor": "^0.9.21",
     "sass": "^1.107.1",
     "semantic-release": "^25.0.9",
