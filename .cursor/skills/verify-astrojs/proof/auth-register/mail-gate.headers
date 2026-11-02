@@ -1,0 +1,10 @@
+HTTP/1.1 302 Found
+Access-Control-Allow-Origin: http://127.0.0.1:4331
+Vary: Origin
+cache-control: private, no-store
+location: /register
+Date: Mon, 02 Nov 2026 16:06:44 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+

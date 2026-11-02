@@ -16,7 +16,8 @@ DEFAULT_PORT="${ASTROJS_VERIFY_PORT:-4331}"
 # and above the app's 4331-4351 pick range.
 DEFAULT_STUB_PORT="${ASTROJS_VERIFY_STUB_PORT:-4381}"
 
-export PATH="${HOME}/.local/bin:${HOME}/.bun/bin:${HOME}/.local/node22/bin:${PATH}"
+# No Node on this line: ensure_node picks the runtime from the floor Astro declares.
+export PATH="${HOME}/.local/bin:${HOME}/.bun/bin:${PATH}"
 
 usage() {
 	cat <<'EOF'
@@ -108,8 +109,38 @@ finally:
 PY
 }
 
+# Astro's own package.json declares the Node floor (">=22.23.4" for Astro 7.4). Read it after
+# install, fall back to 22.12 before it.
+node_floor() {
+	local pkg="$ROOT/node_modules/astro/package.json" floor=""
+	if [ -f "$pkg" ]; then
+		floor="$(python3 - "$pkg" <<'PYEOF'
+import json, re, sys
+engines = json.load(open(sys.argv[1])).get("engines", {}).get("node", "")
+match = re.search(r"(\d+\.\d+\.\d+)", engines)
+print(match.group(1) if match else "")
+PYEOF
+)"
+	fi
+	printf '%s\n' "${floor:-22.12.0}"
+}
+
+# True when the version printed by $1/node (or `node` on PATH for an empty $1) is >= $2.
+node_satisfies() {
+	local dir="$1" floor="$2" bin ver
+	bin="${dir:+$dir/}node"
+	[ -z "$dir" ] || [ -x "$bin" ] || return 1
+	ver="$("$bin" -v 2>/dev/null)" || return 1
+	ver="${ver#v}"
+	[ "$(printf '%s\n%s\n' "$floor" "$ver" | sort -V | head -n 1)" = "$floor" ]
+}
+
+# Pick the first Node that satisfies the floor: the one `vp env` manages, then every Vite+
+# runtime (newest first), then the user-level installs, then PATH. A hardcoded version dir
+# goes stale at the next `vp` upgrade, and a too-old Node makes `astro dev` exit at boot.
 ensure_node() {
-	local vp_node="" candidate ver major
+	local floor vp_node="" candidate ver runtime
+	floor="$(node_floor)"
 	if command -v vp >/dev/null 2>&1; then
 		case "$(command -v vp)" in
 		*/node_modules/.bin/vp) ;;
@@ -118,22 +149,23 @@ ensure_node() {
 			;;
 		esac
 	fi
+	local candidates=()
 	if [ -n "$vp_node" ] && [ -x "$vp_node" ]; then
-		export PATH="$(dirname "$vp_node"):${PATH}"
+		candidates+=("$(dirname "$vp_node")")
 	fi
-	for candidate in \
-		"${HOME}/.local/share/vite-plus/js_runtime/node/24.21.0/bin" \
-		"${HOME}/.local/share/vite-plus/js_runtime/node/22.23.2/bin" \
-		"${HOME}/.local/node22/bin" \
-		"${HOME}/.local/node/bin"; do
-		if [ -x "${candidate}/node" ]; then
+	for runtime in $(ls -d "${HOME}"/.local/share/vite-plus/js_runtime/node/*/bin 2>/dev/null | sort -rV); do
+		candidates+=("$runtime")
+	done
+	candidates+=("${HOME}/.local/node22/bin" "${HOME}/.local/node/bin")
+	for candidate in "${candidates[@]}"; do
+		if node_satisfies "$candidate" "$floor"; then
 			export PATH="${candidate}:${PATH}"
-			break
+			return 0
 		fi
 	done
+	node_satisfies "" "$floor" && return 0
 	ver="$(node -v 2>/dev/null || true)"
-	major="$(printf '%s' "${ver#v}" | awk -F. '{ print $1 + 0 }')"
-	[ "${major:-0}" -ge 22 ] || die "need Node >=22.12 (got ${ver:-missing}); install via vp env"
+	die "need Node >=${floor} for Astro (got ${ver:-missing}); install via vp env"
 }
 
 ensure_deps() {
@@ -532,26 +564,31 @@ cmd_screenshot() {
 	local profile="$TMP_DIR/chrome-profile"
 	rm -rf "$profile"
 	mkdir -p "$profile"
-	rm -f "$path"
+	# Paint into a sibling file and rename on success, so a failed shot leaves a committed PNG alone.
+	local shot="$path.part"
+	rm -f "$shot"
 	local chrome_log="$TMP_DIR/chrome.log"
 	with_timeout 45 "$chrome" --headless=new --disable-gpu --no-sandbox --disable-dev-shm-usage \
 		--hide-scrollbars --window-size=1280,800 --virtual-time-budget=8000 \
-		--user-data-dir="$profile" --screenshot="$path" "$target" >"$chrome_log" 2>&1 || true
-	if [ -s "$path" ]; then
+		--user-data-dir="$profile" --screenshot="$shot" "$target" >"$chrome_log" 2>&1 || true
+	if [ -s "$shot" ]; then
+		mv "$shot" "$path"
 		echo "screenshot: $path ($target)"
 		return 0
 	fi
-	rm -f "$path"
+	rm -f "$shot"
 	local profile_old="$TMP_DIR/chrome-profile-old"
 	rm -rf "$profile_old"
 	mkdir -p "$profile_old"
 	with_timeout 45 "$chrome" --headless --disable-gpu --no-sandbox --disable-dev-shm-usage \
 		--hide-scrollbars --window-size=1280,800 \
-		--user-data-dir="$profile_old" --screenshot="$path" "$target" >>"$chrome_log" 2>&1 || true
-	if [ -s "$path" ]; then
+		--user-data-dir="$profile_old" --screenshot="$shot" "$target" >>"$chrome_log" 2>&1 || true
+	if [ -s "$shot" ]; then
+		mv "$shot" "$path"
 		echo "screenshot: $path ($target) (headless fallback)"
 		return 0
 	fi
+	rm -f "$shot"
 	echo "screenshot: chrome timed out or failed ($target)" >&2
 	return 1
 }

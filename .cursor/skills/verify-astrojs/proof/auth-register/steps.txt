@@ -1,0 +1,5 @@
+mail-gate GET /register/mail-confirmation -> 302 /register
+register-form GET /register -> 200
+register POST /register?_action=auth.register -> 302 /register/mail-confirmation
+mail-confirmation GET /register/mail-confirmation -> 200
+resend-mail POST /register/mail-confirmation?_action=auth.confirmMail -> 200

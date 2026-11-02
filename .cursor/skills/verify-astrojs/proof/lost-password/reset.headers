@@ -1,0 +1,14 @@
+HTTP/1.1 302 Found
+Access-Control-Allow-Origin: http://127.0.0.1:4331
+Vary: Origin
+cache-control: private, no-store
+location: /dashboard
+set-cookie: user_token=<redacted>; Max-Age=604800; Path=/; Expires=Mon, 09 Nov 2026 16:05:06 GMT; HttpOnly; SameSite=Lax
+set-cookie: user_data=<redacted>; Max-Age=604800; Path=/; Expires=Mon, 09 Nov 2026 16:05:06 GMT; HttpOnly; SameSite=Lax
+set-cookie: user_data_timestamp=<redacted>; Max-Age=604800; Path=/; Expires=Mon, 09 Nov 2026 16:05:06 GMT; HttpOnly; SameSite=Lax
+set-cookie: password-reset-code=<redacted>; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT
+Date: Mon, 02 Nov 2026 16:06:44 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+Transfer-Encoding: chunked
+

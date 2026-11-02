@@ -48,13 +48,13 @@ Keep implementation details out of the map. Name only user paths, stable handles
 - [Sign in](./auth-login.md) covers `/login`, logged-out redirects into it, and the stub-backed sign-in, dashboard, account page, and sign-out.
 - [Register](./auth-register.md) covers `/register`, the stub-backed submit, the mail-confirmation page and resend, and the mail-confirmation / profile gates.
 - [Lost password](./lost-password.md) covers `/lost-password`, the stub-backed forgot and reset submits, the wait-mail page, the `?code=` hop, and the wait-mail / reset gates.
-- [Legal pages](./legal-pages.md) covers `/mentions-legales` and `/politique-confidentialite`.
+- [Legal pages](./legal-pages.md) covers `/mentions-legales` (CMS body plus the static `Hébergement` section) and `/politique-confidentialite`.
 
 ## Not yet mapped (reachable, no recipe)
 
 These user-facing paths exist. They are not a pass for any feature above. Do not invent recipes mid-run.
 
-- Profile update and avatar upload on `/dashboard/account` (page load is covered by [Sign in](./auth-login.md))
+- Profile update and avatar upload on `/dashboard/account` (page load is covered by [Sign in](./auth-login.md); the stub now answers `POST users/avatar`, so a recipe is possible)
 - `/register/profil` **with a session whose profile is incomplete** (the stub reader's profile is complete)
 - Cookie-banner accept / customize clicks (markup is covered on public home; visibility needs hydration)
 - PWA install / service worker (`/manifest.webmanifest`, `src/sw.ts`)

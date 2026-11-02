@@ -34,13 +34,13 @@ Preconditions:
 - **Guard dashboard.** Run `control-astrojs http GET /dashboard --no-follow`. Status is `302` and `Location` is `/login`.
 - **Guard account.** Run `control-astrojs http GET /dashboard/account --no-follow`. Status is `302` and `Location` is `/login`.
 - **Guard profile setup.** Run `control-astrojs http GET /register/profil --no-follow`. Status is `302` and `Location` is `/login`.
-- **Painted frame.** Run `control-astrojs screenshot --path artifacts/login.png --url /login`. The PNG shows `Se connecter`.
+- **Painted frame.** Run `control-astrojs screenshot --path artifacts/login.png --url /login`. The PNG shows `Se connecter`. On a host where headless Chrome cannot paint at all, report the frame unreachable with that prerequisite and keep the HTML markers as proof.
 - **Sign in, browse, sign out.** Run `control-astrojs drive auth-login`. It prints one line per step and writes `proof/auth-login/` (`steps.txt`, one `.headers` + `.html` per step, `doctor.txt`, `manifest.json`). Expected steps: `guard` `302 /login`, `turnstile-missing` `403`, `wrong-password` `400`, `login` `302 /dashboard` with `user_token`, `user_data`, `user_data_timestamp` set, `dashboard` `200` with `Mon compte` and `Jean Dupont`, `account` `200` with `Mon profil`, `login-when-logged-in` `302 /dashboard`, `logout` `302 /login`, `guard-after-logout` `302 /login`. A 200 HTML form after the login POST is not a successful login.
 
 ## Gotchas
 
 - Docker health is `GET /api/health` (200 `ok`, plain text). Doctor probes `/login` instead, so a healthy `/api/health` does not prove the sign-in page.
-- The form holds a Turnstile widget (`data-turnstile`). A POST without `cf-turnstile-response` is a 403 before Strapi is called. `drive auth-login` sends Cloudflare's dummy token, which the always-pass test secret accepts at siteverify; that needs network access to `challenges.cloudflare.com`, or the submit answers 503 with `La vérification anti-robot est indisponible`, not a pass or a wrong password.
+- The form holds a Turnstile widget (`data-turnstile`). A POST without `cf-turnstile-response` is a 403 before Strapi is called. `drive auth-login` sends Cloudflare's dummy token, which the always-pass test secret accepts at siteverify; that needs network access to `challenges.cloudflare.com`, or the submit answers 503 with `La vérification anti-robot est indisponible`, not a pass or a wrong password. The same 503 comes back when siteverify answers a non-2xx status or an unexpected body (a bad secret, an outage).
 - `/login`, `/dashboard`, and their redirects answer `Cache-Control: private, no-store`.
 - `PasswordInput` is a React island (`client:idle`). `#password` is in the SSR HTML.
 - Submit is a React island. The accessible name is the `label` prop `Se connecter`.
