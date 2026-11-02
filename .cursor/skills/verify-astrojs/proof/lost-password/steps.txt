@@ -1,0 +1,10 @@
+wait-gate GET /lost-password/wait-mail -> 302 /lost-password
+reset-gate GET /lost-password/reset -> 302 /lost-password
+forgot-form GET /lost-password -> 200
+forgot POST /lost-password?_action=password.forgotPassword -> 302 /lost-password/wait-mail
+wait-mail GET /lost-password/wait-mail -> 200
+reset-link GET /lost-password/reset?code=verify -> 302 /lost-password/reset
+reset-form GET /lost-password/reset -> 200
+reset POST /lost-password/reset?_action=password.resetPassword -> 302 /dashboard
+dashboard GET /dashboard -> 200
+logout POST /dashboard?_action=auth.logout -> 302 /login

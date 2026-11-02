@@ -1,0 +1,35 @@
+{
+  "feature": "auth-register",
+  "baseUrl": "http://127.0.0.1:4331",
+  "strapi": "tests/e2e/strapi-stub.ts on 127.0.0.1:4381",
+  "capturedAt": "2026-11-02T16:06:44.396523+00:00",
+  "commands": [
+    "mail-gate GET /register/mail-confirmation -> 302 /register",
+    "register-form GET /register -> 200",
+    "register POST /register?_action=auth.register -> 302 /register/mail-confirmation",
+    "mail-confirmation GET /register/mail-confirmation -> 200",
+    "resend-mail POST /register/mail-confirmation?_action=auth.confirmMail -> 200"
+  ],
+  "checks": [
+    "/register/mail-confirmation without cookie -> 302 /register",
+    "/register shows S\u2019inscrire, email and password pair, Turnstile widget",
+    "register -> 302 /register/mail-confirmation, sets mail-confirmation",
+    "/register/mail-confirmation shows the submitted email",
+    "resend -> 200 with A confirmation email has been sent to your email address."
+  ],
+  "files": [
+    "doctor.txt",
+    "mail-confirmation.headers",
+    "mail-confirmation.html",
+    "mail-gate.headers",
+    "mail-gate.html",
+    "manifest.json",
+    "register-form.headers",
+    "register-form.html",
+    "register.headers",
+    "register.html",
+    "resend-mail.headers",
+    "resend-mail.html",
+    "steps.txt"
+  ]
+}

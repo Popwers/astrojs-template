@@ -1,0 +1,51 @@
+{
+  "feature": "lost-password",
+  "baseUrl": "http://127.0.0.1:4331",
+  "strapi": "tests/e2e/strapi-stub.ts on 127.0.0.1:4381",
+  "capturedAt": "2026-11-02T16:06:45.008112+00:00",
+  "commands": [
+    "wait-gate GET /lost-password/wait-mail -> 302 /lost-password",
+    "reset-gate GET /lost-password/reset -> 302 /lost-password",
+    "forgot-form GET /lost-password -> 200",
+    "forgot POST /lost-password?_action=password.forgotPassword -> 302 /lost-password/wait-mail",
+    "wait-mail GET /lost-password/wait-mail -> 200",
+    "reset-link GET /lost-password/reset?code=verify -> 302 /lost-password/reset",
+    "reset-form GET /lost-password/reset -> 200",
+    "reset POST /lost-password/reset?_action=password.resetPassword -> 302 /dashboard",
+    "dashboard GET /dashboard -> 200",
+    "logout POST /dashboard?_action=auth.logout -> 302 /login"
+  ],
+  "checks": [
+    "/lost-password/wait-mail and /lost-password/reset without cookies -> 302 /lost-password",
+    "/lost-password shows the heading, email field, submit, Retour \u00e0 l'accueil",
+    "forgot -> 302 /lost-password/wait-mail, sets wait-mail-password; wait-mail shows the email",
+    "/lost-password/reset?code=verify -> 302 /lost-password/reset, sets password-reset-code",
+    "reset -> 302 /dashboard signed in as the stub reader, password-reset-code cleared",
+    "logout -> 302 /login"
+  ],
+  "files": [
+    "dashboard.headers",
+    "dashboard.html",
+    "doctor.txt",
+    "forgot-form.headers",
+    "forgot-form.html",
+    "forgot.headers",
+    "forgot.html",
+    "logout.headers",
+    "logout.html",
+    "manifest.json",
+    "reset-form.headers",
+    "reset-form.html",
+    "reset-gate.headers",
+    "reset-gate.html",
+    "reset-link.headers",
+    "reset-link.html",
+    "reset.headers",
+    "reset.html",
+    "steps.txt",
+    "wait-gate.headers",
+    "wait-gate.html",
+    "wait-mail.headers",
+    "wait-mail.html"
+  ]
+}

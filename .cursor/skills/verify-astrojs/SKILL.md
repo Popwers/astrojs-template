@@ -23,8 +23,8 @@ What launch does:
 
 1. Writes `/tmp/verify-astrojs/state` and `run.env` (generated `COOKIE_SIGNING_SECRET`, never committed).
 2. Runs `bun install` if `node_modules` is missing.
-3. Puts Node `>=22.12` on `PATH` (Astro 7 refuses system Node 20). Prefers `vp env` Node, then Vite+ runtimes under `~/.local/share/vite-plus/js_runtime/node/`.
-4. Starts `bun tests/e2e/strapi-stub.ts` with `STRAPI_STUB_PORT=<stub port>` and waits until it answers. The stub knows two users from `tests/e2e/accounts.ts` and serves `auth/local`, `auth/local/register`, `auth/send-email-confirmation`, `auth/forgot-password`, `auth/reset-password`, `users/me`, and `PUT users/:id`. Register and forgot-password accept any email and store nothing; reset-password ignores the code and signs the reader in without changing their password. Every other Strapi call gets a 404 envelope, so CMS content falls back to empty.
+3. Puts a Node that satisfies Astro's own floor on `PATH` (`engines.node` of `node_modules/astro/package.json`, `>=22.23.4` for Astro 7.4; `22.12.0` before install). Candidates in order: the `vp env` Node, every Vite+ runtime under `~/.local/share/vite-plus/js_runtime/node/` newest first, `~/.local/node22/bin`, `~/.local/node/bin`, then `PATH`. An older Node makes `astro dev` exit at boot (`Node.js vX is not supported by Astro!` in `astro.log`) and launch reports `exited before ready`.
+4. Starts `bun tests/e2e/strapi-stub.ts` with `STRAPI_STUB_PORT=<stub port>` and waits until it answers. The stub knows two users from `tests/e2e/accounts.ts` and serves `auth/local`, `auth/local/register`, `auth/send-email-confirmation`, `auth/forgot-password`, `auth/reset-password`, `users/me`, `POST users/avatar`, and `PUT users/:id`. Register and forgot-password accept any email and store nothing; reset-password ignores the code and signs the reader in without changing their password. Every other Strapi call gets a 404 envelope, so CMS content falls back to empty.
 5. Starts `./node_modules/.bin/astro dev --ignore-lock --host 127.0.0.1 --port <port>` with disposable env only:
    - `COOKIE_SIGNING_SECRET` — random 32-byte hex; required, the process throws if unset
    - `STRAPI_URL=http://127.0.0.1:<stub port>` — the loopback stub, never a public host
@@ -81,7 +81,7 @@ Stable handles from this repo:
 
 | Surface | Handle |
 | --- | --- |
-| Home hero | text `Welcome to Astro` (`src/pages/index.astro`) |
+| Home hero | `h1` `Welcome to <span class="text-gradient">Astro</span>`; the contiguous `Welcome to Astro` in the HTML is the instructions paragraph under it (`src/pages/index.astro`) |
 | Home document title | `Your project \| Accueil` |
 | Nav home | link text `Accueil`, href `/` |
 | Nav placeholders | `Menu 1` → `/menu1`, `Menu 2 + Sous menu` → `/menu2` (those routes 404) |
@@ -98,7 +98,7 @@ Stable handles from this repo:
 | Reset form | heading `Changer votre mot de passe`, `#password`, `#passwordConfirmation`, button `Changer mon mot de passe` |
 | Turnstile | `data-turnstile` block inside every public form (login, register, mail confirmation, lost-password, wait-mail, reset) |
 | Dashboard (authed) | heading `Mon compte`, `#logout-button` `Se déconnecter`, link `Informations personnelles` → `/dashboard/account` |
-| Legal | `h1` `Mentions légales`, `h1` `Politique de confidentialité` |
+| Legal | `h1` `Mentions légales` then `h2` `Hébergement` with the host line (`Hetzner Online GmbH, …`), `h1` `Politique de confidentialité` |
 | Footer legal | links `/mentions-legales`, `/politique-confidentialite` |
 | Cookie banner | `#cookie-banner`, `#accept-all-cookies`, `#customize-cookies` (HTML present; visible after client JS) |
 | 404 | heading `Page non trouvée`, link `Retourner à l'accueil` |
@@ -141,9 +141,9 @@ Standards:
 - Capture the action and the result, not only the last screen.
 - A 200 on `/` is not enough for `public-home`. The HTML must contain `Welcome to Astro`.
 - A 200 on `/login` is not enough for `auth-login`. Assert `Se connecter`, `#email`, `#password`, and the logged-out `/dashboard` → `/login` redirect.
-- Chrome screenshots must show the page identity (`Welcome to Astro` on home, `Se connecter` on login). Headless Chrome is `google-chrome` or `/usr/bin/google-chrome` on Linux and `/Applications/Google Chrome.app` on macOS. Chrome often writes the PNG and then hangs; `control-astrojs screenshot` treats a non-empty file as success and kills the process. On a host with no Chrome, or where headless Chrome cannot paint at all (no PNG even for a `data:` URL), `drive public-home` skips the PNG; report the painted frame unreachable on that host and keep the HTML markers as proof.
+- Chrome screenshots must show the page identity (`Welcome to Astro` on home, `Se connecter` on login). Headless Chrome is `google-chrome` or `/usr/bin/google-chrome` on Linux and `/Applications/Google Chrome.app` on macOS. Chrome often writes the PNG and then hangs; `control-astrojs screenshot` treats a non-empty file as success and kills the process. It paints into `<path>.part` and renames on success, so a failed shot leaves a committed PNG in place. On a host with no Chrome, or where headless Chrome cannot paint at all (no PNG even for a `data:` URL), `drive public-home` skips the PNG; report the painted frame unreachable on that host and keep the HTML markers as proof.
 
-Committed proofs live at `proof/public-home/` and `proof/auth-login/`. Later runs may overwrite a folder only when re-proving the same feature.
+Committed proofs live at `proof/public-home/`, `proof/auth-login/`, `proof/auth-register/`, and `proof/lost-password/`. Later runs may overwrite a folder only when re-proving the same feature.
 
 ## Cleanup
 
