@@ -36,6 +36,10 @@ Default branch is `master`. Conventional commits via `cz` / `ga`. `vp config` wr
 
 There is no CI workflow. Checks run locally in the `pre-push` hook: `make verify`, then e2e when the push touches app code. `git push --no-verify` bypasses it once. Releases stay on GitHub (`versionning.yml`, `ubuntu-latest`).
 
+## Tests share a worker
+
+Test files run with `isolate: false`, so one worker runs several files on one module registry. `tests/support/setup.ts` (`test.setupFiles`) runs after each file's own teardown and resets real timers, mocks, `vi.stubGlobal` and `vi.stubEnv` values, and the module registry. A test still restores what that does not cover. That means `process.env` keys assigned directly, globals assigned directly instead of `vi.stubGlobal`, module-level state and its reset helpers (`rateLimit`, the consent store), and servers or sockets it opens. Prefer `vi.stubGlobal` and `vi.stubEnv` over direct assignment.
+
 ## Architecture
 
 ### Middleware

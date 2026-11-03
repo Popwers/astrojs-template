@@ -270,8 +270,9 @@ export default defineConfig({
 	test: {
 		// The e2e runner owns tests/e2e (`vp run test:e2e`).
 		exclude: [...configDefaults.exclude, 'tests/e2e/**'],
-		// Reuse workers across files. Each test file restores what it touches (fetch, env, storage).
+		// Reuse workers across files. tests/support/setup.ts resets timers, mocks, stubs and modules after each file.
 		isolate: false,
+		setupFiles: ['./tests/support/setup.ts'],
 		env: {
 			COOKIE_SIGNING_SECRET: 'test-cookie-signing-secret',
 		},
