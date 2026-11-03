@@ -270,6 +270,8 @@ export default defineConfig({
 	test: {
 		// The e2e runner owns tests/e2e (`vp run test:e2e`).
 		exclude: [...configDefaults.exclude, 'tests/e2e/**'],
+		// Reuse workers across files. Each test file restores what it touches (fetch, env, storage).
+		isolate: false,
 		env: {
 			COOKIE_SIGNING_SECRET: 'test-cookie-signing-secret',
 		},
