@@ -12,7 +12,7 @@ Astro 7 template (static by default, on-demand routes on the Node adapter) with 
 | API | Strapi (`STRAPI_URL`, `STRAPI_TOKEN`) |
 | Validation | Zod on Astro actions |
 | Runtime | Bun |
-| Toolchain | Vite+ (`vp`): Oxlint, Oxfmt, tsgo, Vitest, Git hooks |
+| Toolchain | Vite+ (`vp`): Oxlint, Oxfmt, Vitest, Git hooks. Types: `bun check` |
 
 ## Commands
 
@@ -22,9 +22,9 @@ Type `make` for the list. `vp` calls bun because `packageManager` is bun.
 | --- | --- | --- |
 | Install + hooks | `make install` | `vp i` then `vp config` |
 | Dev server (`localhost:4321`) | `make dev` | `vp run dev` → `astro dev --host` |
-| Lint + fmt + types | `make check` | `vp check` |
+| Lint + fmt + types | `make check` | `vp check`, then `bun check --no-script` |
 | Tests | `make test` | `vp test` |
-| Pre-push gate | `make verify` | `astro sync`, `vp check`, `astro check`, `vp test run`, portability guard, build |
+| Pre-push gate | `make verify` | `astro sync`, `make check`, `astro check`, `vp test run`, portability guard, build |
 | E2E golden paths | `vp run test:e2e` | `e2e run` against the stub Strapi in `tests/e2e` |
 | Production build | `make build` | `vp run build` → `astro build` |
 | Preview the build | `make preview` | `vp run preview` → `astro preview` |
@@ -32,9 +32,15 @@ Type `make` for the list. `vp` calls bun because `packageManager` is bun.
 
 The e2e runner (`e2e.config.ts`) starts `tests/e2e/serve.sh`, which runs `tests/e2e/strapi-stub.ts` on port 41337, builds the app and serves it on port 44321, plus three more instances of the build for Turnstile: port 44322 whose secret always fails, port 44323 whose site key always asks for a click, port 44324 whose site key always blocks (`E2E_STRAPI_STUB_PORT`, `E2E_APP_PORT`, `E2E_REJECT_PORT`, `E2E_CHALLENGE_PORT` and `E2E_BLOCK_PORT` override them; ports and Turnstile test keys live in `tests/e2e/servers.ts`); the runner downloads Chromium on first use and the widget loads from `challenges.cloudflare.com`, so the run needs network access to it. Add a stub route when a golden path calls a new Strapi endpoint. `vp run test:e2e:ci` is the run the pre-push gate uses: it skips the `agent`-tagged test, which needs a model login (`bunx e2e login spacexai`). Results land in `.e2e/` (`report.json`, `logs/app.log`). Vitest excludes `tests/e2e`.
 
-Default branch is `master`. Conventional commits via `cz` / `ga`. `vp config` writes hooks into `.vite-hooks/` (installed with the dependencies by `prepare`, or `make hooks`). The staged check is `vp check --fix`.
+Default branch is `master`. Conventional commits via `cz` / `ga`. `vp config` writes hooks into `.vite-hooks/` (installed with the dependencies by `prepare`, or `make hooks`). The staged checks are `vp check --fix` and `bun check --no-script`.
 
 There is no CI workflow. Checks run locally in the `pre-push` hook: `make verify`, then e2e when the push touches app code. `git push --no-verify` bypasses it once. Releases stay on GitHub (`versionning.yml`, `ubuntu-latest`).
+
+## Tests share a worker
+
+Test files run with `isolate: false`, so one worker runs several files on one module registry. `tests/support/setup.ts` (`test.setupFiles`) runs after each file's own teardown and resets real timers, mocks, `vi.stubGlobal` and `vi.stubEnv` values, and the module registry. A test still restores what that does not cover. That means `process.env` keys assigned directly, globals assigned directly instead of `vi.stubGlobal`, module-level state and its reset helpers (`rateLimit`, the consent store), and servers or sockets it opens. Prefer `vi.stubGlobal` and `vi.stubEnv` over direct assignment.
+
+The type check is `bun check --no-script`. `vp check` no longer type-checks (`lint.options.typeCheck` is `false`).
 
 ## Architecture
 

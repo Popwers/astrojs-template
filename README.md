@@ -80,14 +80,14 @@ Type `make` (or `make help`) to list targets.
 | `make install` | Install dependencies (`vp i`) and Git hooks (`vp config`) |
 | `make hooks` | Reinstall Git hooks only (`vp config`) |
 | `make dev` | Dev server at `localhost:4321` (`astro dev --host`) |
-| `make check` | Oxlint + Oxfmt + tsgo (`vp check`) |
+| `make check` | Oxlint + Oxfmt (`vp check`), then `bun check --no-script` |
 | `make test` | Run all tests (`vp test`) |
-| `make verify` | Pre-push gate: `astro sync`, `vp check`, `astro check`, tests, build |
+| `make verify` | Pre-push gate: `astro sync`, `make check`, `astro check`, tests, build |
 | `vp run test:e2e` | e2e golden paths against a stub Strapi (`tests/e2e`) |
 | `make build` | Production build to `./dist/` (`astro build`) |
 | `make preview` | Preview the production build (`astro preview`) |
 | `vp run generate-pwa-assets` | Generate PWA icons/splash from `public/icon.png` |
-| `vp check --fix` | Same as `make check`, with auto-fix |
+| `vp check --fix` | Lint and format with auto-fix (no type check, see `bun check --no-script`) |
 
 The test script is `vp test`. Tests import from `vitest`. The Makefile target is `vp test`, not `vp run test`.
 
@@ -126,13 +126,13 @@ This template sets no Content Security Policy. If you add one, allow `https://ch
 
 There is no CI workflow. Checks run on your machine in the `pre-push` Git hook (`.vite-hooks/pre-push`): `make verify` first, then the e2e suite (`vp run test:e2e:ci`) when the push touches app code. A push that only changes docs or Markdown skips the gate. Hooks install themselves with the dependencies (`prepare` runs `vp config`); `make hooks` reinstalls them; projects started from this template inherit them. `git push --no-verify` bypasses the gate once.
 
-`make verify` runs `astro sync`, `vp check`, `astro check`, `vp test run`, the test portability guard (`scripts/check-test-portability.sh`) and `make build`, with dummy `STRAPI_*` and `COOKIE_SIGNING_SECRET` values, so it needs no `.env`. Releases stay on GitHub: `.github/workflows/versionning.yml` runs semantic-release on `ubuntu-latest`.
+`make verify` runs `astro sync`, `make check`, `astro check`, `vp test run`, the test portability guard (`scripts/check-test-portability.sh`) and `make build`, with dummy `STRAPI_*` and `COOKIE_SIGNING_SECRET` values, so it needs no `.env`. Releases stay on GitHub: `.github/workflows/versionning.yml` runs semantic-release on `ubuntu-latest`.
 
 ## Toolchain
 
 - **Façade**: Vite+ (`vp` / `vpx`). Type `vp` in this repo. Do not type `npm i` / `npx` / `bun add`.
 - **Package manager**: bun (`bun.lock`)
-- **Quality**: Oxlint + Oxfmt + tsgo via `vp check`. Vendored [anti-slop](https://github.com/dmmulroy/anti-slop). Tailwind also uses `@shadcn/lint` and npm `cn`.
+- **Quality**: Oxlint + Oxfmt via `vp check`, types via `bun check --no-script`. Vendored [anti-slop](https://github.com/dmmulroy/anti-slop). Tailwind also uses `@shadcn/lint` and npm `cn`.
 - **Git hooks**: `.vite-hooks/` (`make install` or `vp config`)
 - **State**: React `useState` per island (Zustand v5 only for state shared between islands)
 - **API**: Strapi (`STRAPI_URL` / `STRAPI_TOKEN`)
