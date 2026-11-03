@@ -18,9 +18,8 @@ hooks: ## Install Git hooks (vp config)
 	@vp config >/dev/null
 	@echo "Hooks installed (.vite-hooks/: pre-commit runs vp staged, pre-push runs make verify)"
 
-check: ## Lint, format (vp check), then typecheck (bun check)
+check: ## Lint, format, and typecheck (Oxlint + Oxfmt + tsgo)
 	@vp check
-	@bun check --no-script
 
 test: ## Run the Vitest suite (vp test)
 	@vp test

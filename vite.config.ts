@@ -15,7 +15,7 @@ const fromRoot = (relativePath: string) => fileURLToPath(new URL(relativePath, i
  *         bracket on same line, arrow parens always, deterministic import
  *         order, Tailwind sorted, package.json sorted.
  * lint:   type-aware oxlint with a small curated rule set + Astro overrides.
- * staged: run `vp check --fix` on staged files, then `bun check --no-script` (install via `vp config`).
+ * staged: run `vp check --fix` on staged files (install via `vp config`).
  */
 
 const hasShadcnLint = existsSync('node_modules/@shadcn/lint');
@@ -149,8 +149,7 @@ export default defineConfig({
 		],
 		options: {
 			typeAware: true,
-			// Type checking runs in `bun check --no-script` (Makefile `check`, staged hook).
-			typeCheck: false,
+			typeCheck: true,
 		},
 		// Curated overrides on top of oxlint `recommended`; keep the set tight.
 		rules: lintRules({
@@ -261,8 +260,6 @@ export default defineConfig({
 	// Run on staged files at commit time. Hook is installed once with `vp config`.
 	staged: {
 		'*.{js,jsx,ts,tsx,vue,svelte,astro,json,css,scss,html,md}': 'vp check --fix',
-		// The whole project is type-checked, whatever the staged files are.
-		'*.{js,jsx,ts,tsx,astro}': () => 'bun check --no-script',
 		'*.{js,jsx,ts,tsx}': 'react-doctor --no-telemetry --no-supply-chain --blocking warning',
 	},
 
