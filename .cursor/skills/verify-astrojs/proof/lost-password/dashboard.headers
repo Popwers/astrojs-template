@@ -3,9 +3,9 @@ Access-Control-Allow-Origin: http://127.0.0.1:4331
 Vary: Origin
 cache-control: private, no-store
 content-type: text/html
-set-cookie: user_data=<redacted>; Max-Age=604800; Path=/; Expires=Mon, 09 Nov 2026 16:05:06 GMT; HttpOnly; SameSite=Lax
-set-cookie: user_data_timestamp=<redacted>; Max-Age=604800; Path=/; Expires=Mon, 09 Nov 2026 16:05:06 GMT; HttpOnly; SameSite=Lax
-Date: Mon, 02 Nov 2026 16:06:44 GMT
+set-cookie: user_data=<redacted>; Max-Age=604800; Path=/; Expires=Mon, 16 Nov 2026 08:39:59 GMT; HttpOnly; SameSite=Lax
+set-cookie: user_data_timestamp=<redacted>; Max-Age=604800; Path=/; Expires=Mon, 16 Nov 2026 08:39:59 GMT; HttpOnly; SameSite=Lax
+Date: Mon, 09 Nov 2026 08:41:35 GMT
 Connection: keep-alive
 Keep-Alive: timeout=5
 Transfer-Encoding: chunked

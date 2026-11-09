@@ -2,7 +2,7 @@
   "feature": "lost-password",
   "baseUrl": "http://127.0.0.1:4331",
   "strapi": "tests/e2e/strapi-stub.ts on 127.0.0.1:4381",
-  "capturedAt": "2026-11-02T16:06:45.008112+00:00",
+  "capturedAt": "2026-11-09T08:41:35.526777+00:00",
   "commands": [
     "wait-gate GET /lost-password/wait-mail -> 302 /lost-password",
     "reset-gate GET /lost-password/reset -> 302 /lost-password",

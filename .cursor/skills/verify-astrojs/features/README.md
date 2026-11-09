@@ -14,6 +14,7 @@ This directory is the maintained source for verifying the user-facing behavior o
 
 - Start every recipe from the baseline state unless its preconditions say otherwise.
 - Prefer HTTP (`control-astrojs http`) for status, redirects, and HTML markers. `http` prints only hits from a fixed marker list; when a recipe names any other body string (`data-turnstile`, an `href`), add `--body FILE` and grep the file.
+- `astro dev` adds `data-astro-source-file` (the checkout's absolute path) and `data-astro-source-loc` to most elements. Grep text, an `id=`/`href=` attribute, or a closing form such as `>Hébergement</h2>`, never a bare opening tag like `<h2>`.
 - Use `control-astrojs screenshot` when the proof needs a painted frame.
 - Prefer labels, ids, and the handles in the parent `SKILL.md` over CSS or coordinates.
 - Treat every command as literal. Keep quoted names and flags unchanged.
@@ -58,7 +59,7 @@ These user-facing paths exist. They are not a pass for any feature above. Do not
 - `/register/profil` **with a session whose profile is incomplete** (the stub reader's profile is complete)
 - Cookie-banner accept / customize clicks (markup is covered on public home; visibility needs hydration)
 - PWA install / service worker (`/manifest.webmanifest`, `src/sw.ts`)
-- `/robots.txt` and `/sitemap-index.xml`. The sitemap is emitted by `astro build` only, so it is a 404 on the `astro dev` verify stack.
+- `/robots.txt` and `/sitemap-index.xml`. `/robots.txt` answers 200 on the verify stack: `User-agent: *` / `Allow: /`, then a `Disallow: /` block for named AI-training and SEO crawlers (`Bytespider`, `CCBot`, …), then the `Sitemap:` line. The sitemap is emitted by `astro build` only, so it is a 404 on the `astro dev` verify stack.
 - `/500` (`src/pages/500.astro`) returns HTTP 500 with heading `Erreur 500`. It is the custom error page, not a health check and not a pass for any feature above.
 
 `/terms` is linked from register copy and has no page. Hitting it is a 404, not a mapped legal page.

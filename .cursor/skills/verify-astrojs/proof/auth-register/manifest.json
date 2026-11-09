@@ -2,7 +2,7 @@
   "feature": "auth-register",
   "baseUrl": "http://127.0.0.1:4331",
   "strapi": "tests/e2e/strapi-stub.ts on 127.0.0.1:4381",
-  "capturedAt": "2026-11-02T16:06:44.396523+00:00",
+  "capturedAt": "2026-11-09T08:41:35.005511+00:00",
   "commands": [
     "mail-gate GET /register/mail-confirmation -> 302 /register",
     "register-form GET /register -> 200",
