@@ -3,8 +3,8 @@ Access-Control-Allow-Origin: http://127.0.0.1:4331
 Vary: Origin
 cache-control: private, no-store
 location: /register/mail-confirmation
-set-cookie: mail-confirmation=<redacted>; Max-Age=3600; Path=/; Expires=Mon, 02 Nov 2026 17:06:44 GMT; HttpOnly; SameSite=Lax
-Date: Mon, 02 Nov 2026 16:06:44 GMT
+set-cookie: mail-confirmation=<redacted>; Max-Age=3600; Path=/; Expires=Mon, 09 Nov 2026 09:41:34 GMT; HttpOnly; SameSite=Lax
+Date: Mon, 09 Nov 2026 08:41:34 GMT
 Connection: keep-alive
 Keep-Alive: timeout=5
 Transfer-Encoding: chunked

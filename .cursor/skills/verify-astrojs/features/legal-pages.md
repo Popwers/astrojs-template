@@ -24,7 +24,7 @@ Preconditions:
 - `control-astrojs doctor` reports the owned URL.
 - Strapi is the verify stub. CMS body copy is empty; the hosting section on `/mentions-legales` does not depend on it.
 
-- **Mentions.** Run `control-astrojs http GET /mentions-legales --body artifacts/mentions.html`. Status is `200`, `cache-control=private, no-store` while the stub has no content. The markers contain `Mentions légales`; the saved HTML contains `<h2>Hébergement</h2>` and `Hetzner Online GmbH`.
+- **Mentions.** Run `control-astrojs http GET /mentions-legales --body artifacts/mentions.html`. Status is `200`, `cache-control=private, no-store` while the stub has no content. The markers contain `Mentions légales`; the saved HTML contains `>Hébergement</h2>` and `Hetzner Online GmbH`. Grep the closing form: under `astro dev` the opening tag carries `data-astro-source-*` attributes, so `<h2>Hébergement</h2>` never matches.
 - **Privacy.** Run `control-astrojs http GET /politique-confidentialite --body artifacts/privacy.html`. Status is `200`. The body contains `Politique de confidentialité` and no `Hébergement` section.
 - **Footer entry.** Run `control-astrojs http GET / --body artifacts/home.html`. The saved HTML contains `href="/mentions-legales"` and `href="/politique-confidentialite"`.
 - **Empty CMS body.** Do not require Strapi rich text. A heading plus empty `TextRenderer` is a pass on `/politique-confidentialite`; on `/mentions-legales` the `Hébergement` section must still follow the empty body. A 500 is a product regression.

@@ -64,7 +64,7 @@ If anything looks off, stop. Do not attach to `localhost:4321` or any instance t
 
 ## Drive
 
-Harness is `control-astrojs` (HTTP + optional Chrome). Prefer HTTP for status, redirects, and HTML markers. Use Chrome when the proof needs a painted frame or a click the HTML dump cannot show.
+Harness is `control-astrojs` (HTTP + optional Chrome). Prefer HTTP for status, redirects, and HTML markers. Dev HTML annotates elements with `data-astro-source-*` attributes, so grep text or closing forms (`>Hébergement</h2>`), not bare opening tags. Use Chrome when the proof needs a painted frame or a click the HTML dump cannot show.
 
 ```bash
 .cursor/skills/verify-astrojs/bin/control-astrojs http GET /

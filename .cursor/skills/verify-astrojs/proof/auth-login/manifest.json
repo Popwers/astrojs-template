@@ -2,7 +2,7 @@
   "feature": "auth-login",
   "baseUrl": "http://127.0.0.1:4331",
   "strapi": "tests/e2e/strapi-stub.ts on 127.0.0.1:4381",
-  "capturedAt": "2026-11-02T16:06:43.919966+00:00",
+  "capturedAt": "2026-11-09T08:41:34.608385+00:00",
   "commands": [
     "guard GET /dashboard -> 302 /login",
     "turnstile-missing POST /login?_action=auth.login -> 403",
