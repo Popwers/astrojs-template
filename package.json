@@ -40,7 +40,7 @@
   "devDependencies": {
     "@ai-sdk/xai": "^5.0.46",
     "@astrojs/check": "^0.9.12",
-    "@e2e-dev/web": "^0.15.5",
+    "@e2e-dev/web": "^0.16.0",
     "@oxlint/plugins": "1.93.0",
     "@playform/compress": "^0.2.5",
     "@semantic-release/changelog": "^7.0.0",
