@@ -100,7 +100,7 @@ Stable handles from this repo:
 | Dashboard (authed) | heading `Mon compte`, `#logout-button` `Se déconnecter`, link `Informations personnelles` → `/dashboard/account` |
 | Legal | `h1` `Mentions légales` then `h2` `Hébergement` with the host line (`Hetzner Online GmbH, …`), `h1` `Politique de confidentialité` |
 | Footer legal | links `/mentions-legales`, `/politique-confidentialite` |
-| Cookie banner | `#cookie-banner`, `#accept-all-cookies`, `#customize-cookies` (HTML present; visible after client JS) |
+| Cookie banner | `#cookie-banner`, `#accept-all-cookies`, `#customize-cookies` (HTML present; client JS shows it 4 s after load when no consent is stored) |
 | 404 | heading `Page non trouvée`, link `Retourner à l'accueil` |
 | Health probe | `GET /api/health` is 200 `ok`, `Cache-Control: no-store` (the Docker `HEALTHCHECK`); doctor still probes `/login` |
 

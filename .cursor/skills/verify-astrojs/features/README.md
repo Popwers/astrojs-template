@@ -56,9 +56,10 @@ Keep implementation details out of the map. Name only user paths, stable handles
 These user-facing paths exist. They are not a pass for any feature above. Do not invent recipes mid-run.
 
 - Profile update and avatar upload on `/dashboard/account` (page load is covered by [Sign in](./auth-login.md); the stub now answers `POST users/avatar`, so a recipe is possible)
+- Account deletion on `/dashboard/account`: checkbox `#confirmation` and button `Supprimer définitivement mon compte`. The stub has no `DELETE users/:id` route, so the submit cannot complete on the verify stack.
 - `/register/profil` **with a session whose profile is incomplete** (the stub reader's profile is complete)
 - Cookie-banner accept / customize clicks (markup is covered on public home; visibility needs hydration)
-- PWA install / service worker (`/manifest.webmanifest`, `src/sw.ts`)
+- PWA install / service worker (`/manifest.webmanifest`, `src/sw.ts`). On the `astro dev` verify stack, `/manifest.webmanifest` answers 200 and pages link it, but the layout never registers the service worker and unregisters any existing one. Registration only happens on a built server.
 - `/robots.txt` and `/sitemap-index.xml`. `/robots.txt` answers 200 on the verify stack: `User-agent: *` / `Allow: /`, then a `Disallow: /` block for named AI-training and SEO crawlers (`Bytespider`, `CCBot`, …), then the `Sitemap:` line. The sitemap is emitted by `astro build` only, so it is a 404 on the `astro dev` verify stack.
 - `/500` (`src/pages/500.astro`) returns HTTP 500 with heading `Erreur 500`. It is the custom error page, not a health check and not a pass for any feature above.
 
