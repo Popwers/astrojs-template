@@ -37,3 +37,4 @@ pnpm-debug.log*
 .e2e/failures/
 .e2e/logs/
 .e2e/videos/
+.e2e/timings.json
