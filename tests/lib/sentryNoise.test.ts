@@ -1,6 +1,6 @@
 import { IGNORE_SENTRY_ERRORS, isVisitorNetworkFailure } from '@lib/sentryNoise';
 import { eventFiltersIntegration, type ErrorEvent } from '@sentry/astro';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test } from 'vite-plus/test';
 
 const sentryFilter = eventFiltersIntegration({
 	ignoreErrors: [...IGNORE_SENTRY_ERRORS],

@@ -1,5 +1,5 @@
 import { NEED_REGISTER_ROUTES, RESTRICTED_WHEN_LOGGED_IN, RESTRICTED_WHEN_LOGGED_OUT } from '@data/routes';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('Navigation route guards', () => {
 	it('restricts account page access for unauthenticated users', () => {
