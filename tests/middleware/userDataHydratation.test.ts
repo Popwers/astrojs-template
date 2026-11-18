@@ -1,5 +1,5 @@
 import type { FetchProps, StrapiError } from '@interfaces/strapi';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { getUserFromCookie } from '../../src/lib/userCookie';
 import { hydrateUserData } from '../../src/middleware/userDataHydratation';

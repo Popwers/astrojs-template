@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 
 import { resolveCookieSigningSecret, signCookiePayload, verifySignedCookiePayload } from '@lib/signedCookie';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 const PUBLIC_DEFAULT = 'dev-cookie-signing-secret-change-me';
 

@@ -1,6 +1,6 @@
 import type { ClientContext } from '@lib/clientIp';
 import { assertTurnstile } from '@lib/turnstile';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
 
 import { codeOf, messageOf } from '../utils/actionError';
 import { fetchUrl, installFetchStub } from '../utils/fetchStub';

@@ -1,6 +1,6 @@
 import type { User } from '@interfaces/user';
 import { isPersistableUser, resolveUserAfterRefresh } from '@lib/userRefresh';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 const createUser = (overrides: Partial<User> = {}): User => ({
 	id: 1,

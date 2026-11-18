@@ -6,7 +6,7 @@ import {
 	asPaginatedPageCount,
 	asPaginatedResults,
 } from '@lib/strapiResponse';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('strapiResponse helpers', () => {
 	it('returns safe array fallbacks for invalid values', () => {

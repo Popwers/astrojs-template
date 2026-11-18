@@ -1,5 +1,5 @@
 import { getBrowserCookie, removeBrowserCookie, setBrowserCookie } from '@lib/cookie';
-import { beforeEach, describe, expect, test } from 'vitest';
+import { beforeEach, describe, expect, test } from 'vite-plus/test';
 
 describe('Cookie functions', () => {
 	beforeEach(() => {
