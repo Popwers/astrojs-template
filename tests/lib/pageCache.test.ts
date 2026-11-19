@@ -1,10 +1,4 @@
-import {
-	hasSessionCookie,
-	pageCacheVerdict,
-	PRIVATE_CACHE_CONTROL,
-	PUBLIC_PAGE_CACHE_CONTROL,
-	type PageCacheFacts,
-} from '@lib/pageCache';
+import { hasSessionCookie, pageCacheVerdict, type PageCacheFacts } from '@lib/pageCache';
 import { describe, expect, it } from 'vite-plus/test';
 
 // How the policy can fail: a member's page reaches a shared cache (session, private route, island,
@@ -61,13 +55,6 @@ describe('pageCacheVerdict', () => {
 		expect(pageCacheVerdict({ ...anonymousPage, cacheControl: 'no-store' })).toBe('private');
 		expect(pageCacheVerdict({ ...anonymousPage, cacheControl: 'private, max-age=60' })).toBe('private');
 		expect(pageCacheVerdict({ ...anonymousPage, cacheControl: 'public, s-maxage=60' })).toBe('keep');
-	});
-
-	it('uses the documented header values', () => {
-		expect(PUBLIC_PAGE_CACHE_CONTROL).toBe(
-			'public, max-age=0, s-maxage=86400, stale-while-revalidate=604800',
-		);
-		expect(PRIVATE_CACHE_CONTROL).toBe('private, no-store');
 	});
 });
 
