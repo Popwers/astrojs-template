@@ -1,5 +1,5 @@
 import { parseApiResponseBody } from '@lib/strapiClient';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('strapiClient helpers', () => {
 	it('parses valid JSON even when the content-type is not JSON', async () => {

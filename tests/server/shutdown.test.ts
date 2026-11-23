@@ -1,15 +1,19 @@
 import { Agent, createServer, request, type RequestListener, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { drainServer } from '../../server/shutdown.ts';
+
+// Mirrors the sweep interval of server/shutdown.ts: one tick turns a socket that went idle into a closed one.
+const IDLE_SWEEP_MS = 100;
 
 // How the drain can fail: it cuts a request in flight, an idle keep-alive socket holds it open until
 // the timeout, or a hung request keeps the process alive past the orchestrator's SIGKILL.
 let open: Server[] = [];
 
 afterEach(() => {
+	vi.useRealTimers();
 	for (const server of open) {
 		server.closeAllConnections();
 		server.close();
@@ -45,45 +49,84 @@ function get(port: number, agent?: Agent): Promise<{ status: number; body: strin
 	});
 }
 
+interface Gate {
+	opened: Promise<void>;
+	open: () => void;
+}
+
+function gate(): Gate {
+	let open = () => {};
+	const opened = new Promise<void>((resolve) => {
+		open = resolve;
+	});
+	return { opened, open };
+}
+
+/** A handler that answers only once `release` opens, and tells when a request has reached it. */
+function heldHandler(release: Gate, received: Gate): RequestListener {
+	return (_req, res) => {
+		received.open();
+		void release.opened.then(() => res.end('done'));
+	};
+}
+
+// The drain's own timers (grace period, idle sweep) run on a fake clock; the sockets stay real.
+const fakeClock = () =>
+	vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+
 describe('drainServer', () => {
 	it('lets a request in flight finish, then reports drained', async () => {
-		const { server, port } = await listen((_req, res) => setTimeout(() => res.end('done'), 150));
+		const release = gate();
+		const received = gate();
+		const { server, port } = await listen(heldHandler(release, received));
 		const response = get(port);
-		await new Promise((resolve) => setTimeout(resolve, 30));
-		const started = performance.now();
-		const result = await drainServer(server, 2000);
+		await received.opened;
+
+		const drained = drainServer(server, 2000);
+		release.open();
+
 		expect(await response).toEqual({ status: 200, body: 'done' });
-		expect(result).toBe('drained');
-		expect(performance.now() - started).toBeLessThan(1000);
+		expect(await drained).toBe('drained');
 	});
 
 	it('does not wait on an idle keep-alive connection', async () => {
 		const { server, port } = await listen((_req, res) => res.end('ok'));
 		const agent = new Agent({ keepAlive: true });
 		await get(port, agent);
-		const started = performance.now();
+
 		expect(await drainServer(server, 2000)).toBe('drained');
-		expect(performance.now() - started).toBeLessThan(1000);
 		agent.destroy();
 	});
 
 	it('closes a keep-alive socket once its in-flight response ends', async () => {
-		const { server, port } = await listen((_req, res) => setTimeout(() => res.end('done'), 100));
+		fakeClock();
+		const release = gate();
+		const received = gate();
+		const { server, port } = await listen(heldHandler(release, received));
 		const agent = new Agent({ keepAlive: true });
 		const response = get(port, agent);
-		await new Promise((resolve) => setTimeout(resolve, 30));
-		const started = performance.now();
-		expect(await drainServer(server, 2000)).toBe('drained');
+		await received.opened;
+
+		const drained = drainServer(server, 2000);
+		release.open();
 		expect(await response).toEqual({ status: 200, body: 'done' });
-		expect(performance.now() - started).toBeLessThan(1000);
+		await vi.advanceTimersByTimeAsync(IDLE_SWEEP_MS);
+
+		expect(await drained).toBe('drained');
 		agent.destroy();
 	});
 
 	it('cuts a hung request at the timeout', async () => {
-		const { server, port } = await listen(() => undefined);
+		fakeClock();
+		const received = gate();
+		const { server, port } = await listen(heldHandler(gate(), received));
 		const response = get(port).catch((error: Error) => error.message);
-		await new Promise((resolve) => setTimeout(resolve, 30));
-		expect(await drainServer(server, 200)).toBe('forced');
+		await received.opened;
+
+		const drained = drainServer(server, 200);
+		await vi.advanceTimersByTimeAsync(200);
+
+		expect(await drained).toBe('forced');
 		expect(await response).toMatch(/socket hang up|ECONNRESET/);
 	});
 });

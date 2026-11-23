@@ -1,6 +1,6 @@
 import { auth } from '@actions/auth';
 import type { JsonValue } from '@interfaces/json';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
 
 import { codeOf, messageOf } from '../utils/actionError';
 import { createActionContext, handlerOf } from '../utils/actionHandler';

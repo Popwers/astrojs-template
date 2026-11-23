@@ -1,6 +1,6 @@
 import type { User } from '@interfaces/user';
 import { requireAuth } from '@lib/authGuard';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 import { codeOf } from '../utils/actionError';
 import { createActionContext } from '../utils/actionHandler';

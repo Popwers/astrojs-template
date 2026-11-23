@@ -27,7 +27,7 @@ Preconditions:
 
 - **Open home.** Run `control-astrojs http GET /`. Status is `200`. The body contains `Welcome to Astro`.
 - **See chrome.** The same HTML contains `Accueil`, `Mentions légales`, and `Politique de confidentialité`.
-- **See cookie markup.** The same HTML contains `id="cookie-banner"`, `id="accept-all-cookies"`, `id="customize-cookies"`, and `id="cookie-modal"` (grep the `--body` file for the last two; `http` prints only its fixed markers). The banner uses `.cookie-layer { opacity: 0 }` until client JS adds `is-visible`; HTTP proof is the markup, not visibility.
+- **See cookie markup.** The same HTML contains `id="cookie-banner"`, `id="accept-all-cookies"`, `id="customize-cookies"`, and `id="cookie-modal"` (grep the `--body` file for the last two; `http` prints only its fixed markers). The banner uses `.cookie-layer { opacity: 0 }` until client JS adds `is-visible`, 4 seconds after load and only when no consent is stored; HTTP proof is the markup, not visibility.
 - **Missing route.** Run `control-astrojs http GET /this-page-does-not-exist-verify`. Status is `404`. The body contains `Page non trouvée` and `Retourner à l'accueil`.
 - **Painted frame.** Run `control-astrojs screenshot --path .cursor/skills/verify-astrojs/proof/public-home/home.png --url /`. The PNG shows `Welcome to Astro`. On a host where headless Chrome cannot paint at all (no PNG even for a `data:` URL), report the frame unreachable with that prerequisite; the committed `home.png` stays, a failed shot never removes it.
 - **Scripted recipe.** Run `control-astrojs drive public-home`. It writes `proof/public-home/` (`home.html`, `home.headers`, `not-found.html`, `doctor.txt`, `manifest.json`, and `home.png` when Chrome exists).

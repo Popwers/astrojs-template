@@ -1,5 +1,5 @@
 import { createStrapiError, isStrapiError, normalizeStrapiError } from '@lib/strapiError';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it } from 'vite-plus/test';
 
 describe('strapiError helpers', () => {
 	it('preserves native Strapi errors', () => {
