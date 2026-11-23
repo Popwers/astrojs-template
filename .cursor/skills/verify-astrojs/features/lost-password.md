@@ -42,4 +42,4 @@ Preconditions:
 - A submit without `cf-turnstile-response` is a 403 (`La vérification anti-robot a échoué`). Without network access to Cloudflare it is a 503.
 - Layout mode `lost-password` shows `Retour à l'accueil`, same as login. Reset mode does not.
 - The wait-mail page also has a `Renvoyer un mail` form. It posts the same forgot-password action, so each resend spends the forgot bucket.
-- Forgot-password and reset each allow 5 POSTs per hour per client, in memory. `drive lost-password` spends 1 of each. Relaunch resets the buckets.
+- Forgot-password and reset each allow 5 POSTs per hour per client, in memory, counted before the Turnstile check. `drive lost-password` spends 1 of each. The 6th POST in the window answers `500` with `Too many attempts. Please try again later.` (not a 429); that is the bucket, not a lost-password regression. Relaunch resets the buckets.

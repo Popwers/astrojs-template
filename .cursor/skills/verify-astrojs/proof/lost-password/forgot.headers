@@ -3,8 +3,8 @@ Access-Control-Allow-Origin: http://127.0.0.1:4331
 Vary: Origin
 cache-control: private, no-store
 location: /lost-password/wait-mail
-set-cookie: wait-mail-password=<redacted>; Max-Age=3600; Path=/; Expires=Mon, 16 Nov 2026 08:01:55 GMT; HttpOnly; SameSite=Lax
-Date: Mon, 16 Nov 2026 07:01:55 GMT
+set-cookie: wait-mail-password=<redacted>; Max-Age=3600; Path=/; Expires=Mon, 23 Nov 2026 06:54:45 GMT; HttpOnly; SameSite=Lax
+Date: Mon, 23 Nov 2026 05:54:45 GMT
 Connection: keep-alive
 Keep-Alive: timeout=5
 Transfer-Encoding: chunked

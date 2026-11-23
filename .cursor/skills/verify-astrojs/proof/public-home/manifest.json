@@ -1,7 +1,7 @@
 {
   "feature": "public-home",
   "baseUrl": "http://127.0.0.1:4331",
-  "capturedAt": "2026-11-16T07:01:53.321569+00:00",
+  "capturedAt": "2026-11-23T05:54:43.680698+00:00",
   "commands": [
     "GET http://127.0.0.1:4331/ -> 200",
     "GET http://127.0.0.1:4331/this-page-does-not-exist-verify -> 404",
