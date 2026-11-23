@@ -3,9 +3,9 @@ Access-Control-Allow-Origin: http://127.0.0.1:4331
 Vary: Origin
 cache-control: private, no-store
 location: /dashboard
-set-cookie: user_data=<redacted>; Max-Age=604800; Path=/; Expires=Mon, 23 Nov 2026 07:00:18 GMT; HttpOnly; SameSite=Lax
-set-cookie: user_data_timestamp=<redacted>; Max-Age=604800; Path=/; Expires=Mon, 23 Nov 2026 07:00:18 GMT; HttpOnly; SameSite=Lax
-Date: Mon, 16 Nov 2026 07:01:54 GMT
+set-cookie: user_data=<redacted>; Max-Age=604800; Path=/; Expires=Mon, 30 Nov 2026 05:53:06 GMT; HttpOnly; SameSite=Lax
+set-cookie: user_data_timestamp=<redacted>; Max-Age=604800; Path=/; Expires=Mon, 30 Nov 2026 05:53:06 GMT; HttpOnly; SameSite=Lax
+Date: Mon, 23 Nov 2026 05:54:44 GMT
 Connection: keep-alive
 Keep-Alive: timeout=5
 Transfer-Encoding: chunked

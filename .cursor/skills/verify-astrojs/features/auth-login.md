@@ -47,6 +47,6 @@ Preconditions:
 - Query `?error=server-unavailable` shows `Le serveur ne répond pas pour le moment` without submitting.
 - A successful login sets `user_token`, `user_data`, and `user_data_timestamp`, then redirects to `/dashboard` (or a `?redirect=` path starting with a single `/`). There is no Better Auth cookie.
 - Action POSTs (`/login?_action=auth.login`, `/dashboard?_action=auth.logout`) need `Origin` equal to the app origin. Without it Astro answers `403`.
-- Login allows 10 POSTs per 15 minutes per client, in memory, counted before the Turnstile check. `drive auth-login` spends 3. Relaunch resets the bucket.
+- Login allows 10 POSTs per 15 minutes per client, in memory, counted once the form validates and before the Turnstile check. `drive auth-login` spends 3. The 11th POST in the window answers `500` with `Too many attempts. Please try again later.` (not a 429), so a fourth `drive auth-login` on one launch fails at `wrong-password`. That 500 is the bucket, not a sign-in regression. Relaunch resets the bucket.
 - Only the stub accounts in `tests/e2e/accounts.ts` sign in. Use the reader; the e2e suite renames the editor.
 - Do not follow redirects when proving the guard. `http GET /dashboard` without `--no-follow` lands on `/login` `200` and hides the 302.

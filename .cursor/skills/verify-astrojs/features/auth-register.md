@@ -41,4 +41,4 @@ Preconditions:
 - The stub stores nothing. A registered email cannot sign in afterwards; sign in with the stub reader through [Sign in](./auth-login.md).
 - Register copy links to `/terms`, which has no page and 404s. That is a product gap, not a register-form failure.
 - `/register/profil` is in `RESTRICTED_WHEN_LOGGED_OUT`. Anon users never see `Votre profil` / `Créer mon compte`.
-- Register and resend each allow 5 POSTs per hour per client, in memory. `drive auth-register` spends 1 of each. Relaunch resets the buckets.
+- Register and resend each allow 5 POSTs per hour per client, in memory, counted once the form validates and before the Turnstile check: a weak password (`400`) spends nothing, a missing token (`403`) does. `drive auth-register` spends 1 of each. The 6th POST in the window answers `500` with `Too many attempts. Please try again later.` (not a 429); that is the bucket, not a register regression. Relaunch resets the buckets.
