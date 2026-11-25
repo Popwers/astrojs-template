@@ -82,49 +82,6 @@ export default defineConfig({
 				globDirectory: clientDir,
 				globIgnores: ['**/vendor-heic2any.*', '**/vendor-browser-image-compression.*'],
 			},
-			workbox: {
-				navigateFallback: '/',
-				globPatterns: ['**/*.{css,js,html,svg,png,ico,txt,woff2}'],
-				navigateFallbackAllowlist: [/^\/$/],
-				runtimeCaching: [
-					{
-						urlPattern: ({ url, sameOrigin, request }) =>
-							sameOrigin && request.mode === 'navigate' && !url.pathname.match(/^\/$/),
-						handler: 'NetworkFirst',
-						options: {
-							cacheName: 'offline-ssr-pages-cache',
-							matchOptions: {
-								ignoreVary: true,
-								ignoreSearch: true,
-							},
-							cacheableResponse: {
-								statuses: [200],
-							},
-							expiration: {
-								maxEntries: 100,
-							},
-							plugins: [
-								{
-									cachedResponseWillBeUsed: async (params) => {
-										// When handlerDidError is invoked, then we can prevent redirecting if there is an entry in the cache.
-										// To check the behavior, navigate to a page, then disable the network and refresh the page.
-
-										params.state ??= {};
-										params.state.dontRedirect = params.cachedResponse;
-									},
-									handlerDidError: async ({ state }) => {
-										// Offline fallback: when `cachedResponseWillBeUsed` captured a
-										// cached Response, serve it instead of letting the failure bubble.
-										if (state?.dontRedirect) return state.dontRedirect;
-										// No cache to fall back to — defer to workbox's `navigateFallback`.
-										return undefined;
-									},
-								},
-							],
-						},
-					},
-				],
-			},
 			devOptions: {
 				enabled: false,
 				type: 'module',
