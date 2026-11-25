@@ -3,11 +3,22 @@ import { allowOption, judgedComments, readComments } from '../shared/comment.ts'
 
 const FUNCTION_WORDS = new Set(
 	(
-		'le les des une est pour avec dans sur pas qui que nous vous cette ces aux du et ou sont mais donc ici ' +
-		'alors lorsque quand afin leur leurs notre nos votre vos il elle ils elles puis aussi très sous entre ' +
-		'vers chez être avoir fait faire doit peut permet'
+		'le la les un une des de du au aux en ce cette ces se ne pas est sont pour avec dans sur par qui que nous ' +
+		'vous et ou mais donc ici alors lorsque quand afin leur leurs notre nos votre vos il elle ils elles puis ' +
+		'aussi très sous entre vers chez être avoir fait faire doit peut permet chaque tous tout depuis avant après'
 	).split(' '),
 );
+
+const ENGLISH_WORDS = new Set(
+	(
+		'the of and to is in for that with when are not by it this be from as its was were has have will can if ' +
+		'then which into only each every no so we they their there'
+	).split(' '),
+);
+
+function distinctIn(words: readonly string[], vocabulary: ReadonlySet<string>): number {
+	return new Set(words.filter((word) => vocabulary.has(word))).size;
+}
 
 const ACCENT = /[àâäæçéèêëîïôœùûüÿ]/i;
 const QUOTED = [
@@ -22,7 +33,10 @@ function stripQuoted(text: string): string {
 	return QUOTED.reduce((rest, pattern) => rest.replace(pattern, ' '), text);
 }
 
-/** Reject comments written in French, detected by accented words and French function words. */
+/**
+ * Reject comments written in French: accented words and French function words must outweigh the English
+ * function words, so an English sentence that names a French domain term is left alone.
+ */
 export const englishOnlyRule = defineRule({
 	meta: {
 		type: 'suggestion',
@@ -48,18 +62,20 @@ export const englishOnlyRule = defineRule({
 					const accents = words.filter(
 						(word) => ACCENT.test(word) && !allowed.has(word.toLowerCase()),
 					);
-					const functionWords = new Set(
-						words
-							.filter(
-								(word) =>
-									word !== word.toUpperCase() && FUNCTION_WORDS.has(word.toLowerCase()),
-							)
-							.map((word) => word.toLowerCase()),
-					);
+					const lowercased = words
+						.filter((word) => word !== word.toUpperCase())
+						.map((word) => word.toLowerCase());
+					const accentCount = new Set(accents.map((word) => word.toLowerCase())).size;
+					const frenchCount = distinctIn(lowercased, FUNCTION_WORDS);
+					const englishCount = distinctIn(lowercased, ENGLISH_WORDS);
+					const hasStrongSignal =
+						accentCount > 0 ||
+						frenchCount >= 3 ||
+						lowercased.some((word) => word.length >= 3 && FUNCTION_WORDS.has(word));
 					const isFrench =
-						accents.length >= 2 ||
-						(accents.length >= 1 && functionWords.size >= 1) ||
-						functionWords.size >= 3;
+						hasStrongSignal &&
+						accentCount + frenchCount >= 2 &&
+						accentCount + 2 * frenchCount > 2 * englishCount;
 					if (isFrench) context.report({ loc: comment.loc, messageId: 'nonEnglish' });
 				}
 			},
