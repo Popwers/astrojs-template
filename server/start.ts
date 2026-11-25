@@ -2,6 +2,7 @@ import { createServer } from 'node:http';
 import { fileURLToPath } from 'node:url';
 
 import { servePrecompressed, type Listener } from './precompressed.ts';
+import { missingEnv } from './requiredEnv.ts';
 import { securityHeaders } from './securityHeaders.ts';
 import { drainServer } from './shutdown.ts';
 import { indexStaticFiles } from './staticFiles.ts';
@@ -25,11 +26,18 @@ function listenHost(host: string | boolean): string {
  * Serve the Astro build: security headers on every response, precompressed assets and cache headers
  * in front of the adapter's handler, and a graceful exit on SIGTERM/SIGINT (no new connection, in-flight
  * requests finish, then exit 0).
- * `HOST`, `PORT` and `SHUTDOWN_TIMEOUT_MS` override the defaults.
+ * `HOST`, `PORT` and `SHUTDOWN_TIMEOUT_MS` override the defaults. Exits with code 1, before listening, when a
+ * variable of `REQUIRED_ENV` is missing.
  * @param entry - The adapter's exports.
  * @param clientDir - URL of `dist/client`.
  */
 export function startServer(entry: AstroNodeEntry, clientDir: URL): void {
+	const missing = missingEnv(process.env);
+	if (missing.length > 0) {
+		console.error(`Refusing to start: set ${missing.join(', ')} (see .env.example).`);
+		process.exit(1);
+	}
+
 	const files = indexStaticFiles(fileURLToPath(clientDir), '/_astro/');
 	const serveFiles = servePrecompressed(files, entry.handler);
 	const strapiUrl = process.env.STRAPI_URL;
