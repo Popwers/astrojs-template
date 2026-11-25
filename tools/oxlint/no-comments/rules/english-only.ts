@@ -35,7 +35,7 @@ function stripQuoted(text: string): string {
 
 /**
  * Reject comments written in French: accented words and French function words must outweigh the English
- * function words, so an English sentence that names a French domain term is left alone.
+ * function words and the plain unaccented words, so an English sentence that names French domain terms is left alone.
  */
 export const englishOnlyRule = defineRule({
 	meta: {
@@ -68,6 +68,15 @@ export const englishOnlyRule = defineRule({
 					const accentCount = new Set(accents.map((word) => word.toLowerCase())).size;
 					const frenchCount = distinctIn(lowercased, FUNCTION_WORDS);
 					const englishCount = distinctIn(lowercased, ENGLISH_WORDS);
+					const plainCount = new Set(
+						lowercased.filter(
+							(word) =>
+								word.length >= 3 &&
+								!ACCENT.test(word) &&
+								!FUNCTION_WORDS.has(word) &&
+								!ENGLISH_WORDS.has(word),
+						),
+					).size;
 					const hasStrongSignal =
 						accentCount > 0 ||
 						frenchCount >= 3 ||
@@ -75,7 +84,7 @@ export const englishOnlyRule = defineRule({
 					const isFrench =
 						hasStrongSignal &&
 						accentCount + frenchCount >= 2 &&
-						accentCount + 2 * frenchCount > 2 * englishCount;
+						accentCount + 2 * frenchCount > 2 * englishCount + plainCount / 2;
 					if (isFrench) context.report({ loc: comment.loc, messageId: 'nonEnglish' });
 				}
 			},

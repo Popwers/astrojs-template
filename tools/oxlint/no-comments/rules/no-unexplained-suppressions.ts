@@ -25,11 +25,12 @@ function judgeLinterDisable(rest: string): MessageId | null {
 }
 
 function judge(body: string): MessageId | null {
-	if (/^@ts-(ignore|nocheck)(?![\w-])/.test(body)) return 'bannedTsDirective';
-	if (body.startsWith('@ts-expect-error')) {
+	if (/^@ts-ignore(?![\w-])/.test(body)) return 'bannedTsDirective';
+	const explained = /^@ts-(?:expect-error|nocheck)(?![\w-])/.exec(body);
+	if (explained) {
 		const reason = body
-			.slice('@ts-expect-error'.length)
-			.replace(/^[\s:-]+/, '')
+			.slice(explained[0].length)
+			.replace(/^[\s:—–-]+/, '')
 			.trim();
 		return reason.length < MIN_REASON_LENGTH ? 'missingReason' : null;
 	}
@@ -45,7 +46,7 @@ export const noUnexplainedSuppressionsRule = defineRule({
 		docs: { description: 'Disallow blanket, reasonless or @ts-ignore style suppressions.' },
 		messages: {
 			bannedTsDirective:
-				'Do not use `@ts-ignore` or `@ts-nocheck`. Fix the type, or use `@ts-expect-error` with a reason.',
+				'Do not use `@ts-ignore`. Fix the type, or use `@ts-expect-error` with a reason.',
 			missingReason: 'Explain this suppression: add a reason of at least 10 characters.',
 			blanketDisable: 'Name the rule this disables instead of silencing every rule.',
 		},

@@ -9,7 +9,7 @@ const UNENCODED_CONSTRAINT = [
 ];
 
 const DEFERRED_FIX = [
-	/\b(TODO|FIXME|XXX|HACK)\b/,
+	/\b(TODO|FIXME|HACK)\b|\bXXX\s*:/,
 	/\b(for now|good enough|temporary (fix|hack|patch|solution|measure)|temp fix|quick fix|work-?around|hacky|kludge|band-?aid|monkey-?patch(ed)?|should be fine|revisit (this|later))\b/i,
 	/\buntil we (can|have|fix|migrate|move|upgrade)\b/i,
 ];

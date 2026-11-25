@@ -9,7 +9,7 @@ const DEFAULT_ALLOWED_PREFIXES = new Set(
 	).split(' '),
 );
 
-const TICKET_ID = /(?<![\w-])([A-Z]{2,10})-(\d{1,6})(?![\w-]|\.\d)/g;
+const TICKET_ID = /(?<![\w.-])([A-Z]{2,10})-(\d{1,6})(?![\w-]|\.\d)/g;
 
 /** Reject issue-tracker identifiers made of letters, a dash and digits in comments. */
 export const noTicketIdsRule = defineRule({
