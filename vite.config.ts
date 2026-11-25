@@ -19,6 +19,7 @@ const fromRoot = (relativePath: string) => fileURLToPath(new URL(relativePath, i
  */
 
 const hasShadcnLint = existsSync('node_modules/@shadcn/lint');
+const hasNoComments = existsSync('tools/oxlint/no-comments/index.ts');
 
 /**
  * Wrap a rule map so `defineConfig` accepts JS plugin rule names.
@@ -30,6 +31,25 @@ function lintRules(rules: Record<string, DummyRule>): DummyRuleMap {
 	// SAFETY: DummyRuleMap lists built-in oxlint rules only. JS plugin ids
 	// (anti-slop/*, shadcn/*) are valid at runtime; each value is a DummyRule.
 	return rules as DummyRuleMap;
+}
+
+/** Comment policy (vendored `tools/oxlint/no-comments`): on only when the plugin is in the repo. */
+function noCommentsRules(): DummyRuleMap {
+	if (!hasNoComments) {
+		return {};
+	}
+
+	return lintRules({
+		'no-comments/english-only': 'error',
+		'no-comments/no-caller-lists': 'error',
+		'no-comments/no-commented-out-code': 'error',
+		'no-comments/no-narration': 'error',
+		'no-comments/no-restated-names': 'error',
+		'no-comments/no-stacked-line-comments': 'error',
+		'no-comments/no-ticket-ids': 'error',
+		'no-comments/no-unexplained-suppressions': 'error',
+		'no-comments/no-unlinked-constraints': 'error',
+	});
 }
 
 const shadcnOn: DummyRule = hasShadcnLint ? 'error' : 'off';
@@ -117,6 +137,7 @@ export default defineConfig({
 			'.serena/**',
 			'.windsurf/**',
 			'tools/oxlint/anti-slop/**',
+			'tools/oxlint/no-comments/**',
 		],
 	},
 
@@ -141,10 +162,14 @@ export default defineConfig({
 			'.serena/**',
 			'.windsurf/**',
 			'tools/oxlint/anti-slop/**',
+			'tools/oxlint/no-comments/**',
 		],
 		// Vendored anti-slop (https://github.com/dmmulroy/anti-slop). @shadcn/lint loads only when installed.
 		jsPlugins: [
 			{ name: 'anti-slop', specifier: './tools/oxlint/anti-slop/index.ts' },
+			...(hasNoComments
+				? [{ name: 'no-comments', specifier: './tools/oxlint/no-comments/index.ts' }]
+				: []),
 			...(hasShadcnLint ? ['@shadcn/lint'] : []),
 		],
 		options: {
@@ -176,6 +201,7 @@ export default defineConfig({
 			'anti-slop/no-unsafe-dictionary-type': 'error',
 			'anti-slop/no-widen-then-assert': 'error',
 			'anti-slop/require-safety-comment-for-type-assertion': 'error',
+			...noCommentsRules(),
 			'shadcn/no-restyle': hasShadcnLint ? ['error', { allow: ['layout'] }] : 'off',
 			'shadcn/no-raw-colors': shadcnOn,
 			'shadcn/no-arbitrary-values': shadcnOn,
@@ -263,10 +289,12 @@ export default defineConfig({
 		'*.{js,jsx,ts,tsx}': 'react-doctor --no-telemetry --no-supply-chain --blocking warning',
 	},
 
-	// Vitest (`vp test`) shares the Vite alias graph. Astro virtual modules
-	// (`astro:actions`, `astro:env/server`) have no runtime outside a build,
-	// so tests resolve them to `tests/stubs/`. `astro:schema` needs no stub:
-	// schema files import `z` from `astro/zod`, a real subpath.
+	/**
+	 * Vitest (`vp test`) shares the Vite alias graph. Astro virtual modules
+	 * (`astro:actions`, `astro:env/server`) have no runtime outside a build,
+	 * so tests resolve them to `tests/stubs/`. `astro:schema` needs no stub:
+	 * schema files import `z` from `astro/zod`, a real subpath.
+	 */
 	test: {
 		// The e2e runner owns tests/e2e (`vp run test:e2e`).
 		exclude: [...configDefaults.exclude, 'tests/e2e/**'],
