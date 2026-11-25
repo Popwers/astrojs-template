@@ -2,9 +2,11 @@ import { describe, expect, it } from 'vite-plus/test';
 
 import { pickEncoding } from '../../server/encoding.ts';
 
-// How negotiation can fail: a variant the client refused (q=0) or never listed is sent, the weaker
-// encoding wins a tie or beats a higher quality, an unwritten variant is chosen, or header noise
-// (case, spaces, aliases, wildcard) is misread.
+/**
+ * How negotiation can fail: a variant the client refused (q=0) or never listed is sent, the weaker
+ * encoding wins a tie or beats a higher quality, an unwritten variant is chosen, or header noise
+ * (case, spaces, aliases, wildcard) is misread.
+ */
 const both = ['br', 'gzip'] as const;
 
 describe('pickEncoding', () => {

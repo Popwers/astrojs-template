@@ -24,9 +24,11 @@ export default defineConfig({
 	server: {
 		host: true,
 	},
-	// Static by default: every page is prerendered at build unless it exports `prerender = false`
-	// (forms, session, auth guards). The Node adapter serves those on-demand routes, the actions and
-	// the server islands, and hands the prerendered HTML and assets to its static handler.
+	/**
+	 * Static by default: every page is prerendered at build unless it exports `prerender = false`
+	 * (forms, session, auth guards). The Node adapter serves those on-demand routes, the actions and
+	 * the server islands, and hands the prerendered HTML and assets to its static handler.
+	 */
 	output: 'static',
 	adapter: node({
 		mode: 'standalone',
@@ -35,18 +37,22 @@ export default defineConfig({
 	// Prerendered pages get the same slash-less URL as the on-demand ones (canonical, sitemap):
 	// `normalizePath` and the static handler redirect `/page/` to `/page`.
 	trailingSlash: 'never',
-	// Astro caps Action request bodies at 1 MB by default, which would reject any avatar over
-	// that limit. The ceiling is derived from MAX_FILE_SIZE in userOptions.ts — the single source
-	// of truth — so there is one place to change the limit.
+	/**
+	 * Astro caps Action request bodies at 1 MB by default, which would reject any avatar over
+	 * that limit. The ceiling is derived from MAX_FILE_SIZE in userOptions.ts — the single source
+	 * of truth — so there is one place to change the limit.
+	 */
 	security: {
 		actionBodySizeLimit: ACTION_BODY_SIZE_LIMIT,
 	},
 	integrations: [
 		react(),
 		sitemap(),
-		// CSS: false — csso silently drops every `@media (width >= …)` range-syntax block
-		// emitted by Tailwind 4 (kept as-is since Vite 8/Astro 7), wiping all responsive
-		// styles in production. Vite already minifies CSS, so csso only added ~1% anyway.
+		/**
+		 * CSS: false — csso silently drops every `@media (width >= …)` range-syntax block
+		 * emitted by Tailwind 4 (kept as-is since Vite 8/Astro 7), wiping all responsive
+		 * styles in production. Vite already minifies CSS, so csso only added ~1% anyway.
+		 */
 		playformCompress({ HTML: false, CSS: false }),
 		sentry({
 			org: 'your-org',
@@ -196,9 +202,11 @@ export default defineConfig({
 			},
 			rollupOptions: {
 				output: {
-					// Per-package vendor chunks for independent cache invalidation. Astro's own
-					// framework packages stay in the default chunk: splitting them breaks the
-					// astro:env runtime init order (TDZ on _getEnv/setGetEnv).
+					/**
+					 * Per-package vendor chunks for independent cache invalidation. Astro's own
+					 * framework packages stay in the default chunk: splitting them breaks the
+					 * astro:env runtime init order (TDZ on _getEnv/setGetEnv).
+					 */
 					manualChunks(id) {
 						if (!id.includes('node_modules')) return;
 						if (id.includes('/node_modules/astro/') || id.includes('/node_modules/@astrojs/'))
@@ -211,10 +219,12 @@ export default defineConfig({
 				},
 			},
 		},
-		// Force a single React copy and pre-bundle every React-island dependency up front.
-		// Without this, Vite discovers island deps lazily on first navigation, re-optimizes
-		// mid-session, and any already-open tab mixes two React generations — surfacing as
-		// "Invalid hook call" / "useRef of null" until a hard refresh.
+		/**
+		 * Force a single React copy and pre-bundle every React-island dependency up front.
+		 * Without this, Vite discovers island deps lazily on first navigation, re-optimizes
+		 * mid-session, and any already-open tab mixes two React generations — surfacing as
+		 * "Invalid hook call" / "useRef of null" until a hard refresh.
+		 */
 		resolve: {
 			dedupe: ['react', 'react-dom'],
 		},

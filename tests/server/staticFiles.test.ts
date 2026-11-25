@@ -12,9 +12,11 @@ import {
 } from '../../server/cacheControl.ts';
 import { indexStaticFiles } from '../../server/staticFiles.ts';
 
-// How the index can fail: a page misses its slash-less URL (served without the page policy), a hashed
-// asset loses `immutable`, a prerendered error page becomes edge-cacheable, a variant that was not
-// written is listed, or files the server has nothing to add to are intercepted.
+/**
+ * How the index can fail: a page misses its slash-less URL (served without the page policy), a hashed
+ * asset loses `immutable`, a prerendered error page becomes edge-cacheable, a variant that was not
+ * written is listed, or files the server has nothing to add to are intercepted.
+ */
 const dir = mkdtempSync(join(tmpdir(), 'static-files-'));
 const write = (path: string, body = 'x') => {
 	mkdirSync(join(dir, path, '..'), { recursive: true });

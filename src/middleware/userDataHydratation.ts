@@ -69,10 +69,12 @@ export async function refreshUserData(context: APIContext, loadUser: LoadUser = 
 			return context.redirect('/login', 302);
 		}
 
-		// Non-401 failure: keep the existing (stale) cookie data serving rather
-		// than logging the user out on a transient CMS blip. A persistent failure
-		// degrades quietly here — only logged, not surfaced. See
-		// docs/error-handling.md ("Middleware" + "Observability gap").
+		/**
+		 * Non-401 failure: keep the existing (stale) cookie data serving rather
+		 * than logging the user out on a transient CMS blip. A persistent failure
+		 * degrades quietly here — only logged, not surfaced. See
+		 * docs/error-handling.md ("Middleware" + "Observability gap").
+		 */
 		console.error('Failed to refresh user data:', userData.error);
 		return;
 	}

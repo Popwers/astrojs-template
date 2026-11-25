@@ -59,7 +59,7 @@ export default ({ children }: { children: React.ReactNode }) => {
 		const rawFile = input.files[0];
 		setErrorMessage(null);
 
-		// Phase 1: decode HEIC and compress. The control is disabled but no preview yet.
+		// Decode HEIC and compress. The control is disabled but no preview yet.
 		setStatus('preparing');
 		const { file, error: prepareError } = await prepareAvatar(rawFile);
 
@@ -69,7 +69,7 @@ export default ({ children }: { children: React.ReactNode }) => {
 			return;
 		}
 
-		// Phase 2: upload the prepared file with an optimistic preview.
+		// Upload the prepared file with an optimistic preview.
 		setStatus('uploading');
 
 		const previousFile = previewFile;

@@ -59,10 +59,12 @@ function createMiddlewareContext(
  * has to substitute one.
  */
 function asApiContext(context: TestMiddlewareContext): APIContext {
-	// SAFETY: the fake implements every member the middlewares touch — `url`, `locals`,
-	// `redirect` and the `has`/`get`/`set`/`delete` cookie surface. Any other member is
-	// absent at runtime, so a middleware reaching past this slice throws instead of
-	// silently reading `undefined`.
+	/**
+	 * SAFETY: the fake implements every member the middlewares touch — `url`, `locals`,
+	 * `redirect` and the `has`/`get`/`set`/`delete` cookie surface. Any other member is
+	 * absent at runtime, so a middleware reaching past this slice throws instead of
+	 * silently reading `undefined`.
+	 */
 	return context as never;
 }
 

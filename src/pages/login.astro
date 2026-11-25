@@ -26,9 +26,11 @@ if (result && !result.error) {
 	Astro.cookies.set('user_token', jwt, DEFAULT_COOKIE_OPTIONS);
 	Astro.locals.user = updateUserCookie(Astro.cookies, user);
 
-	// Validate the redirect target to prevent open-redirect attacks.
-	// Accept only paths starting with a single `/` not followed by `/` or `\`;
-	// browsers normalize `/\` to `//` (scheme-relative), so it must be rejected too.
+	/**
+	 * Validate the redirect target to prevent open-redirect attacks.
+	 * Accept only paths starting with a single `/` not followed by `/` or `\`;
+	 * browsers normalize `/\` to `//` (scheme-relative), so it must be rejected too.
+	 */
 	return Astro.redirect(
 		(() => {
 			const rawRedirect = Astro.url.searchParams.get('redirect');
