@@ -79,6 +79,8 @@ export default defineConfig({
 			// The upload helpers (HEIC decoder, image compression) load on demand in the dashboard;
 			// precaching them would make every first visit download 1.4 MB more.
 			injectManifest: {
+				// The worker has no sourceMappingURL, so its map is an orphan file the server would still hand out.
+				sourcemap: false,
 				globDirectory: clientDir,
 				globIgnores: ['**/vendor-heic2any.*', '**/vendor-browser-image-compression.*'],
 			},
