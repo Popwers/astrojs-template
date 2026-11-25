@@ -35,14 +35,13 @@ export const auth = {
 			assertRateLimit(context, 'auth-register', 5, 60 * 60 * 1000);
 			await assertTurnstile(context, input['cf-turnstile-response']);
 
-			const { email, password, master } = input;
+			const { email, password } = input;
 			if (
 				await scopedRequest({
 					endpoint: 'auth/local/register',
 					body: {
 						email,
 						password,
-						master: master || undefined,
 					},
 				})
 			) {

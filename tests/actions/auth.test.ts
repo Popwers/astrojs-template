@@ -112,7 +112,7 @@ describe('auth.register', () => {
 		stubFetch(jsonResponse({ jwt: 'token-1', user: { id: 2, email: 'new@b.com' } }));
 
 		const result = await handlerOf(auth.register)(
-			{ email: 'new@b.com', password: 'secret123', master: undefined, ...TURNSTILE_TOKEN },
+			{ email: 'new@b.com', password: 'secret123', ...TURNSTILE_TOKEN },
 			createActionContext(),
 		);
 
