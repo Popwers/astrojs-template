@@ -3,6 +3,7 @@
 export const prerender = false;
 
 import { actions, isInputError } from 'astro:actions';
+import { fieldErrorAttributes } from '@lib/fieldError';
 
 import ErrorInput from '@components/site/global/input/ErrorInput.astro';
 import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
@@ -31,7 +32,7 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 		Nous allons vous envoyer un email pour réinitialiser votre mot de passe.
 	</p>
 
-	<form class='mt-16' method='POST' action={actions.password.forgotPassword}>
+	<form class='mt-16' method='POST' action={actions.password.forgotPassword} aria-label='Réinitialisation du mot de passe'>
 		<div class='form-group'>
 			<label for='email'>Adresse mail</label>
 			<input
@@ -43,8 +44,9 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 				spellcheck='false'
 				placeholder='votre@email.com'
 				required
+				{...fieldErrorAttributes('email', inputErrors.email)}
 			/>
-			<ErrorInput errors={inputErrors.email} />
+			<ErrorInput for='email' errors={inputErrors.email} />
 		</div>
 
 		<Turnstile />

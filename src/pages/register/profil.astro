@@ -3,6 +3,7 @@
 export const prerender = false;
 
 import { actions, isInputError } from 'astro:actions';
+import { fieldErrorAttributes } from '@lib/fieldError';
 
 import ErrorInput from '@components/site/global/input/ErrorInput.astro';
 import ReturnInfo from '@components/site/global/input/ReturnInfo.astro';
@@ -31,7 +32,7 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 	mode='profil'>
 	<h1 class='h3'>Votre profil</h1>
 
-	<form class='mt-16' method='POST' action={actions.user.profile}>
+	<form class='mt-16' method='POST' action={actions.user.profile} aria-label='Création du profil'>
 		<div class='form-group'>
 			<label for='username'>Comment vous appelez-vous ?</label>
 			<input
@@ -42,8 +43,9 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 				autocomplete='name'
 				placeholder='Nom prénom ou dénomination'
 				required
+				{...fieldErrorAttributes('username', inputErrors.username)}
 			/>
-			<ErrorInput errors={inputErrors.username} />
+			<ErrorInput for='username' errors={inputErrors.username} />
 		</div>
 
 		<ReturnInfo result={result} />

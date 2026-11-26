@@ -3,6 +3,7 @@
 export const prerender = false;
 
 import { actions, isInputError } from 'astro:actions';
+import { fieldErrorAttributes } from '@lib/fieldError';
 
 import ErrorInput from '@components/site/global/input/ErrorInput.astro';
 import PasswordInput from '@components/site/global/input/PasswordInput';
@@ -63,7 +64,7 @@ const hasServerUnavailableError = sessionError === 'server-unavailable';
 		)
 	}
 
-	<form class='mt-16' method='POST' action={actions.auth.login}>
+	<form class='mt-16' method='POST' action={actions.auth.login} aria-label='Connexion'>
 		<div class='form-group'>
 			<label for='email'>Adresse mail</label>
 			<input
@@ -76,8 +77,9 @@ const hasServerUnavailableError = sessionError === 'server-unavailable';
 				name='email'
 				placeholder='votre@email.com'
 				required
+				{...fieldErrorAttributes('email', inputErrors.email)}
 			/>
-			<ErrorInput errors={inputErrors.email} />
+			<ErrorInput for='email' errors={inputErrors.email} />
 		</div>
 
 		<PasswordInput

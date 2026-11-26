@@ -27,7 +27,7 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 		changer votre mot de passe.
 	</p>
 
-	<form class='mt-16' method='POST' action={actions.password.forgotPassword}>
+	<form class='mt-16' method='POST' action={actions.password.forgotPassword} aria-label='Renvoi du mail de réinitialisation'>
 		<input type='hidden' name='email' value={email} />
 		<p>Vous n’avez pas reçu de mail ?</p>
 		<ErrorInput errors={inputErrors.email} />

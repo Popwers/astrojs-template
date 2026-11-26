@@ -1,3 +1,4 @@
+import { fieldErrorAttributes } from '@lib/fieldError';
 import { cn } from '@lib/utils';
 import { useState } from 'react';
 
@@ -5,6 +6,10 @@ import PasswordInput from './PasswordInput.tsx';
 
 interface PasswordCheckerProps {
 	isNewPassword?: boolean;
+	/** Errors the action reported for `password`, tied to the input with `aria-describedby`. */
+	passwordErrors?: string[];
+	/** Errors the action reported for `passwordConfirmation`. */
+	confirmationErrors?: string[];
 }
 
 const STRENGTH_RULES = {
@@ -42,9 +47,11 @@ const getConfirmationClass = (password: string, confirmation: string) => {
 /**
  * Password checker component used to check the strength of a password
  * @param props.isNewPassword - If the password is for a new account or a reset password
+ * @param props.passwordErrors - Action errors of the password field
+ * @param props.confirmationErrors - Action errors of the confirmation field
  * @returns The password checker component
  */
-export default ({ isNewPassword = false }: PasswordCheckerProps) => {
+export default ({ isNewPassword = false, passwordErrors, confirmationErrors }: PasswordCheckerProps) => {
 	const [password, setPassword] = useState('');
 	const [passwordConfirmation, setPasswordConfirmation] = useState('');
 
@@ -68,6 +75,7 @@ export default ({ isNewPassword = false }: PasswordCheckerProps) => {
 				label={isNewPassword ? 'Nouveau mot de passe' : 'Mot de passe'}
 				placeholder={isNewPassword ? 'Nouveau mot de passe' : 'Mot de passe'}
 				autocomplete='new-password'
+				props={fieldErrorAttributes('password', passwordErrors)}
 				onChange={(e) => setPassword(e.target.value)}
 			/>
 			<PasswordInput
@@ -77,6 +85,7 @@ export default ({ isNewPassword = false }: PasswordCheckerProps) => {
 				name='passwordConfirmation'
 				autocomplete='new-password'
 				placeholder='Confirmer votre mot de passe'
+				props={fieldErrorAttributes('passwordConfirmation', confirmationErrors)}
 				onChange={(e) => setPasswordConfirmation(e.target.value)}
 			/>
 

@@ -58,3 +58,36 @@ test('avatar upload previews the new image', async ({ app, screen, browser }) =>
 		.toBe(1);
 	await expect(screen.getByText('Changer l’image de profil')).toBeVisible();
 });
+
+test('a field error is tied to its input and the form has a name', async ({
+	app,
+	screen,
+	browser,
+	allowedPageErrors,
+}) => {
+	allowedPageErrors.push(
+		/^(?:status 404|resource failed): \S+\/terms /,
+		/^status 400: \S+_action=auth\.register /,
+	);
+	await app.open('/register');
+	await screen.getByLabel('Adresse mail').fill('new.user@example.com');
+	await screen.getByLabel('Mot de passe', { exact: true }).fill('abcdefgh');
+	await screen.getByLabel('Confirmer votre mot de passe').fill('abcdefgh');
+	await screen.getByRole('button', 'S’inscrire').tap();
+
+	const described = () =>
+		browser.evaluate(() => {
+			const input = document.querySelector('#password');
+			const describedBy = input?.getAttribute('aria-describedby') ?? '';
+			return {
+				invalid: input?.getAttribute('aria-invalid') ?? null,
+				error: document.getElementById(describedBy)?.textContent ?? null,
+				formName: document.querySelector('form')?.getAttribute('aria-label') ?? null,
+			};
+		});
+	await expect.poll(async () => (await described()).invalid).toBe('true');
+	expect(await described()).toMatchObject({
+		error: expect.stringContaining('majuscule'),
+		formName: 'Inscription',
+	});
+});

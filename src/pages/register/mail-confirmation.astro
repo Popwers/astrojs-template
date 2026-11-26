@@ -26,7 +26,7 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 		<br />Suivez les instructions pour activer votre compte.
 	</p>
 
-	<form class='mt-16' method='POST' action={actions.auth.confirmMail}>
+	<form class='mt-16' method='POST' action={actions.auth.confirmMail} aria-label='Renvoi du mail de confirmation'>
 		<input type='hidden' name='email' value={email} />
 		<p>Vous n’avez pas reçu de mail ?</p>
 		<ErrorInput errors={inputErrors.email} />
