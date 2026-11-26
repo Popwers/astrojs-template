@@ -7,6 +7,8 @@ interface FetchProps {
 	wrappedByList?: boolean;
 	token?: string;
 	returnError?: boolean;
+	/** Abort the request after this many milliseconds. Defaults to 30 seconds. */
+	timeoutMs?: number;
 }
 
 /**

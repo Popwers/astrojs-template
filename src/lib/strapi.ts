@@ -15,6 +15,7 @@ import { STRAPI_TOKEN, STRAPI_URL } from 'astro:env/server';
  * @param wrappedByKey - The key used to unwrap the response.
  * @param wrappedByList - If the response is a list, unwrap it.
  * @param token - Optional user token (falls back to the server-side STRAPI_TOKEN).
+ * @param timeoutMs - Abort after this many milliseconds, 30 seconds by default.
  * @param returnError - Controls the failure mode. `false` (default) returns a
  * safe empty fallback so content pages render empty instead of 500-ing — an
  * availability trade-off, see `docs/error-handling.md`. `true` returns the
@@ -28,6 +29,7 @@ export default async function fetchApi<T>({
 	wrappedByList,
 	token,
 	returnError = false,
+	timeoutMs = 30_000,
 }: FetchProps): Promise<T> {
 	try {
 		const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
@@ -42,7 +44,7 @@ export default async function fetchApi<T>({
 			headers: {
 				Authorization: `Bearer ${token || STRAPI_TOKEN}`,
 			},
-			signal: AbortSignal.timeout(30000),
+			signal: AbortSignal.timeout(timeoutMs),
 		});
 
 		const fallbackMessage = `API error: ${response.status} on ${endpoint}`;

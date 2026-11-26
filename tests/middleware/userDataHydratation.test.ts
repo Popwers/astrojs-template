@@ -134,6 +134,58 @@ describe('userDataHydratation middleware', () => {
 		});
 	});
 
+	it.each(['/_actions/user.updateAvatar', '/_server-islands/AvatarIsland'])(
+		'serves %s from the cookie session without calling Strapi',
+		async (path) => {
+			const cookieUser = {
+				id: 12,
+				documentId: 'user-doc',
+				email: 'user@example.com',
+				username: 'user_12',
+			};
+			const context = createMiddlewareContext(path, {
+				user_token: 'still-valid-token',
+				user_data: cookieUser,
+				user_data_timestamp: '0',
+			});
+			let loads = 0;
+
+			const response = await hydrateUserData(
+				asApiContext(context),
+				async () => new Response('ok', { status: 200 }),
+				async () => {
+					loads += 1;
+					return cookieUser;
+				},
+			);
+
+			expect(response.status).toBe(200);
+			expect(loads).toBe(0);
+			expect(context.locals.userToken).toBe('still-valid-token');
+			expect(context.locals.user).toMatchObject({ id: 12, email: 'user@example.com' });
+		},
+	);
+
+	it('bounds the user refresh far below the default 30 seconds', async () => {
+		const context = createMiddlewareContext('/dashboard', {
+			user_token: 'still-valid-token',
+			user_data: { id: 12, documentId: 'user-doc', email: 'user@example.com', username: 'user_12' },
+			user_data_timestamp: '0',
+		});
+		let receivedParams: FetchProps | undefined;
+
+		await hydrateUserData(
+			asApiContext(context),
+			async () => new Response('ok', { status: 200 }),
+			async (params) => {
+				receivedParams = params;
+				return { id: 12, documentId: 'user-doc', email: 'user@example.com', username: 'user_12' };
+			},
+		);
+
+		expect(receivedParams?.timeoutMs).toBeLessThanOrEqual(10_000);
+	});
+
 	it('keeps the cached user when refresh succeeds with an incomplete payload', async () => {
 		const cookieUser = {
 			id: 12,

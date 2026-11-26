@@ -161,6 +161,27 @@ describe('fetchApi', () => {
 	});
 });
 
+describe('fetchApi timeout', () => {
+	it('gives up on a hanging request after timeoutMs and returns the structured error', async () => {
+		installFetchStub(
+			(_input, init) =>
+				new Promise<Response>((_resolve, reject) => {
+					init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+				}),
+		);
+		const started = Date.now();
+
+		const result = await fetchApi<StrapiError>({
+			endpoint: 'users/me',
+			timeoutMs: 50,
+			returnError: true,
+		});
+
+		expect(Date.now() - started).toBeLessThan(2000);
+		expect(result.error.status).toBe(500);
+	});
+});
+
 describe('submitApi', () => {
 	it('returns the JSON payload as-is on success', async () => {
 		stubFetch(jsonResponse({ jwt: 'token-1', user: { id: 1 } }));

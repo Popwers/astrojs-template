@@ -1,5 +1,7 @@
+import { COOKIE_SESSION_ROUTES } from '@data/routes';
 import type { FetchProps, StrapiError } from '@interfaces/strapi';
 import type { User } from '@interfaces/user';
+import { matchesAnyRoute } from '@lib/pathMatch';
 import { clearUserSession } from '@lib/session';
 import { getUserFromCookie, updateUserCookie } from '@lib/userCookie';
 import { isPersistableUser } from '@lib/userRefresh';
@@ -17,6 +19,9 @@ async function defaultLoadUser(params: FetchProps): Promise<User | StrapiError> 
 
 	return await fetchApi<User | StrapiError>(params);
 }
+
+/** A slow CMS must not hold every page: past this, the cookie user keeps serving. */
+const USER_REFRESH_TIMEOUT_MS = 5000;
 
 /**
  * Hydrate the user data and token in the locals object.
@@ -36,10 +41,12 @@ export async function hydrateUserData(
 
 			if (cookieUser) context.locals.user = cookieUser;
 
-			// Always revalidate against Strapi so blocked/deleted accounts cannot
-			// linger on an unsigned timestamp window.
-			const response = await refreshUserData(context, loadUser);
-			if (response) return response;
+			// Revalidate every page request against Strapi so blocked/deleted accounts cannot linger on an
+			// unsigned timestamp window. Islands and actions reuse that result: see COOKIE_SESSION_ROUTES.
+			if (!matchesAnyRoute(context.url.pathname, COOKIE_SESSION_ROUTES)) {
+				const response = await refreshUserData(context, loadUser);
+				if (response) return response;
+			}
 		}
 	} catch (error) {
 		console.error('Error in user data hydration:', error);
@@ -56,6 +63,7 @@ export async function refreshUserData(context: APIContext, loadUser: LoadUser = 
 		token: context.locals.userToken,
 		wrappedByKey: '',
 		returnError: true,
+		timeoutMs: USER_REFRESH_TIMEOUT_MS,
 		// Populate the avatar relation so the refreshed cookie keeps avatar_url;
 		// otherwise Strapi omits the relation and updateUserCookie writes null.
 		query: {
