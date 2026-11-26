@@ -68,7 +68,13 @@
     "yaml": "^2.9.1",
     "esbuild": "^0.28.2",
     "astro": "^7.4.12",
-    "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000"
+    "vite": "npm:@voidzero-dev/vite-plus-core@8.3.8000",
+    "sharp": "^0.35.5",
+    "svgo": "^4.1.0",
+    "deepmerge-ts": "^8.0.2",
+    "tar": "^7.5.23",
+    "glob": "^14.0.6",
+    "minimatch": "^11.0.9"
   },
   "trustedDependencies": [
     "core-js",
