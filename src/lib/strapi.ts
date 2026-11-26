@@ -150,6 +150,7 @@ function toMultipartBody(submitBody: SubmitProps['body']): FormData | undefined 
  * @param token - The authentication token.
  * @param method - The HTTP method to use.
  * @param contentType - The content type of the request.
+ * @param clientIp - The visitor's address, forwarded to Strapi when known.
  * @returns The API response, or a structured Strapi error on failure.
  */
 export async function submitApi({
@@ -158,6 +159,7 @@ export async function submitApi({
 	token,
 	method = 'POST',
 	contentType = 'application/json',
+	clientIp,
 }: SubmitProps): Promise<StrapiUserData | StrapiData | StrapiError | User> {
 	try {
 		const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
@@ -175,6 +177,7 @@ export async function submitApi({
 					'Content-Type': contentType,
 				}),
 				...(token && { Authorization: `Bearer ${token}` }),
+				...(clientIp && { 'X-Forwarded-For': clientIp }),
 			},
 			body: contentType === 'application/json' ? JSON.stringify(body) : multipartBody,
 			signal: AbortSignal.timeout(30000),

@@ -1,5 +1,6 @@
 import { confirmMail, login, register } from '@actions/schema/auth';
 import scopedRequest from '@actions/utility/scopedRequest';
+import { clientIp } from '@lib/clientIp';
 import { clearUserSession } from '@lib/session';
 import { assertTurnstile } from '@lib/turnstile';
 import { defineAction } from 'astro:actions';
@@ -19,6 +20,7 @@ export const auth = {
 			const { email, password } = input;
 			return await scopedRequest({
 				endpoint: 'auth/local',
+				clientIp: clientIp(context),
 				body: {
 					identifier: email,
 					password,
@@ -39,6 +41,7 @@ export const auth = {
 			if (
 				await scopedRequest({
 					endpoint: 'auth/local/register',
+					clientIp: clientIp(context),
 					body: {
 						email,
 						password,
@@ -64,6 +67,7 @@ export const auth = {
 			if (
 				await scopedRequest({
 					endpoint: 'auth/send-email-confirmation',
+					clientIp: clientIp(context),
 					body: {
 						email,
 					},

@@ -40,6 +40,8 @@ interface SubmitProps {
 	token?: string;
 	method?: 'POST' | 'PUT' | 'DELETE';
 	contentType?: 'application/json' | 'multipart/form-data';
+	/** The visitor's address, sent as `X-Forwarded-For` so Strapi rate-limits and logs the visitor, not this server. */
+	clientIp?: string | null;
 }
 
 interface StrapiError {

@@ -16,6 +16,7 @@ const scopedRequest = async ({
 	token,
 	method = 'POST',
 	contentType = 'application/json',
+	clientIp,
 }: SubmitProps) => {
 	try {
 		const response = await submitApi({
@@ -24,6 +25,7 @@ const scopedRequest = async ({
 			token,
 			method,
 			contentType,
+			clientIp,
 		});
 		if ('error' in response && response.error) {
 			throw new ActionError({

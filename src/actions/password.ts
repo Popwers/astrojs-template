@@ -1,5 +1,6 @@
 import { forgotPassword, resetPassword } from '@actions/schema/password';
 import scopedRequest from '@actions/utility/scopedRequest';
+import { clientIp } from '@lib/clientIp';
 import { assertTurnstile } from '@lib/turnstile';
 import { defineAction } from 'astro:actions';
 
@@ -19,6 +20,7 @@ export const password = {
 			if (
 				await scopedRequest({
 					endpoint: 'auth/forgot-password',
+					clientIp: clientIp(context),
 					body: {
 						email,
 					},
@@ -43,6 +45,7 @@ export const password = {
 			const { code, password, passwordConfirmation } = input;
 			return await scopedRequest({
 				endpoint: 'auth/reset-password',
+				clientIp: clientIp(context),
 				body: {
 					code,
 					password,

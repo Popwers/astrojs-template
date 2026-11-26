@@ -182,6 +182,22 @@ describe('submitApi', () => {
 		expect(body).toEqual(expect.any(String));
 	});
 
+	it('forwards the visitor address as X-Forwarded-For when one is known', async () => {
+		stubFetch(jsonResponse({ ok: true }));
+
+		await submitApi({ endpoint: 'auth/local', body: { identifier: 'a' }, clientIp: '198.51.100.7' });
+
+		expect(new Headers(calls[0]?.init?.headers).get('X-Forwarded-For')).toBe('198.51.100.7');
+	});
+
+	it('sends no X-Forwarded-For when the visitor address is unknown', async () => {
+		stubFetch(jsonResponse({ ok: true }));
+
+		await submitApi({ endpoint: 'auth/local', body: { identifier: 'a' }, clientIp: null });
+
+		expect(new Headers(calls[0]?.init?.headers).has('X-Forwarded-For')).toBe(false);
+	});
+
 	it('returns a normalized error on a 400 response', async () => {
 		stubFetch(
 			jsonResponse(
