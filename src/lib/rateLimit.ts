@@ -7,11 +7,18 @@ interface Bucket {
 	resetAt: number;
 }
 
-/** Most clients tracked at once: past it, the oldest one is dropped, so memory and work stay bounded. */
+/**
+ * Most clients tracked at once. A live counter is never evicted, or flooding new keys would erase a
+ * throttled client's budget: when the table is full of live buckets, new clients share one overflow
+ * budget per route instead.
+ */
 export const MAX_TRACKED_CLIENTS = 10_000;
 
 /** Expired buckets are swept at most this often, never on every request. */
 export const SWEEP_INTERVAL_MS = 60_000;
+
+/** Expired buckets reclaimed from the front of the table per request. */
+const FRONT_RECLAIM_STEPS = 8;
 
 let lastSweepAt = 0;
 
@@ -50,22 +57,10 @@ function dropExpiredBuckets(now: number): void {
 	}
 }
 
-function consume(bucketKey: string, max: number, windowMs: number): void {
-	const now = Date.now();
-	const bucket = buckets.get(bucketKey);
+/** Shared budget of the clients that arrive while the table is full, one per limited route. */
+const overflowBuckets = new Map<string, Bucket>();
 
-	if (!bucket || now >= bucket.resetAt) {
-		buckets.delete(bucketKey);
-		if (buckets.size >= MAX_TRACKED_CLIENTS && now - lastSweepAt >= SWEEP_INTERVAL_MS)
-			dropExpiredBuckets(now);
-		if (buckets.size >= MAX_TRACKED_CLIENTS) {
-			const oldest = buckets.keys().next();
-			if (!oldest.done) buckets.delete(oldest.value);
-		}
-		buckets.set(bucketKey, { count: 1, resetAt: now + windowMs });
-		return;
-	}
-
+function bump(bucket: Bucket, max: number): void {
 	bucket.count += 1;
 	if (bucket.count > max) {
 		throw new ActionError({
@@ -75,12 +70,55 @@ function consume(bucketKey: string, max: number, windowMs: number): void {
 	}
 }
 
+/** Drops the expired buckets at the front of the table: a few per request, never the whole list. */
+function dropExpiredFront(now: number): void {
+	for (let step = 0; step < FRONT_RECLAIM_STEPS; step += 1) {
+		const first = buckets.entries().next();
+		if (first.done || now < first.value[1].resetAt) return;
+		buckets.delete(first.value[0]);
+	}
+}
+
+function consumeOverflow(route: string, max: number, windowMs: number, now: number): void {
+	const current = overflowBuckets.get(route);
+	if (!current || now >= current.resetAt) {
+		overflowBuckets.set(route, { count: 1, resetAt: now + windowMs });
+		return;
+	}
+
+	bump(current, max);
+}
+
+function consume(route: string, subject: string, max: number, windowMs: number): void {
+	const bucketKey = `${route}:${subject}`;
+	const now = Date.now();
+	const bucket = buckets.get(bucketKey);
+
+	if (bucket && now < bucket.resetAt) {
+		bump(bucket, max);
+		return;
+	}
+
+	buckets.delete(bucketKey);
+	if (buckets.size >= MAX_TRACKED_CLIENTS) {
+		dropExpiredFront(now);
+		if (buckets.size >= MAX_TRACKED_CLIENTS && now - lastSweepAt >= SWEEP_INTERVAL_MS)
+			dropExpiredBuckets(now);
+	}
+	if (buckets.size >= MAX_TRACKED_CLIENTS) {
+		consumeOverflow(route, max, windowMs, now);
+		return;
+	}
+
+	buckets.set(bucketKey, { count: 1, resetAt: now + windowMs });
+}
+
 /**
  * Best-effort in-process rate limiter for auth endpoints (single-instance).
  * @throws ActionError `TOO_MANY_REQUESTS` (HTTP 429) once `max` calls land inside `windowMs`.
  */
 export function assertRateLimit(context: ClientContext, key: string, max: number, windowMs: number): void {
-	consume(`${key}:${clientSubject(clientIp(context))}`, max, windowMs);
+	consume(key, clientSubject(clientIp(context)), max, windowMs);
 }
 
 /**
@@ -89,10 +127,17 @@ export function assertRateLimit(context: ClientContext, key: string, max: number
  * @throws ActionError `TOO_MANY_REQUESTS` (HTTP 429) once `max` calls land inside `windowMs`.
  */
 export function assertUserRateLimit(userId: number, key: string, max: number, windowMs: number): void {
-	consume(`${key}:user:${userId}`, max, windowMs);
+	consume(key, `user:${userId}`, max, windowMs);
 }
 
 /** Number of clients the limiter currently tracks. */
 export function trackedClientCount(): number {
 	return buckets.size;
+}
+
+/** Forgets every counter, for tests that fill the table. */
+export function resetRateLimiter(): void {
+	buckets.clear();
+	overflowBuckets.clear();
+	lastSweepAt = 0;
 }
