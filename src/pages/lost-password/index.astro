@@ -32,7 +32,7 @@ const inputErrors = isInputError(result?.error) ? result.error.fields : {};
 		Nous allons vous envoyer un email pour réinitialiser votre mot de passe.
 	</p>
 
-	<form class='mt-16' method='POST' action={actions.password.forgotPassword} aria-label='Réinitialisation du mot de passe'>
+	<form class='mt-16' method='POST' action={actions.password.forgotPassword} aria-label='Demande de réinitialisation'>
 		<div class='form-group'>
 			<label for='email'>Adresse mail</label>
 			<input
