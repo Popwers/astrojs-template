@@ -1,3 +1,10 @@
+## [1.4.1](https://github.com/Popwers/astrojs-template/compare/v1.4.0...v1.4.1) (2026-11-26)
+
+
+### Bug Fixes
+
+* comments, modern web, security and performance pass ([#56](https://github.com/Popwers/astrojs-template/issues/56)) ([8e705bb](https://github.com/Popwers/astrojs-template/commit/8e705bb744d3c7fb0f51d3a7dee2664e8e7ffc51))
+
 # [1.4.0](https://github.com/Popwers/astrojs-template/compare/v1.3.0...v1.4.0) (2026-10-28)
 
 
