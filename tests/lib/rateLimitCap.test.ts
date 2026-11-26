@@ -17,8 +17,7 @@ function fillToCap(): void {
 
 beforeEach(() => {
 	resetRateLimiter();
-	vi.useFakeTimers();
-	vi.setSystemTime(new Date('2026-01-01T00:00:00Z'));
+	vi.useFakeTimers({ now: new Date('2026-01-01T00:00:00Z') });
 });
 
 afterEach(() => {
@@ -46,15 +45,24 @@ describe('rate limiter state bound', () => {
 	it('walks the tracked clients at most once per sweep interval, not once per new key', () => {
 		fillToCap();
 		attempt(99_999);
-		const iterate = vi.spyOn(Map.prototype, Symbol.iterator);
+		const original = Map.prototype[Symbol.iterator];
+		let walks = 0;
+		Map.prototype[Symbol.iterator] = function countedIterator(this: Map<unknown, unknown>) {
+			walks += 1;
+			return original.call(this);
+		};
 
-		for (let id = 100_000; id < 100_200; id += 1) attempt(id);
-		expect(iterate).not.toHaveBeenCalled();
+		try {
+			for (let id = 100_000; id < 100_200; id += 1) attempt(id);
+			expect(walks).toBe(0);
 
-		vi.advanceTimersByTime(SWEEP_INTERVAL_MS + 1);
-		attempt(200_000);
-		attempt(200_001);
-		expect(iterate.mock.calls.length).toBeLessThanOrEqual(1);
+			vi.advanceTimersByTime(SWEEP_INTERVAL_MS + 1);
+			attempt(200_000);
+			attempt(200_001);
+			expect(walks).toBeLessThanOrEqual(1);
+		} finally {
+			Map.prototype[Symbol.iterator] = original;
+		}
 	});
 
 	it('still limits a key past its budget once the cap is reached', () => {
