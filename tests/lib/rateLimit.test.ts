@@ -1,4 +1,4 @@
-import { assertRateLimit } from '@lib/rateLimit';
+import { assertRateLimit, assertUserRateLimit } from '@lib/rateLimit';
 import { afterEach, describe, expect, it } from 'vite-plus/test';
 
 import { codeOf } from '../utils/actionError';
@@ -214,6 +214,21 @@ describe('assertRateLimit refusal', () => {
 			} catch (error) {
 				expect(codeOf(error)).toBe('TOO_MANY_REQUESTS');
 			}
+		});
+	});
+});
+
+describe('assertUserRateLimit', () => {
+	it('counts per account, whatever the address', () => {
+		assertUserRateLimit(701, 'user-key', 1, 60_000);
+		expect(() => assertUserRateLimit(701, 'user-key', 1, 60_000)).toThrow(/Trop de tentatives/);
+		expect(() => assertUserRateLimit(702, 'user-key', 1, 60_000)).not.toThrow();
+	});
+
+	it('keeps its budget apart from the per-address budget of the same key', () => {
+		withTrustProxy(undefined, () => {
+			assertRateLimit(contextWith({}, '203.0.113.80'), 'shared-key', 1, 60_000);
+			expect(() => assertUserRateLimit(703, 'shared-key', 1, 60_000)).not.toThrow();
 		});
 	});
 });

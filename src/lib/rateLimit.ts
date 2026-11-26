@@ -44,12 +44,7 @@ function dropExpiredBuckets(now: number): void {
 	}
 }
 
-/**
- * Best-effort in-process rate limiter for auth endpoints (single-instance).
- * @throws ActionError `TOO_MANY_REQUESTS` (HTTP 429) once `max` calls land inside `windowMs`.
- */
-export function assertRateLimit(context: ClientContext, key: string, max: number, windowMs: number): void {
-	const bucketKey = `${key}:${clientSubject(clientIp(context))}`;
+function consume(bucketKey: string, max: number, windowMs: number): void {
 	const now = Date.now();
 	const bucket = buckets.get(bucketKey);
 
@@ -66,4 +61,21 @@ export function assertRateLimit(context: ClientContext, key: string, max: number
 			message: 'Trop de tentatives. Veuillez réessayer plus tard.',
 		});
 	}
+}
+
+/**
+ * Best-effort in-process rate limiter for auth endpoints (single-instance).
+ * @throws ActionError `TOO_MANY_REQUESTS` (HTTP 429) once `max` calls land inside `windowMs`.
+ */
+export function assertRateLimit(context: ClientContext, key: string, max: number, windowMs: number): void {
+	consume(`${key}:${clientSubject(clientIp(context))}`, max, windowMs);
+}
+
+/**
+ * The same limiter for a signed-in user, counted per account so that a shared address does not pool
+ * several users and a rotating address does not reset one.
+ * @throws ActionError `TOO_MANY_REQUESTS` (HTTP 429) once `max` calls land inside `windowMs`.
+ */
+export function assertUserRateLimit(userId: number, key: string, max: number, windowMs: number): void {
+	consume(`${key}:user:${userId}`, max, windowMs);
 }
