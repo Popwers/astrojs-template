@@ -53,7 +53,7 @@ export default {
 						STRAPI_STUB_PORT: String(STRAPI_STUB_PORT),
 						STRAPI_URL: `http://localhost:${STRAPI_STUB_PORT}`,
 						STRAPI_TOKEN: 'e2e-strapi-token',
-						COOKIE_SIGNING_SECRET: 'e2e-cookie-signing-secret',
+						COOKIE_SIGNING_SECRET: 'e2e-cookie-signing-secret-0123456789',
 						TURNSTILE_SITE_KEY,
 						TURNSTILE_SECRET_KEY: TURNSTILE_PASS_SECRET_KEY,
 						TURNSTILE_REJECT_SECRET_KEY,
