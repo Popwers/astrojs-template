@@ -15,6 +15,7 @@ import { STRAPI_TOKEN, STRAPI_URL } from 'astro:env/server';
  * @param wrappedByKey - The key used to unwrap the response.
  * @param wrappedByList - If the response is a list, unwrap it.
  * @param token - Optional user token (falls back to the server-side STRAPI_TOKEN).
+ * @param timeoutMs - Abort after this many milliseconds, 30 seconds by default.
  * @param returnError - Controls the failure mode. `false` (default) returns a
  * safe empty fallback so content pages render empty instead of 500-ing — an
  * availability trade-off, see `docs/error-handling.md`. `true` returns the
@@ -28,6 +29,7 @@ export default async function fetchApi<T>({
 	wrappedByList,
 	token,
 	returnError = false,
+	timeoutMs = 30_000,
 }: FetchProps): Promise<T> {
 	try {
 		const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
@@ -42,7 +44,7 @@ export default async function fetchApi<T>({
 			headers: {
 				Authorization: `Bearer ${token || STRAPI_TOKEN}`,
 			},
-			signal: AbortSignal.timeout(30000),
+			signal: AbortSignal.timeout(timeoutMs),
 		});
 
 		const fallbackMessage = `API error: ${response.status} on ${endpoint}`;
@@ -150,6 +152,7 @@ function toMultipartBody(submitBody: SubmitProps['body']): FormData | undefined 
  * @param token - The authentication token.
  * @param method - The HTTP method to use.
  * @param contentType - The content type of the request.
+ * @param clientIp - The visitor's address, forwarded to Strapi when known.
  * @returns The API response, or a structured Strapi error on failure.
  */
 export async function submitApi({
@@ -158,6 +161,7 @@ export async function submitApi({
 	token,
 	method = 'POST',
 	contentType = 'application/json',
+	clientIp,
 }: SubmitProps): Promise<StrapiUserData | StrapiData | StrapiError | User> {
 	try {
 		const normalizedEndpoint = endpoint.startsWith('/') ? endpoint.slice(1) : endpoint;
@@ -175,6 +179,7 @@ export async function submitApi({
 					'Content-Type': contentType,
 				}),
 				...(token && { Authorization: `Bearer ${token}` }),
+				...(clientIp && { 'X-Forwarded-For': clientIp }),
 			},
 			body: contentType === 'application/json' ? JSON.stringify(body) : multipartBody,
 			signal: AbortSignal.timeout(30000),

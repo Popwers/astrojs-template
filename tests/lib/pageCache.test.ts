@@ -1,10 +1,12 @@
 import { hasSessionCookie, pageCacheVerdict, type PageCacheFacts } from '@lib/pageCache';
 import { describe, expect, it } from 'vite-plus/test';
 
-// How the policy can fail: a member's page reaches a shared cache (session, private route, island,
-// cookie set, form POST), an error or redirect is cached (a missing asset stays 404 at the edge), an
-// endpoint loses the headers it chose, a route's own opt-out is overridden, or a look-alike cookie
-// name counts as a session.
+/**
+ * How the policy can fail: a member's page reaches a shared cache (session, private route, island,
+ * cookie set, form POST), an error or redirect is cached (a missing asset stays 404 at the edge), an
+ * endpoint loses the headers it chose, a route's own opt-out is overridden, or a look-alike cookie
+ * name counts as a session.
+ */
 const anonymousPage: PageCacheFacts = {
 	method: 'GET',
 	pathname: '/',

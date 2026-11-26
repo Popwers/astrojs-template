@@ -161,6 +161,27 @@ describe('fetchApi', () => {
 	});
 });
 
+describe('fetchApi timeout', () => {
+	it('gives up on a hanging request after timeoutMs and returns the structured error', async () => {
+		installFetchStub(
+			(_input, init) =>
+				new Promise<Response>((_resolve, reject) => {
+					init?.signal?.addEventListener('abort', () => reject(init.signal?.reason));
+				}),
+		);
+		const started = Date.now();
+
+		const result = await fetchApi<StrapiError>({
+			endpoint: 'users/me',
+			timeoutMs: 50,
+			returnError: true,
+		});
+
+		expect(Date.now() - started).toBeLessThan(2000);
+		expect(result.error.status).toBe(500);
+	});
+});
+
 describe('submitApi', () => {
 	it('returns the JSON payload as-is on success', async () => {
 		stubFetch(jsonResponse({ jwt: 'token-1', user: { id: 1 } }));
@@ -180,6 +201,22 @@ describe('submitApi', () => {
 		const body = calls[0]?.init?.body;
 		expect(headers.get('Content-Type')).toBe('application/json');
 		expect(body).toEqual(expect.any(String));
+	});
+
+	it('forwards the visitor address as X-Forwarded-For when one is known', async () => {
+		stubFetch(jsonResponse({ ok: true }));
+
+		await submitApi({ endpoint: 'auth/local', body: { identifier: 'a' }, clientIp: '198.51.100.7' });
+
+		expect(new Headers(calls[0]?.init?.headers).get('X-Forwarded-For')).toBe('198.51.100.7');
+	});
+
+	it('sends no X-Forwarded-For when the visitor address is unknown', async () => {
+		stubFetch(jsonResponse({ ok: true }));
+
+		await submitApi({ endpoint: 'auth/local', body: { identifier: 'a' }, clientIp: null });
+
+		expect(new Headers(calls[0]?.init?.headers).has('X-Forwarded-For')).toBe(false);
 	});
 
 	it('returns a normalized error on a 400 response', async () => {

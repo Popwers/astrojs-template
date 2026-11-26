@@ -6,9 +6,11 @@ import {
 	parseTracesSampleRate,
 } from '../../src/lib/sentrySampling';
 
-// Failure modes: unset or blank variable, non-numeric value, out-of-range value (a typo like `10`
-// must not mean 100 %), a valid 0 swallowed as falsy, whitespace from an env file; the sampler
-// tracing health checks, overriding a parent's decision, or ignoring the configured rate.
+/**
+ * Failure modes: unset or blank variable, non-numeric value, out-of-range value (a typo like `10`
+ * must not mean 100 %), a valid 0 swallowed as falsy, whitespace from an env file; the sampler
+ * tracing health checks, overriding a parent's decision, or ignoring the configured rate.
+ */
 describe('parseTracesSampleRate', () => {
 	it('defaults to 0.1 when unset or blank', () => {
 		expect(DEFAULT_TRACES_SAMPLE_RATE).toBe(0.1);

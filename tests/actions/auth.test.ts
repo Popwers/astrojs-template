@@ -1,6 +1,6 @@
 import { auth } from '@actions/auth';
 import type { JsonValue } from '@interfaces/json';
-import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test';
 
 import { codeOf, messageOf } from '../utils/actionError';
 import { createActionContext, handlerOf } from '../utils/actionHandler';
@@ -12,6 +12,7 @@ const TURNSTILE_TOKEN = { 'cf-turnstile-response': 'test-token' };
 let originalFetch: typeof globalThis.fetch;
 let originalError: typeof console.error;
 let strapiCalls: number;
+let strapiHeaders: Headers | undefined;
 
 /**
  * Install a fetch stub that answers the Turnstile siteverify call with `siteverify` and every other
@@ -22,10 +23,11 @@ function stubFetch(
 	siteverify: Response = jsonResponse({ success: true }),
 ) {
 	strapiCalls = 0;
-	installFetchStub(async (input) => {
+	installFetchStub(async (input, init) => {
 		if (fetchUrl(input) === SITEVERIFY_URL) return siteverify.clone();
 
 		strapiCalls += 1;
+		strapiHeaders = new Headers(init?.headers);
 		return response instanceof Response ? response : response();
 	});
 }
@@ -58,6 +60,21 @@ describe('auth.login', () => {
 		);
 
 		expect(result).toEqual({ jwt: 'token-1', user: { id: 1, email: 'a@b.com' } });
+	});
+
+	it('forwards the trusted visitor address to Strapi', async () => {
+		vi.stubEnv('TRUST_PROXY', 'cloudflare');
+		stubFetch(jsonResponse({ jwt: 'token-1', user: { id: 1, email: 'a@b.com' } }));
+		const context = {
+			...createActionContext(),
+			request: new Request('http://localhost/test', {
+				headers: { 'cf-connecting-ip': '198.51.100.7' },
+			}),
+		};
+
+		await handlerOf(auth.login)({ email: 'a@b.com', password: 'secret123', ...TURNSTILE_TOKEN }, context);
+
+		expect(strapiHeaders?.get('X-Forwarded-For')).toBe('198.51.100.7');
 	});
 
 	it('throws when Strapi rejects the credentials', async () => {
@@ -112,7 +129,7 @@ describe('auth.register', () => {
 		stubFetch(jsonResponse({ jwt: 'token-1', user: { id: 2, email: 'new@b.com' } }));
 
 		const result = await handlerOf(auth.register)(
-			{ email: 'new@b.com', password: 'secret123', master: undefined, ...TURNSTILE_TOKEN },
+			{ email: 'new@b.com', password: 'secret123', ...TURNSTILE_TOKEN },
 			createActionContext(),
 		);
 

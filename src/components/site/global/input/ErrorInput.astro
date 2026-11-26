@@ -1,20 +1,25 @@
 ---
+import { errorIdOf } from '@lib/fieldError';
+
 interface Props {
 	errors?: string[];
+	/** The `id` of the input the errors belong to: the text gets the id its `aria-describedby` names. */
+	for?: string;
 }
 
-const { errors } = Astro.props;
+const { errors, for: fieldId } = Astro.props;
+const id = fieldId ? errorIdOf(fieldId) : undefined;
 ---
 
 {
 	errors &&
 		(errors.length > 1 ? (
-			<ul class='p-0'>
+			<ul id={id} class='p-0'>
 				{errors.map(error => (
 					<li class='text-red text-sm mb-1'>{error}</li>
 				))}
 			</ul>
 		) : (
-			<p class='text-red text-sm'>{errors[0]}</p>
+			<p id={id} class='text-red text-sm'>{errors[0]}</p>
 		))
 }

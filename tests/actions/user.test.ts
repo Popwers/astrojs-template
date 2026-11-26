@@ -2,6 +2,7 @@ import { user } from '@actions/user';
 import type { JsonValue } from '@interfaces/json';
 import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
 
+import { codeOf } from '../utils/actionError';
 import { createActionContext, handlerOf } from '../utils/actionHandler';
 import { fetchUrl, installFetchStub, type FetchInit, type FetchInput } from '../utils/fetchStub';
 
@@ -132,5 +133,48 @@ describe('user.deleteAccount', () => {
 			threw = true;
 		}
 		expect(threw).toBe(true);
+	});
+});
+
+describe('authenticated action rate limits', () => {
+	it('answers 429 once an account floods deleteAccount, without a further Strapi call', async () => {
+		stubJson({});
+		const flooder = () =>
+			createActionContext(
+				{ id: 904, documentId: 'doc-904', email: 'f@b.com', username: 'flooder' },
+				'jwt-904',
+			);
+
+		for (let attempt = 0; attempt < 3; attempt += 1) {
+			await handlerOf(user.deleteAccount)({}, flooder());
+		}
+		const before = calls.length;
+
+		try {
+			await handlerOf(user.deleteAccount)({}, flooder());
+			throw new Error('expected the fourth call to throw');
+		} catch (error) {
+			expect(codeOf(error)).toBe('TOO_MANY_REQUESTS');
+		}
+		expect(calls.length).toBe(before);
+	});
+
+	it("does not let one account exhaust another account's profile budget", async () => {
+		stubJson({ id: 905, username: 'bobby' });
+		for (let attempt = 0; attempt < 21; attempt += 1) {
+			await handlerOf(user.profile)(
+				{ username: 'bobby' },
+				createActionContext(
+					{ id: 905, documentId: 'doc-905', email: 'f@b.com', username: 'x' },
+					'jwt-905',
+				),
+			).catch(() => undefined);
+		}
+
+		const other = createActionContext(
+			{ id: 906, documentId: 'doc-906', email: 'o@b.com', username: 'o' },
+			'jwt-906',
+		);
+		await expect(handlerOf(user.profile)({ username: 'bobby' }, other)).resolves.toBeDefined();
 	});
 });

@@ -97,7 +97,7 @@ Copy `.env.example` to `.env`. The schema is in `astro.config.mjs` (`envField`).
 | `COOKIE_SIGNING_SECRET` | Signed cookies |
 | `TURNSTILE_SITE_KEY` | Turnstile widget site key (runtime) |
 | `TURNSTILE_SECRET_KEY` | Turnstile siteverify secret (runtime) |
-| `TRUST_PROXY` | Reverse-proxy trust |
+| `TRUST_PROXY` | Where the visitor address comes from (`cloudflare` in the Docker image, `none` otherwise). It feeds the rate limits, Turnstile and the `X-Forwarded-For` the server sends to Strapi on auth calls |
 | `SENTRY_AUTH_TOKEN` | Sentry (optional) |
 | `SENTRY_RELEASE` | Sentry release name (optional) |
 | `SENTRY_TRACES_SAMPLE_RATE` | Sentry traces rate at build time, default `0.1` (optional) |

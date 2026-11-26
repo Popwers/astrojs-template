@@ -1,7 +1,9 @@
 ---
-// On demand, cached at the edge: the text comes from Strapi per request, so an edit shows within a day
-// (s-maxage, see the page-cache middleware) without a rebuild, and the build needs neither Strapi nor
-// the runtime secrets. Content falls back to empty array when Strapi is unreachable.
+/**
+ * On demand, cached at the edge: the text comes from Strapi per request, so an edit shows within a day
+ * (s-maxage, see the page-cache middleware) without a rebuild, and the build needs neither Strapi nor
+ * the runtime secrets. Content falls back to empty array when Strapi is unreachable.
+ */
 export const prerender = false;
 
 import TextRenderer from "@components/site/global/TextRenderer";

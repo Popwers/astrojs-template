@@ -40,7 +40,8 @@ function originOf(url: string | undefined): string | null {
  *
  * `script-src` keeps `'unsafe-inline'`: the `<ClientRouter />` swaps pages without reloading, and
  * Astro inlines the server island and hydration scripts, so per-page hashes (Astro `security.csp`)
- * cannot cover them. It also allows `data:`: after each swap the router appends an empty
+ * cannot cover them: tried on Astro 7, every e2e page then reported `script-src-elem` and
+ * `style-src-attr` violations, since the hashes reach prerendered pages only. It also allows `data:`: after each swap the router appends an empty
  * `data:application/javascript,` module to wait for the page's module scripts. The policy still pins
  * every script, frame, connection and image to known origins.
  * @param pathname - Request path, to grant eval to the avatar page only.

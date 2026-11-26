@@ -55,6 +55,17 @@ const updateUser = z.object({
 	phone: optionalString(),
 });
 
+/** First bytes of a JPEG and of a PNG: the browser-supplied `file.type` says nothing about the content. */
+const IMAGE_SIGNATURES: ReadonlyArray<readonly number[]> = [
+	[0xff, 0xd8, 0xff],
+	[0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a],
+];
+
+const hasImageSignature = async (file: File): Promise<boolean> => {
+	const head = new Uint8Array(await file.slice(0, 8).arrayBuffer());
+	return IMAGE_SIGNATURES.some((signature) => signature.every((byte, index) => head[index] === byte));
+};
+
 const updateAvatar = z.object({
 	avatar: z
 		.instanceof(File)
@@ -63,6 +74,10 @@ const updateAvatar = z.object({
 		.refine(
 			(file) => !file || SUPPORTED_FILE_TYPES.includes(file.type),
 			'Seuls les formats .jpg, .jpeg et .png sont supportés.',
+		)
+		.refine(
+			async (file) => !file || (await hasImageSignature(file)),
+			"Le fichier n'est pas une image JPEG ou PNG valide.",
 		),
 });
 

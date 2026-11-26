@@ -39,9 +39,13 @@ RUN --mount=type=cache,target=/root/.bun/install/cache,sharing=locked \
 
 # --- runtime: ship only node_modules + dist + entry -------------------------
 FROM base AS runtime
+# TRUST_PROXY=cloudflare: the image runs behind the Cloudflare zone, so rate limits and Turnstile use
+# CF-Connecting-IP. Without it every visitor shares the proxy's address, hence one login bucket. Set it to
+# `none` when the container is reachable without Cloudflare, where that header is spoofable.
 ENV HOST=0.0.0.0 \
     PORT=4321 \
-    NODE_ENV=production
+    NODE_ENV=production \
+    TRUST_PROXY=cloudflare
 
 COPY --from=deps  /app/node_modules ./node_modules
 COPY --from=build /app/dist          ./dist

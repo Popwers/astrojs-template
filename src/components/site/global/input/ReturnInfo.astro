@@ -56,7 +56,7 @@ if (code === 'user-change-email') {
 {error && <p class={cn(box ? boxClass : 'text-sm', box ? 'bg-red' : 'text-red')}>{result.error?.message}</p>}
 
 <script is:inline define:vars={{ code }}>
-	// @ts-nocheck
+	// @ts-expect-error: `code` is injected into the inline script by define:vars
 	if (code === 'user-change-email') {
 		setTimeout(() => {
 			window.location.href = '/login';

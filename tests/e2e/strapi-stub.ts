@@ -109,13 +109,25 @@ const routes: Route[] = [
 		path: /^\/api\/users\/me$/,
 		handle: (request) => {
 			const account = sessionAccount(request);
-			return account ? Response.json({ ...account.user, avatar: null }) : unauthorized();
+			if (!account) return unauthorized();
+
+			const avatar = account.avatarPath ? { documentId: 'avatar-doc', url: account.avatarPath } : null;
+			return Response.json({ ...account.user, avatar });
 		},
 	},
 	{
 		method: 'POST',
 		path: /^\/api\/users\/avatar$/,
 		handle: (request) => (sessionAccount(request) ? Response.json({ id: 1 }) : unauthorized()),
+	},
+	{
+		// The app asks for the `medium_` rendition of an avatar upload.
+		method: 'GET',
+		path: /^\/uploads\/medium_avatar\.png$/,
+		handle: () =>
+			new Response(Bun.file('tests/e2e/fixtures/avatar.png'), {
+				headers: { 'Content-Type': 'image/png' },
+			}),
 	},
 	{
 		method: 'PUT',

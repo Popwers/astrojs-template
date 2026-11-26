@@ -1,5 +1,7 @@
+import { COOKIE_SESSION_ROUTES, REVALIDATING_PAGES } from '@data/routes';
 import type { FetchProps, StrapiError } from '@interfaces/strapi';
 import type { User } from '@interfaces/user';
+import { matchesAnyRoute } from '@lib/pathMatch';
 import { clearUserSession } from '@lib/session';
 import { getUserFromCookie, updateUserCookie } from '@lib/userCookie';
 import { isPersistableUser } from '@lib/userRefresh';
@@ -16,6 +18,35 @@ async function defaultLoadUser(params: FetchProps): Promise<User | StrapiError> 
 	const { default: fetchApi } = await import('@lib/strapi');
 
 	return await fetchApi<User | StrapiError>(params);
+}
+
+/** A slow CMS must not hold every page: past this, the cookie user keeps serving. */
+const USER_REFRESH_TIMEOUT_MS = 5000;
+
+const SERVER_ISLANDS = '/_server-islands';
+
+function isServerIsland(context: APIContext): boolean {
+	return matchesAnyRoute(context.url.pathname, [SERVER_ISLANDS]);
+}
+
+/** The path of the page that requested a server island, from its same-origin `Referer`. */
+function refererPath(context: APIContext): string | null {
+	const referer = context.request.headers.get('referer');
+	if (!referer) return null;
+
+	try {
+		return new URL(referer).pathname;
+	} catch {
+		return null;
+	}
+}
+
+function needsRefresh(context: APIContext): boolean {
+	if (matchesAnyRoute(context.url.pathname, COOKIE_SESSION_ROUTES)) return false;
+	if (!isServerIsland(context)) return true;
+
+	const page = refererPath(context);
+	return page === null || !matchesAnyRoute(page, REVALIDATING_PAGES);
 }
 
 /**
@@ -36,10 +67,12 @@ export async function hydrateUserData(
 
 			if (cookieUser) context.locals.user = cookieUser;
 
-			// Always revalidate against Strapi so blocked/deleted accounts cannot
-			// linger on an unsigned timestamp window.
-			const response = await refreshUserData(context, loadUser);
-			if (response) return response;
+			// Revalidate against Strapi so blocked/deleted accounts cannot linger on an unsigned timestamp
+			// window. Actions rely on their own JWT call, and an island on a page that just revalidated.
+			if (needsRefresh(context)) {
+				const response = await refreshUserData(context, loadUser);
+				if (response) return isServerIsland(context) ? next() : response;
+			}
 		}
 	} catch (error) {
 		console.error('Error in user data hydration:', error);
@@ -56,6 +89,7 @@ export async function refreshUserData(context: APIContext, loadUser: LoadUser = 
 		token: context.locals.userToken,
 		wrappedByKey: '',
 		returnError: true,
+		timeoutMs: USER_REFRESH_TIMEOUT_MS,
 		// Populate the avatar relation so the refreshed cookie keeps avatar_url;
 		// otherwise Strapi omits the relation and updateUserCookie writes null.
 		query: {
@@ -69,10 +103,12 @@ export async function refreshUserData(context: APIContext, loadUser: LoadUser = 
 			return context.redirect('/login', 302);
 		}
 
-		// Non-401 failure: keep the existing (stale) cookie data serving rather
-		// than logging the user out on a transient CMS blip. A persistent failure
-		// degrades quietly here — only logged, not surfaced. See
-		// docs/error-handling.md ("Middleware" + "Observability gap").
+		/**
+		 * Non-401 failure: keep the existing (stale) cookie data serving rather
+		 * than logging the user out on a transient CMS blip. A persistent failure
+		 * degrades quietly here — only logged, not surfaced. See
+		 * docs/error-handling.md ("Middleware" + "Observability gap").
+		 */
 		console.error('Failed to refresh user data:', userData.error);
 		return;
 	}

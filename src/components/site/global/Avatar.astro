@@ -21,6 +21,9 @@ const avatarUrl =
 const fromRemote = avatar?.url && avatarUrl;
 const name = username.includes('username_') ? 'Mon espace' : username;
 
+/** Rendered size in px, matching the wrapper's w-14, w-36 and w-24: the optimizer resizes to it, not to 768. */
+const size = menu ? 56 : blueIcon ? 144 : 96;
+
 const wrapperClass: string = `rounded-full flex items-center justify-center overflow-hidden ${menu ? 'bg-blue-light w-14 h-14' : blueIcon ? 'bg-blue-light w-36 h-36' : 'bg-white w-24 h-24'}`;
 ---
 
@@ -33,8 +36,8 @@ const wrapperClass: string = `rounded-full flex items-center justify-center over
 			densities={[1.5, 2]}
 			loading='eager'
 			decoding='async'
-			width={768}
-			height={768}
+			width={size}
+			height={size}
 		/>
 	</div>
 	{menu && <p class='ml-4 font-medium'>{name}</p>}

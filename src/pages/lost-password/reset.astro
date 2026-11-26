@@ -53,12 +53,17 @@ if (!code) return Astro.redirect('/lost-password');
 	mode='reset-password'>
 	<h1 class='h3'>Changer votre mot de passe</h1>
 
-	<form class='mt-16' method='POST' action={actions.password.resetPassword}>
+	<form class='mt-16' method='POST' action={actions.password.resetPassword} aria-label='Réinitialisation'>
 		<input type='hidden' name='code' value={code} />
 
-		<PasswordChecker client:idle isNewPassword />
-		<ErrorInput errors={inputErrors.password} />
-		<ErrorInput errors={inputErrors.passwordConfirmation} />
+		<PasswordChecker
+			client:idle
+			isNewPassword
+			passwordErrors={inputErrors.password}
+			confirmationErrors={inputErrors.passwordConfirmation}
+		/>
+		<ErrorInput for='password' errors={inputErrors.password} />
+		<ErrorInput for='passwordConfirmation' errors={inputErrors.passwordConfirmation} />
 
 		<Turnstile />
 

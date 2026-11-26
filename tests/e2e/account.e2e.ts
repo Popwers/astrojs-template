@@ -23,3 +23,23 @@ test('profile update saves the new name', async ({ app, screen, browser }) => {
 	await app.open('/dashboard/account');
 	await expect(screen.getByLabel('Nom')).toHaveValue('Marie Sklodowska-Curie');
 });
+
+test('a remote avatar renders in the account page', async ({ app, screen, browser }) => {
+	await logIn(app, screen, browser, 'editor');
+	await app.open('/dashboard/account');
+
+	const avatars = () =>
+		browser.evaluate(() =>
+			[...document.querySelectorAll<HTMLImageElement>('img[alt^="Avatar de l"]')].map((image) => ({
+				src: image.currentSrc || image.src,
+				loaded: image.complete && image.naturalWidth > 0,
+			})),
+		);
+	await expect
+		.poll(async () =>
+			(await avatars()).some(
+				(image) => image.loaded && /medium_avatar/.test(decodeURIComponent(image.src)),
+			),
+		)
+		.toBe(true);
+});

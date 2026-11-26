@@ -54,3 +54,20 @@ test('customising cookies stores analytics as refused', async ({ app, screen, br
 	const stored = await browser.evaluate(() => localStorage.getItem('cookie-consent'));
 	expect(stored).toBe('{"hasConsented":true,"preferences":{"functional":true,"analytics":false}}');
 });
+
+test('escaping the preferences dialog brings the banner back until a choice is stored', async ({
+	app,
+	screen,
+	browser,
+}) => {
+	await app.open('/');
+	await expect.poll(() => opacity(browser, '#cookie-banner'), { timeout: BANNER_DELAY_MS * 2 }).toBe('1');
+	await screen.getByRole('button', 'Personnaliser').tap();
+	await expect.poll(() => opacity(browser, '#cookie-modal')).toBe('1');
+
+	await browser.keyboard.press('Escape');
+
+	await expect.poll(() => opacity(browser, '#cookie-modal')).toBe('0');
+	await expect.poll(() => opacity(browser, '#cookie-banner')).toBe('1');
+	expect(await browser.evaluate(() => localStorage.getItem('cookie-consent'))).toBeNull();
+});

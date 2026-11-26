@@ -40,10 +40,12 @@ const parseApiResponseBody = async (response: Response): Promise<ParsedApiRespon
 };
 
 const createFetchFallback = <T>({ wrappedByKey }: FetchFallbackProps): T => {
-	// SAFETY: `T` is the payload contract the caller declared on `fetchApi<T>`; no
-	// payload was decoded here. The value returned is the empty form of that
-	// contract — a list when the response is unwrapped by key, an empty object
-	// otherwise — which is the documented degraded mode (docs/error-handling.md).
+	/**
+	 * SAFETY: `T` is the payload contract the caller declared on `fetchApi<T>`; no
+	 * payload was decoded here. The value returned is the empty form of that
+	 * contract — a list when the response is unwrapped by key, an empty object
+	 * otherwise — which is the documented degraded mode (docs/error-handling.md).
+	 */
 	return (wrappedByKey ? [] : {}) as T;
 };
 

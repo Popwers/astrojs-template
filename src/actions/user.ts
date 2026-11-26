@@ -12,6 +12,8 @@ export const user = {
 		input: profile,
 		handler: async (input, context) => {
 			const { user, token } = requireAuth(context, 'You must be logged in to update your profile.');
+			const { assertUserRateLimit } = await import('@lib/rateLimit');
+			assertUserRateLimit(user.id, 'user-profile', 20, 10 * 60 * 1000);
 
 			const { username } = input;
 
@@ -31,6 +33,8 @@ export const user = {
 		input: updateUser,
 		handler: async (input, context) => {
 			const { user, token } = requireAuth(context, 'You must be logged in to update your profile.');
+			const { assertUserRateLimit } = await import('@lib/rateLimit');
+			assertUserRateLimit(user.id, 'user-update', 20, 10 * 60 * 1000);
 
 			const { email, username } = input;
 
@@ -72,7 +76,9 @@ export const user = {
 		accept: 'form',
 		input: updateAvatar,
 		handler: async (input, context) => {
-			const { token } = requireAuth(context, 'You must be logged in to update your avatar.');
+			const { user, token } = requireAuth(context, 'You must be logged in to update your avatar.');
+			const { assertUserRateLimit } = await import('@lib/rateLimit');
+			assertUserRateLimit(user.id, 'user-avatar', 10, 10 * 60 * 1000);
 
 			const { avatar } = input;
 
@@ -94,6 +100,8 @@ export const user = {
 		input: deleteAccount,
 		handler: async (_, context) => {
 			const { user, token } = requireAuth(context, 'You must be logged in to delete your account.');
+			const { assertUserRateLimit } = await import('@lib/rateLimit');
+			assertUserRateLimit(user.id, 'user-delete', 3, 60 * 60 * 1000);
 
 			// Self-deletion only: the id comes from the session, never from client
 			// input, so a user can never target another account (IDOR).

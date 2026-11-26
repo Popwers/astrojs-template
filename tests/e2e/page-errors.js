@@ -1,6 +1,8 @@
-// Init script (`e2e.config.ts` `initScripts`): records every `console.error`, uncaught page error,
-// failed same-origin load (element error, HTTP status >= 400) and CSP violation in sessionStorage,
-// so it survives navigations until `fixtures.ts` reads it after the test.
+/**
+ * Init script (`e2e.config.ts` `initScripts`): records every `console.error`, uncaught page error,
+ * failed same-origin load (element error, HTTP status >= 400) and CSP violation in sessionStorage,
+ * so it survives navigations until `fixtures.ts` reads it after the test.
+ */
 (() => {
 	const key = '__e2ePageErrors';
 	/** @param {string} message */

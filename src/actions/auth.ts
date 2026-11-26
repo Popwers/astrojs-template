@@ -1,5 +1,6 @@
 import { confirmMail, login, register } from '@actions/schema/auth';
 import scopedRequest from '@actions/utility/scopedRequest';
+import { clientIp } from '@lib/clientIp';
 import { clearUserSession } from '@lib/session';
 import { assertTurnstile } from '@lib/turnstile';
 import { defineAction } from 'astro:actions';
@@ -19,6 +20,7 @@ export const auth = {
 			const { email, password } = input;
 			return await scopedRequest({
 				endpoint: 'auth/local',
+				clientIp: clientIp(context),
 				body: {
 					identifier: email,
 					password,
@@ -35,14 +37,14 @@ export const auth = {
 			assertRateLimit(context, 'auth-register', 5, 60 * 60 * 1000);
 			await assertTurnstile(context, input['cf-turnstile-response']);
 
-			const { email, password, master } = input;
+			const { email, password } = input;
 			if (
 				await scopedRequest({
 					endpoint: 'auth/local/register',
+					clientIp: clientIp(context),
 					body: {
 						email,
 						password,
-						master: master || undefined,
 					},
 				})
 			) {
@@ -65,6 +67,7 @@ export const auth = {
 			if (
 				await scopedRequest({
 					endpoint: 'auth/send-email-confirmation',
+					clientIp: clientIp(context),
 					body: {
 						email,
 					},

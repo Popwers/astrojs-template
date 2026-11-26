@@ -4,6 +4,8 @@ import type { User } from '@interfaces/user';
 interface StubAccount {
 	password: string;
 	user: User;
+	/** Strapi upload path of the avatar the stub serves, when the account has one. */
+	avatarPath?: string;
 }
 
 const createdAt = new Date('2026-01-15T09:30:00.000Z');
@@ -27,9 +29,10 @@ const READER: StubAccount = {
 	user: strapiUser(1, 'r7k2m9q4w1x8z5c3v6b0n2p4', 'Jean Dupont', 'jean.dupont@example.com'),
 };
 
-/** Owned by the profile update spec, which renames it. */
+/** Owned by the profile update spec, which renames it. It is the one account with a remote avatar. */
 const EDITOR: StubAccount = {
 	password: 'Editeur-2026!',
+	avatarPath: '/uploads/avatar.png',
 	user: strapiUser(2, 'e3h8j1l6s9d2f5g7a4k0t1y3', 'Marie Curie', 'marie.curie@example.com'),
 };
 

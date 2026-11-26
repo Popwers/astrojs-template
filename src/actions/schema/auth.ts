@@ -16,7 +16,6 @@ const login = z.object({
 const register = z
 	.object({
 		email: emailSchema,
-		master: z.string().optional(),
 		password: z
 			.string({
 				error: 'Le mot de passe est requis',

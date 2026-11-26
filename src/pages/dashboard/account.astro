@@ -3,6 +3,7 @@
 export const prerender = false;
 
 import { actions, isInputError } from 'astro:actions';
+import { fieldErrorAttributes } from '@lib/fieldError';
 
 import Avatar from '@components/site/global/Avatar.astro';
 import AvatarInput from '@components/site/global/input/AvatarInput';
@@ -44,7 +45,7 @@ const description: string = 'Modifier mes informations personnelles';
 		<Avatar blueIcon />
 	</AvatarInput>
 
-	<form method='POST' action={actions.user.update} data-astro-reload>
+	<form method='POST' action={actions.user.update} data-astro-reload aria-label='Informations du compte'>
 		<div class='flex flex-col lg:flex-row lg:gap-6 mt-12'>
 			<div class='form-group w-full'>
 				<label for='username'>Nom</label>
@@ -53,11 +54,12 @@ const description: string = 'Modifier mes informations personnelles';
 					id='username'
 					value={username}
 					name='username'
-					autocomplete='family-name'
+					autocomplete='name'
 					placeholder='Nom prénom ou dénomination'
+					{...fieldErrorAttributes('username', inputErrors.username)}
 					required
 				/>
-				<ErrorInput errors={inputErrors.username} />
+				<ErrorInput for='username' errors={inputErrors.username} />
 			</div>
 		</div>
 		<div class='flex flex-col lg:flex-row lg:gap-6'>
@@ -70,10 +72,12 @@ const description: string = 'Modifier mes informations personnelles';
 					value={email}
 					name='email'
 					autocomplete='username'
+					spellcheck='false'
 					placeholder='votre@email.com'
+					{...fieldErrorAttributes('email', inputErrors.email)}
 					required
 				/>
-				<ErrorInput errors={inputErrors.email} />
+				<ErrorInput for='email' errors={inputErrors.email} />
 			</div>
 		</div>
 
@@ -89,7 +93,13 @@ const description: string = 'Modifier mes informations personnelles';
 
 		{deleteError && <p class='text-red mt-4 text-sm'>{deleteError}</p>}
 
-		<form method='POST' action={actions.user.deleteAccount} class='mt-6' data-astro-reload>
+		<form
+			method='POST'
+			action={actions.user.deleteAccount}
+			class='mt-6'
+			data-astro-reload
+			aria-label='Suppression du compte'
+		>
 			<div class='form-group flex items-start gap-3'>
 				<input type='checkbox' id='confirmation' name='confirmation' value='true' required />
 				<label for='confirmation' class='text-sm'>

@@ -14,54 +14,54 @@
 	</div>
 </div>
 
-<div id='cookie-modal' class='cookie-layer cookie-modal fixed inset-0 z-50 bg-black/50'>
-	<div
-		class='fixed top-1/2 left-1/2 w-full max-w-4xl -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white p-10 shadow-2xl'>
-		<p class='h3'>Paramètres des cookies</p>
+<dialog
+	id='cookie-modal'
+	class='cookie-modal m-auto w-full max-w-4xl rounded-2xl bg-white p-10 text-inherit shadow-2xl'
+	aria-labelledby='cookie-modal-title'>
+	<h1 id='cookie-modal-title' class='h3'>Paramètres des cookies</h1>
 
-		<ul class='mb-10 list-none'>
-			<li>
-				<p class='text-blue-dark mb-0 font-medium'>Cookies essentiels</p>
-				<div class='flex items-center justify-between gap-4'>
-					<p class='mt-0 text-sm text-gray-600'>
-						Ces cookies sont indispensables au fonctionnement du site. Ils permettent
-						l'utilisation des fonctionnalités de base comme la navigation et l'accès aux espaces
-						sécurisés. Le site ne peut pas fonctionner correctement sans ces cookies.
-					</p>
-					<label for='functional-cookies' class='flex cursor-not-allowed items-center gap-2'>
-						<input
-							type='checkbox'
-							id='functional-cookies'
-							class='cursor-not-allowed'
-							checked
-							disabled
-						/>
-						<span class='mt-0 text-sm text-gray-600'>Activer</span>
-					</label>
-				</div>
-			</li>
-			<li>
-				<p class='text-blue-dark mb-0 font-medium'>Cookies d'analyse</p>
-				<div class='flex items-center justify-between gap-4'>
-					<p class='mt-0 text-sm text-gray-600'>
-						Ces cookies nous permettent de mesurer l'audience de notre site, de voir quelles pages
-						sont les plus consultées et comment le site est utilisé. Toutes ces informations sont
-						anonymes et nous aident à améliorer votre expérience. Vous pouvez désactiver ces
-						cookies sans impact sur votre navigation.
-					</p>
-					<label for='analytics-cookies' class='flex cursor-pointer items-center gap-2'>
-						<input type='checkbox' id='analytics-cookies' class='cursor-pointer' checked />
-						<span class='mt-0 text-sm text-gray-600'>Activer</span>
-					</label>
-				</div>
-			</li>
-		</ul>
+	<ul class='mb-10 list-none'>
+		<li>
+			<p class='text-blue-dark mb-0 font-medium'>Cookies essentiels</p>
+			<div class='flex items-center justify-between gap-4'>
+				<p class='mt-0 text-sm text-gray-600'>
+					Ces cookies sont indispensables au fonctionnement du site. Ils permettent
+					l'utilisation des fonctionnalités de base comme la navigation et l'accès aux espaces
+					sécurisés. Le site ne peut pas fonctionner correctement sans ces cookies.
+				</p>
+				<label for='functional-cookies' class='flex cursor-not-allowed items-center gap-2'>
+					<input
+						type='checkbox'
+						id='functional-cookies'
+						class='cursor-not-allowed'
+						checked
+						disabled
+					/>
+					<span class='mt-0 text-sm text-gray-600'>Activer</span>
+				</label>
+			</div>
+		</li>
+		<li>
+			<p class='text-blue-dark mb-0 font-medium'>Cookies d'analyse</p>
+			<div class='flex items-center justify-between gap-4'>
+				<p class='mt-0 text-sm text-gray-600'>
+					Ces cookies nous permettent de mesurer l'audience de notre site, de voir quelles pages
+					sont les plus consultées et comment le site est utilisé. Toutes ces informations sont
+					anonymes et nous aident à améliorer votre expérience. Vous pouvez désactiver ces
+					cookies sans impact sur votre navigation.
+				</p>
+				<label for='analytics-cookies' class='flex cursor-pointer items-center gap-2'>
+					<input type='checkbox' id='analytics-cookies' class='cursor-pointer' checked autofocus />
+					<span class='mt-0 text-sm text-gray-600'>Activer</span>
+				</label>
+			</div>
+		</li>
+	</ul>
 
-		<div class='flex justify-end'>
-			<button id='save-preferences' class='primary fit'>Enregistrer les préférences</button>
-		</div>
+	<div class='flex justify-end'>
+		<button id='save-preferences' class='primary fit'>Enregistrer les préférences</button>
 	</div>
-</div>
+</dialog>
 
 <style>
 	.cookie-layer {
@@ -77,7 +77,40 @@
 	}
 
 	.cookie-modal {
-		transition: opacity 200ms ease-out;
+		opacity: 0;
+		transition:
+			opacity 200ms ease-out,
+			display 200ms allow-discrete,
+			overlay 200ms allow-discrete;
+		overscroll-behavior: contain;
+	}
+
+	.cookie-modal[open] {
+		opacity: 1;
+	}
+
+	.cookie-modal::backdrop {
+		background-color: transparent;
+		overflow: hidden;
+		overscroll-behavior: contain;
+		transition:
+			background-color 200ms ease-out,
+			display 200ms allow-discrete,
+			overlay 200ms allow-discrete;
+	}
+
+	.cookie-modal[open]::backdrop {
+		background-color: rgb(0 0 0 / 0.5);
+	}
+
+	@starting-style {
+		.cookie-modal[open] {
+			opacity: 0;
+		}
+
+		.cookie-modal[open]::backdrop {
+			background-color: transparent;
+		}
 	}
 
 	.cookie-layer.is-visible {
@@ -95,7 +128,7 @@
 
 	const init = () => {
 		const banner = document.querySelector<HTMLDivElement>('#cookie-banner');
-		const modal = document.querySelector<HTMLDivElement>('#cookie-modal');
+		const modal = document.querySelector<HTMLDialogElement>('#cookie-modal');
 		const customizeBtn = document.querySelector<HTMLButtonElement>('#customize-cookies');
 		const acceptAllBtn = document.querySelector<HTMLButtonElement>('#accept-all-cookies');
 		const savePreferencesBtn = document.querySelector<HTMLButtonElement>('#save-preferences');
@@ -116,7 +149,7 @@
 
 		customizeBtn?.addEventListener('click', () => {
 			banner.classList.remove('is-visible');
-			modal.classList.add('is-visible');
+			modal.showModal();
 		});
 
 		savePreferencesBtn?.addEventListener('click', () => {
@@ -124,7 +157,12 @@
 				functional: true,
 				analytics: analyticsCheckbox.checked,
 			});
-			modal.classList.remove('is-visible');
+			modal.close();
+		});
+
+		// Escape closes the dialog without a choice: the banner comes back until one is stored.
+		modal.addEventListener('close', () => {
+			if (!hasStoredConsent()) banner.classList.add('is-visible');
 		});
 
 		if (!hasStoredConsent()) {

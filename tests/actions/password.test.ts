@@ -1,7 +1,7 @@
 import { password } from '@actions/password';
 import { afterEach, beforeEach, describe, expect, it } from 'vite-plus/test';
 
-import { messageOf } from '../utils/actionError';
+import { codeOf, messageOf } from '../utils/actionError';
 import { createActionContext, handlerOf } from '../utils/actionHandler';
 import { fetchUrl, installFetchStub } from '../utils/fetchStub';
 
@@ -42,7 +42,8 @@ describe('password.resetPassword rate limit', () => {
 			await reset(RESET_INPUT, createActionContext());
 			throw new Error('expected the sixth reset to throw');
 		} catch (error) {
-			expect(messageOf(error)).toBe('Too many attempts. Please try again later.');
+			expect(codeOf(error)).toBe('TOO_MANY_REQUESTS');
+			expect(messageOf(error)).toBe('Trop de tentatives. Veuillez réessayer plus tard.');
 		}
 		expect(strapiCalls).toBe(5);
 	});

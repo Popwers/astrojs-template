@@ -18,10 +18,10 @@ make dev               # Astro dev server at localhost:4321
 |----------|----------|---------|-------------|
 | `STRAPI_URL` | Yes (prod) | `https://api.your-project.fr` | Base URL of the Strapi backend. The default lets `make build` succeed without a real backend. Set it for any real run. |
 | `STRAPI_TOKEN` | Yes (prod) | `replace-me-with-a-strapi-api-token` | Strapi API token. The placeholder keeps the build green out of the box. Replace it before talking to a real backend. |
-| `COOKIE_SIGNING_SECRET` | Yes | none | HMAC secret for session cookies. The process throws if this is unset. |
+| `COOKIE_SIGNING_SECRET` | Yes | none | HMAC secret for session cookies, at least 32 characters (`openssl rand -hex 32`). `start.mjs` exits with code 1 at boot if this, `TURNSTILE_SITE_KEY` or `TURNSTILE_SECRET_KEY` is unset or blank, or if the secret is shorter, so a misconfigured deployment fails its release instead of answering `/api/health` and failing every sign-in. |
 | `TURNSTILE_SITE_KEY` | Yes | none | Public key of the Cloudflare Turnstile widget. Read at runtime, so one image serves every environment. Prerendered pages make the build check every secret, so a build needs a value too, as for `COOKIE_SIGNING_SECRET`. `make verify` passes the test keys. |
 | `TURNSTILE_SECRET_KEY` | Yes | none | Secret key of the same widget. The server checks every form token with it. |
-| `TRUST_PROXY` | No | none | `cloudflare` to rate-limit on `CF-Connecting-IP`. `1` or `forwarded` to use `X-Forwarded-For`. Unset ignores spoofable forwarded headers. |
+| `TRUST_PROXY` | No | none (`cloudflare` in the Docker image) | `cloudflare` to rate-limit on `CF-Connecting-IP`. `1` or `forwarded` to use `X-Forwarded-For`. `none` or unset uses the socket address and ignores spoofable forwarded headers: behind a proxy, every visitor then shares one login bucket. |
 | `SENTRY_AUTH_TOKEN` | No | none | Build-time token for Sentry source-map upload. Pass it as a BuildKit secret, never as an image ARG or ENV. |
 | `SENTRY_RELEASE` | No | none | Deployed git SHA, so errors map to the commit that introduced them. |
 | `SENTRY_TRACES_SAMPLE_RATE` | No | `0.1` | Share of traces sent to Sentry, 0 to 1, read at build time for both SDKs. An empty or out-of-range value falls back to `0.1`. Keep it at or below `0.1`: the Sentry quota is shared by the whole organisation. |
