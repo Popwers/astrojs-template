@@ -134,37 +134,59 @@ describe('userDataHydratation middleware', () => {
 		});
 	});
 
-	it.each(['/_actions/user.updateAvatar', '/_server-islands/AvatarIsland'])(
-		'serves %s from the cookie session without calling Strapi',
-		async (path) => {
-			const cookieUser = {
-				id: 12,
-				documentId: 'user-doc',
-				email: 'user@example.com',
-				username: 'user_12',
-			};
-			const context = createMiddlewareContext(path, {
-				user_token: 'still-valid-token',
-				user_data: cookieUser,
-				user_data_timestamp: '0',
-			});
-			let loads = 0;
+	it.each([
+		['/_actions/user.updateAvatar', undefined],
+		['/_server-islands/AvatarIsland', 'https://example.com/dashboard'],
+	])('serves %s from the cookie session without calling Strapi', async (path, referer) => {
+		const cookieUser = { id: 12, documentId: 'user-doc', email: 'user@example.com', username: 'user_12' };
+		const context = createMiddlewareContext(
+			path,
+			{ user_token: 'still-valid-token', user_data: cookieUser, user_data_timestamp: '0' },
+			referer ? { referer } : {},
+		);
+		let loads = 0;
 
-			const response = await hydrateUserData(
-				asApiContext(context),
-				async () => new Response('ok', { status: 200 }),
-				async () => {
-					loads += 1;
-					return cookieUser;
-				},
-			);
+		const response = await hydrateUserData(
+			asApiContext(context),
+			async () => new Response('ok', { status: 200 }),
+			async () => {
+				loads += 1;
+				return cookieUser;
+			},
+		);
 
-			expect(response.status).toBe(200);
-			expect(loads).toBe(0);
-			expect(context.locals.userToken).toBe('still-valid-token');
-			expect(context.locals.user).toMatchObject({ id: 12, email: 'user@example.com' });
-		},
-	);
+		expect(response.status).toBe(200);
+		expect(loads).toBe(0);
+		expect(context.locals.userToken).toBe('still-valid-token');
+		expect(context.locals.user).toMatchObject({ id: 12, email: 'user@example.com' });
+	});
+
+	it.each([
+		['a prerendered page', { referer: 'https://example.com/' }],
+		['an unknown origin page', { referer: 'https://example.com/some-page' }],
+		['no referer', {}],
+	])('revalidates a server island requested from %s', async (_label, headers) => {
+		const cookieUser = { id: 12, documentId: 'user-doc', email: 'user@example.com', username: 'user_12' };
+		const context = createMiddlewareContext(
+			'/_server-islands/AvatarIsland',
+			{ user_token: 'blocked-token', user_data: cookieUser, user_data_timestamp: '0' },
+			headers,
+		);
+
+		const response = await hydrateUserData(
+			asApiContext(context),
+			async () => new Response('ok', { status: 200 }),
+			async () =>
+				({
+					data: null,
+					error: { status: 401, name: 'UnauthorizedError', message: 'Blocked', details: {} },
+				}) satisfies StrapiError,
+		);
+
+		expect(response.status).toBe(200);
+		expect(context.locals.user).toBeNull();
+		expect(context.cookies.has('user_token')).toBe(false);
+	});
 
 	it('bounds the user refresh far below the default 30 seconds', async () => {
 		const context = createMiddlewareContext('/dashboard', {

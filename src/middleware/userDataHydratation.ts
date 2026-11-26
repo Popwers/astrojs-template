@@ -1,4 +1,4 @@
-import { COOKIE_SESSION_ROUTES } from '@data/routes';
+import { COOKIE_SESSION_ROUTES, REVALIDATING_PAGES } from '@data/routes';
 import type { FetchProps, StrapiError } from '@interfaces/strapi';
 import type { User } from '@interfaces/user';
 import { matchesAnyRoute } from '@lib/pathMatch';
@@ -23,6 +23,32 @@ async function defaultLoadUser(params: FetchProps): Promise<User | StrapiError> 
 /** A slow CMS must not hold every page: past this, the cookie user keeps serving. */
 const USER_REFRESH_TIMEOUT_MS = 5000;
 
+const SERVER_ISLANDS = '/_server-islands';
+
+function isServerIsland(context: APIContext): boolean {
+	return matchesAnyRoute(context.url.pathname, [SERVER_ISLANDS]);
+}
+
+/** The path of the page that requested a server island, from its same-origin `Referer`. */
+function refererPath(context: APIContext): string | null {
+	const referer = context.request.headers.get('referer');
+	if (!referer) return null;
+
+	try {
+		return new URL(referer).pathname;
+	} catch {
+		return null;
+	}
+}
+
+function needsRefresh(context: APIContext): boolean {
+	if (matchesAnyRoute(context.url.pathname, COOKIE_SESSION_ROUTES)) return false;
+	if (!isServerIsland(context)) return true;
+
+	const page = refererPath(context);
+	return page === null || !matchesAnyRoute(page, REVALIDATING_PAGES);
+}
+
 /**
  * Hydrate the user data and token in the locals object.
  * Cookie contains only minimal data (~200 bytes).
@@ -41,11 +67,11 @@ export async function hydrateUserData(
 
 			if (cookieUser) context.locals.user = cookieUser;
 
-			// Revalidate every page request against Strapi so blocked/deleted accounts cannot linger on an
-			// unsigned timestamp window. Islands and actions reuse that result: see COOKIE_SESSION_ROUTES.
-			if (!matchesAnyRoute(context.url.pathname, COOKIE_SESSION_ROUTES)) {
+			// Revalidate against Strapi so blocked/deleted accounts cannot linger on an unsigned timestamp
+			// window. Actions rely on their own JWT call, and an island on a page that just revalidated.
+			if (needsRefresh(context)) {
 				const response = await refreshUserData(context, loadUser);
-				if (response) return response;
+				if (response) return isServerIsland(context) ? next() : response;
 			}
 		}
 	} catch (error) {

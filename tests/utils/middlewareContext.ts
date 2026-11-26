@@ -11,6 +11,7 @@ interface TestMiddlewareContext {
 	cookies: TestCookieJar;
 	locals: App.Locals;
 	url: URL;
+	request: { headers: Headers };
 	redirect: (path: string, status: number) => Response;
 }
 
@@ -35,6 +36,7 @@ function prepareCookies(initialCookies: Record<string, CookieValue>) {
 function createMiddlewareContext(
 	path: string,
 	initialCookies: Record<string, CookieValue> = {},
+	headers: Record<string, string> = {},
 ): TestMiddlewareContext {
 	return {
 		cookies: createTestCookies(prepareCookies(initialCookies)),
@@ -43,6 +45,7 @@ function createMiddlewareContext(
 			userToken: '',
 		},
 		url: new URL(`https://example.com${path}`),
+		request: { headers: new Headers(headers) },
 		redirect(redirectPath, status) {
 			return new Response(null, {
 				status,
