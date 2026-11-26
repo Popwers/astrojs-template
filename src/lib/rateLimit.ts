@@ -7,8 +7,13 @@ interface Bucket {
 	resetAt: number;
 }
 
-/** Above this many tracked clients, a new client first sweeps the expired buckets. */
-const SWEEP_THRESHOLD = 10_000;
+/** Most clients tracked at once: past it, the oldest one is dropped, so memory and work stay bounded. */
+export const MAX_TRACKED_CLIENTS = 10_000;
+
+/** Expired buckets are swept at most this often, never on every request. */
+export const SWEEP_INTERVAL_MS = 60_000;
+
+let lastSweepAt = 0;
 
 const IPV4_MAPPED = /^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/i;
 
@@ -39,6 +44,7 @@ function clientSubject(ip: string | null): string {
 }
 
 function dropExpiredBuckets(now: number): void {
+	lastSweepAt = now;
 	for (const [key, bucket] of buckets) {
 		if (now >= bucket.resetAt) buckets.delete(key);
 	}
@@ -49,7 +55,13 @@ function consume(bucketKey: string, max: number, windowMs: number): void {
 	const bucket = buckets.get(bucketKey);
 
 	if (!bucket || now >= bucket.resetAt) {
-		if (buckets.size >= SWEEP_THRESHOLD) dropExpiredBuckets(now);
+		buckets.delete(bucketKey);
+		if (buckets.size >= MAX_TRACKED_CLIENTS && now - lastSweepAt >= SWEEP_INTERVAL_MS)
+			dropExpiredBuckets(now);
+		if (buckets.size >= MAX_TRACKED_CLIENTS) {
+			const oldest = buckets.keys().next();
+			if (!oldest.done) buckets.delete(oldest.value);
+		}
 		buckets.set(bucketKey, { count: 1, resetAt: now + windowMs });
 		return;
 	}
@@ -78,4 +90,9 @@ export function assertRateLimit(context: ClientContext, key: string, max: number
  */
 export function assertUserRateLimit(userId: number, key: string, max: number, windowMs: number): void {
 	consume(`${key}:user:${userId}`, max, windowMs);
+}
+
+/** Number of clients the limiter currently tracks. */
+export function trackedClientCount(): number {
+	return buckets.size;
 }
